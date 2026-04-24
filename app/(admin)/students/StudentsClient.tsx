@@ -3,9 +3,18 @@
 import { useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials } from "@/lib/utils";
-import { parseStudentBulkPaste, bulkImportTemplateTsv } from "@/lib/parse-student-bulk";
+import { parseStudentBulkPaste } from "@/lib/parse-student-bulk";
 
-type ClassOpt = { id: string; name: string; grade: string };
+const GRADES = ["X", "XI", "XII"] as const;
+
+type ClassOpt = {
+  id: string;
+  name: string;
+  grade: string;
+  major: string;
+  year: string;
+  _count: { students: number };
+};
 type StudentRow = {
   id: string;
   name: string;
@@ -24,20 +33,31 @@ export default function StudentsClient({
   searchParams,
   studentDomain,
   viewerRole,
+  suggestedYear,
 }: {
   students: StudentRow[];
   total: number;
   page: number;
   perPage: number;
   classes: ClassOpt[];
-  searchParams: { search?: string; page?: string };
+  searchParams: { search?: string; page?: string; tab?: string };
   studentDomain: string;
   viewerRole: string;
+  suggestedYear: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const totalPages = Math.ceil(total / perPage);
-  const [tab, setTab] = useState<"single" | "bulk">("single");
+  const tab: "single" | "bulk" | "kelas" =
+    searchParams.tab === "kelas" ? "kelas" : searchParams.tab === "bulk" ? "bulk" : "single";
+
+  function setTabQuery(next: "single" | "bulk" | "kelas") {
+    const sp = new URLSearchParams(searchParams as Record<string, string>);
+    if (next === "single") sp.delete("tab");
+    else sp.set("tab", next);
+    const q = sp.toString();
+    router.push(q ? `${pathname}?${q}` : pathname);
+  }
   const [search, setSearch] = useState(searchParams.search || "");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -56,6 +76,12 @@ export default function StudentsClient({
     errors: { row: number; message: string }[];
     truncatedErrors?: boolean;
   } | null>(null);
+
+  const [classModalOpen, setClassModalOpen] = useState(false);
+  const [className, setClassName] = useState("");
+  const [classGrade, setClassGrade] = useState<string>("X");
+  const [classMajor, setClassMajor] = useState("");
+  const [classYear, setClassYear] = useState(suggestedYear);
 
   const previewRows = useMemo(() => {
     try {
@@ -76,14 +102,20 @@ export default function StudentsClient({
     router.push(q ? `${pathname}?${q}` : pathname);
   }
 
-  function downloadTemplate() {
-    const blob = new Blob([bulkImportTemplateTsv()], { type: "text/tab-separated-values;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "template-import-siswa.tsv";
-    a.click();
-    URL.revokeObjectURL(url);
+  async function downloadExcelTemplate() {
+    try {
+      const res = await fetch("/api/students/import-template");
+      if (!res.ok) throw new Error("Gagal mengunduh template");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "template-import-siswa.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setMsg({ type: "err", text: "Tidak bisa mengunduh template. Coba login ulang." });
+    }
   }
 
   async function submitSingle(e: React.FormEvent) {
@@ -114,6 +146,40 @@ export default function StudentsClient({
       setClassId("");
       setEmail("");
       setPassword("");
+      router.refresh();
+    } catch (err: unknown) {
+      setMsg({ type: "err", text: err instanceof Error ? err.message : "Gagal" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitClass(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    const n = className.trim();
+    if (!n) {
+      setMsg({ type: "err", text: "Nama kelas wajib diisi." });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/classes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: n,
+          grade: classGrade.trim(),
+          major: classMajor.trim() || undefined,
+          year: classYear.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal menambah kelas");
+      setMsg({ type: "ok", text: `Kelas "${n}" berhasil ditambahkan.` });
+      setClassName("");
+      setClassMajor("");
+      setClassModalOpen(false);
       router.refresh();
     } catch (err: unknown) {
       setMsg({ type: "err", text: err instanceof Error ? err.message : "Gagal" });
@@ -173,17 +239,18 @@ export default function StudentsClient({
           Data siswa
         </h1>
         <p className="text-xs mt-0.5 max-w-2xl leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Tambah siswa satu per satu atau impor banyak sekaligus dari Excel/CSV. Email login otomatis{" "}
+          Tambah siswa (satuan / impor) dan kelas di halaman ini. Nama kelas untuk impor harus{" "}
+          <strong style={{ color: "var(--text-secondary)" }}>sama persis</strong> dengan daftar di tab{" "}
+          <strong style={{ color: "var(--text-secondary)" }}>Kelas</strong>. Email login otomatis{" "}
           <strong style={{ color: "var(--text-secondary)" }}>nisn@{studentDomain}</strong> jika dikosongkan. Password
-          default siswa baru bisa diatur lewat variabel lingkungan <code className="text-[10px]">DEFAULT_STUDENT_PASSWORD</code>{" "}
-          (bawaan: Siswa@1234).
+          default: <code className="text-[10px]">DEFAULT_STUDENT_PASSWORD</code> atau Siswa@1234.
         </p>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-5">
         <button
           type="button"
-          onClick={() => setTab("single")}
+          onClick={() => setTabQuery("single")}
           className="px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
           style={{
             background: tab === "single" ? "var(--accent)" : "var(--bg-secondary)",
@@ -195,7 +262,7 @@ export default function StudentsClient({
         </button>
         <button
           type="button"
-          onClick={() => setTab("bulk")}
+          onClick={() => setTabQuery("bulk")}
           className="px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
           style={{
             background: tab === "bulk" ? "var(--accent)" : "var(--bg-secondary)",
@@ -204,6 +271,18 @@ export default function StudentsClient({
           }}
         >
           Impor bulk (Excel / CSV)
+        </button>
+        <button
+          type="button"
+          onClick={() => setTabQuery("kelas")}
+          className="px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
+          style={{
+            background: tab === "kelas" ? "var(--accent)" : "var(--bg-secondary)",
+            color: tab === "kelas" ? "white" : "var(--text-secondary)",
+            border: `1px solid ${tab === "kelas" ? "var(--accent)" : "var(--border)"}`,
+          }}
+        >
+          Kelas
         </button>
       </div>
 
@@ -324,7 +403,7 @@ export default function StudentsClient({
                 Impor banyak siswa
               </h2>
               <p className="text-xs mt-1 max-w-xl leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Salin dari Excel (disarankan: tab antar kolom) atau CSV. Baris pertama boleh berisi judul:{" "}
+                Salin dari Excel (disarankan: unduh template Excel) atau tempel CSV/tab. Baris pertama boleh berisi judul:{" "}
                 <code className="text-[10px]">nama</code>, <code className="text-[10px]">nisn</code>,{" "}
                 <code className="text-[10px]">nama_kelas</code> (harus sama persis dengan nama kelas di sistem),{" "}
                 <code className="text-[10px]">email</code>, <code className="text-[10px]">password</code> — semua opsional
@@ -333,11 +412,11 @@ export default function StudentsClient({
             </div>
             <button
               type="button"
-              onClick={downloadTemplate}
+              onClick={() => void downloadExcelTemplate()}
               className="px-3 py-2 rounded-xl border text-xs font-semibold shrink-0"
               style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
             >
-              Unduh template .tsv
+              Unduh template Excel
             </button>
           </div>
 
@@ -405,6 +484,183 @@ export default function StudentsClient({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {tab === "kelas" && (
+        <div className="rounded-2xl border p-6 mb-8" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+          <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
+            <div>
+              <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                Daftar kelas
+              </h2>
+              <p className="text-xs mt-1 max-w-xl leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Kelas dipakai di form siswa dan kolom <code className="text-[10px]">nama_kelas</code> pada impor Excel. Contoh nama:{" "}
+                <strong>X MIPA 1</strong>.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setClassModalOpen(true);
+                setMsg(null);
+                setClassYear(suggestedYear);
+              }}
+              className="px-3 py-2 rounded-xl border text-xs font-semibold shrink-0"
+              style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+            >
+              + Tambah kelas
+            </button>
+          </div>
+          <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr style={{ background: "var(--bg-secondary)" }}>
+                    {["Nama kelas", "Angkatan", "Jurusan", "Tahun ajaran", "Jumlah siswa"].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {classes.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+                        Belum ada kelas. Klik &quot;Tambah kelas&quot;.
+                      </td>
+                    </tr>
+                  ) : (
+                    classes.map((c) => (
+                      <tr key={c.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                        <td className="px-4 py-3 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                          {c.name}
+                        </td>
+                        <td className="px-4 py-3 text-xs" style={{ color: "var(--text-secondary)" }}>
+                          {c.grade}
+                        </td>
+                        <td className="px-4 py-3 text-xs" style={{ color: "var(--text-secondary)" }}>
+                          {c.major || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+                          {c.year}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className="inline-flex min-w-[2rem] justify-center px-2 py-0.5 rounded-lg text-[11px] font-bold tabular-nums"
+                            style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+                          >
+                            {c._count.students}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {classModalOpen && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setClassModalOpen(false)}
+        >
+          <form
+            className="w-full max-w-md rounded-2xl border p-6 shadow-xl"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={submitClass}
+          >
+            <h3 className="text-base font-serif mb-1" style={{ color: "var(--text-primary)" }}>
+              Kelas baru
+            </h3>
+            <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
+              Setelah tersimpan, kelas langsung bisa dipilih saat menambah siswa.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  Nama kelas *
+                </label>
+                <input
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  placeholder="Mis. XI IPA 2"
+                  required
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  Angkatan *
+                </label>
+                <select
+                  value={classGrade}
+                  onChange={(e) => setClassGrade(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                >
+                  {GRADES.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  Jurusan
+                </label>
+                <input
+                  value={classMajor}
+                  onChange={(e) => setClassMajor(e.target.value)}
+                  placeholder="MIPA, IPS, …"
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  Tahun ajaran *
+                </label>
+                <input
+                  value={classYear}
+                  onChange={(e) => setClassYear(e.target.value)}
+                  required
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm font-mono"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => setClassModalOpen(false)}
+                className="px-4 py-2 rounded-xl border text-sm"
+                style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background: "var(--accent)" }}
+              >
+                {loading ? "Menyimpan…" : "Simpan"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

@@ -98,7 +98,3 @@ export function parseStudentBulkPaste(raw: string): ParsedBulkStudent[] {
 
   return out;
 }
-
-export function bulkImportTemplateTsv(): string {
-  return ["nama\tnisn\tnama_kelas\temail\tpassword", "Contoh Siswa\t0012345678\tX MIPA 1\t\t"].join("\n");
-}

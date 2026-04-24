@@ -3,9 +3,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+function staffOk(role: string | undefined) {
+  return role === "TEACHER" || role === "SUPER_ADMIN";
+}
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session || !staffOk(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const classes = await prisma.class.findMany({
     orderBy: [{ grade: "asc" }, { name: "asc" }],
@@ -15,12 +21,21 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session || !staffOk(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await req.json();
-  const { name, grade, major, year } = body;
-  if (!name || !grade || !year) return NextResponse.json({ error: "Name, grade, year required" }, { status: 400 });
+  const { name, grade, major, year } = body as { name?: string; grade?: string; major?: string; year?: string };
+  const n = name?.trim();
+  const g = grade?.trim();
+  const y = year?.trim();
+  if (!n || !g || !y) {
+    return NextResponse.json({ error: "Nama kelas, tingkat (angkatan), dan tahun ajaran wajib diisi" }, { status: 400 });
+  }
 
-  const cls = await prisma.class.create({ data: { name, grade, major: major || "", year } });
+  const cls = await prisma.class.create({
+    data: { name: n, grade: g, major: (major?.trim() || "") || "", year: y },
+  });
   return NextResponse.json({ class: cls }, { status: 201 });
 }
