@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
     else { studentMap.set(r.studentId, { name: r.student.name, nisn: r.student.nisn || "—", class: r.student.class?.name || "—", count: 1, total: r.points }); }
   }
 
-  [...studentMap.values()].sort((a, b) => b.total - a.total).forEach((s, i) => {
+  Array.from(studentMap.values()).sort((a, b) => b.total - a.total).forEach((s, i) => {
     const status = s.total >= 75 ? "Kritis" : s.total >= 50 ? "Perhatian" : "Normal";
     sheet2.addRow({ no: i + 1, name: s.name, nisn: s.nisn, class: s.class, count: s.count, total: s.total, status });
   });

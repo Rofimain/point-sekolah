@@ -26,12 +26,12 @@ async function getDashboardData() {
     if (existing) { existing.total += r.points; }
     else { studentPointsMap.set(r.studentId, { student: r.student, total: r.points }); }
   }
-  const criticalStudents = [...studentPointsMap.values()]
+  const criticalStudents = Array.from(studentPointsMap.values())
     .filter(s => s.total >= parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75"))
     .sort((a, b) => b.total - a.total)
     .slice(0, 10);
 
-  const topStudents = [...studentPointsMap.values()]
+  const topStudents = Array.from(studentPointsMap.values())
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
 
@@ -50,7 +50,7 @@ async function getDashboardData() {
     const existing = vtCount.get(r.violationTypeId);
     if (existing) existing.count++; else vtCount.set(r.violationTypeId, { name: r.violationType.name, count: 1 });
   }
-  const topViolations = [...vtCount.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+  const topViolations = Array.from(vtCount.values()).sort((a, b) => b.count - a.count).slice(0, 5);
 
   return { totalStudents, totalTeachers, thisMonthCount: thisMonthRecords.length, lastMonthCount: lastMonthRecords.length, criticalStudents, topStudents, monthlyData, topViolations };
 }
