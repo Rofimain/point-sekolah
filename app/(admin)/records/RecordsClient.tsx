@@ -3,6 +3,9 @@ import { useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import type { RecordsRow } from "./records-view";
+import { AddRecordStudentPicker, type PickerStudent } from "./AddRecordStudentPicker";
+
+const SESSION_SLOTS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 
 function PointBadge({ points }: { points: number }) {
   const c = points >= 75 ? ["var(--danger-bg)","var(--danger)"] : points >= 50 ? ["var(--warning-bg)","var(--warning)"] : ["var(--success-bg)","var(--success)"];
@@ -21,6 +24,7 @@ export default function RecordsClient({
   perPage,
   classes,
   violationTypes,
+  studentsForPicker,
   totalPointsMap,
   searchParams,
   rosterMode,
@@ -31,6 +35,7 @@ export default function RecordsClient({
   perPage: number;
   classes: { id: string; name: string; grade: string }[];
   violationTypes: any[];
+  studentsForPicker: PickerStudent[];
   totalPointsMap: Record<string, number>;
   searchParams: { grade?: string; classId?: string; search?: string; page?: string };
   rosterMode: boolean;
@@ -118,7 +123,20 @@ export default function RecordsClient({
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setAddModal(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: "var(--accent)" }}>+ Tambah Catatan</button>
+          <button
+            type="button"
+            onClick={() => {
+              setAddStudentId("");
+              setAddVtId("");
+              setAddNotes("");
+              setAddSession("");
+              setAddModal(true);
+            }}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
+            style={{ background: "var(--accent)" }}
+          >
+            + Tambah Catatan
+          </button>
           <button onClick={handleExport} disabled={exporting} className="px-3 py-1.5 rounded-lg text-xs font-semibold border disabled:opacity-60" style={{ background: "var(--success-bg)", color: "var(--success)", borderColor: "var(--success)" }}>
             {exporting ? "Mengekspor..." : "↓ Export Excel"}
           </button>
@@ -209,6 +227,9 @@ export default function RecordsClient({
                             type="button"
                             onClick={() => {
                               setAddStudentId(s.id);
+                              setAddVtId("");
+                              setAddNotes("");
+                              setAddSession("");
                               setAddModal(true);
                             }}
                             className="px-2.5 py-1 rounded border text-[11px]"
@@ -320,30 +341,114 @@ export default function RecordsClient({
 
       {/* Add Modal */}
       {addModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: "rgba(0,0,0,0.5)" }} onClick={() => setAddModal(false)}>
-          <div className="rounded-xl border p-6 w-full max-w-md mx-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }} onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-serif mb-4 pb-3 border-b" style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}>Tambah Catatan Pelanggaran</h3>
-            <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>Masukkan NISN atau cari nama siswa</p>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>NISN / ID Siswa</label>
-                <input value={addStudentId} onChange={(e) => setAddStudentId(e.target.value)} placeholder="Masukkan ID/NISN siswa" className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50 p-4 overflow-y-auto"
+          style={{ background: "rgba(0,0,0,0.55)" }}
+          onClick={() => {
+            setAddModal(false);
+          }}
+        >
+          <div
+            className="rounded-2xl border p-6 w-full max-w-lg shadow-2xl my-6"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3 mb-4 pb-4 border-b" style={{ borderColor: "var(--border)" }}>
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+              >
+                +
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Jenis Pelanggaran</label>
-                <select value={addVtId} onChange={(e) => setAddVtId(e.target.value)} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}>
-                  <option value="">— Pilih —</option>
-                  {violationTypes.map((v: any) => <option key={v.id} value={v.id}>{v.name} ({v.points} poin)</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Keterangan</label>
-                <textarea value={addNotes} onChange={(e) => setAddNotes(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border text-sm resize-none" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
+                <h3 className="text-base font-serif leading-tight" style={{ color: "var(--text-primary)" }}>
+                  Tambah catatan pelanggaran
+                </h3>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  Pilih siswa dari daftar, lalu jenis pelanggaran. Total poin per siswa tampil sebagai panduan.
+                </p>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setAddModal(false)} className="px-4 py-2 rounded-lg border text-sm" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>Batal</button>
-              <button onClick={handleAdd} disabled={loading || !addStudentId || !addVtId} className="px-4 py-2 rounded-lg text-sm text-white disabled:opacity-60" style={{ background: "var(--accent)" }}>Simpan</button>
+
+            <div className="space-y-4">
+              <AddRecordStudentPicker
+                students={studentsForPicker}
+                value={addStudentId}
+                onChange={setAddStudentId}
+                totalPointsMap={totalPointsMap}
+              />
+
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  Jenis pelanggaran
+                </label>
+                <select
+                  value={addVtId}
+                  onChange={(e) => setAddVtId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                >
+                  <option value="">— Pilih jenis —</option>
+                  {violationTypes.map((v: any) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} ({v.points} poin)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  Sesi / waktu <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(opsional)</span>
+                </label>
+                <select
+                  value={addSession}
+                  onChange={(e) => setAddSession(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                >
+                  <option value="">— Tidak spesifik —</option>
+                  {SESSION_SLOTS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  Keterangan <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(opsional)</span>
+                </label>
+                <textarea
+                  value={addNotes}
+                  onChange={(e) => setAddNotes(e.target.value)}
+                  rows={2}
+                  placeholder="Detail kejadian, lokasi, dll."
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm resize-none"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+              <button
+                type="button"
+                onClick={() => setAddModal(false)}
+                className="px-4 py-2.5 rounded-xl border text-sm font-medium"
+                style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={loading || !addStudentId || !addVtId}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: "var(--accent)" }}
+              >
+                {loading ? "Menyimpan…" : "Simpan catatan"}
+              </button>
             </div>
           </div>
         </div>

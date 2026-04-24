@@ -18,10 +18,15 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
     studentWhere.name = { contains: searchParams.search, mode: "insensitive" };
   }
 
-  const [classes, violationTypes, allRecordsForTotals] = await Promise.all([
+  const [classes, violationTypes, allRecordsForTotals, studentsForPicker] = await Promise.all([
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
     prisma.violationType.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.violationRecord.findMany({ select: { studentId: true, points: true } }),
+    prisma.user.findMany({
+      where: { role: "STUDENT", active: true },
+      select: { id: true, name: true, nisn: true, class: { select: { name: true, grade: true } } },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   const totalPointsMap = new Map<string, number>();
@@ -104,6 +109,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
       perPage={perPage}
       classes={classes}
       violationTypes={violationTypes}
+      studentsForPicker={studentsForPicker}
       totalPointsMap={Object.fromEntries(totalPointsMap)}
       searchParams={searchParams}
       rosterMode={rosterMode}
