@@ -4,6 +4,7 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: ["localhost:3000"],
     },
+    optimizePackageImports: ["next-auth/react", "next-themes"],
   },
 };
 

@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { formatDate } from "@/lib/utils";
+import type { RecordsRow } from "./records-view";
 
 function PointBadge({ points }: { points: number }) {
   const c = points >= 75 ? ["var(--danger-bg)","var(--danger)"] : points >= 50 ? ["var(--warning-bg)","var(--warning)"] : ["var(--success-bg)","var(--success)"];
@@ -13,10 +14,35 @@ function StatusBadge({ points }: { points: number }) {
   return <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: s[0], color: s[1] }}>{s[2]}</span>;
 }
 
-export default function RecordsClient({ records, total, page, perPage, classes, violationTypes, totalPointsMap, searchParams }: any) {
+export default function RecordsClient({
+  rows,
+  total,
+  page,
+  perPage,
+  classes,
+  violationTypes,
+  totalPointsMap,
+  searchParams,
+  rosterMode,
+}: {
+  rows: RecordsRow[];
+  total: number;
+  page: number;
+  perPage: number;
+  classes: { id: string; name: string; grade: string }[];
+  violationTypes: any[];
+  totalPointsMap: Record<string, number>;
+  searchParams: { grade?: string; classId?: string; search?: string; page?: string };
+  rosterMode: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const totalPages = Math.ceil(total / perPage);
+
+  const classesFiltered = useMemo(() => {
+    if (!searchParams.grade) return classes;
+    return classes.filter((c) => c.grade === searchParams.grade);
+  }, [classes, searchParams.grade]);
 
   const [editModal, setEditModal] = useState<any>(null);
   const [editPoints, setEditPoints] = useState(0);
@@ -85,7 +111,11 @@ export default function RecordsClient({ records, total, page, perPage, classes, 
       <div className="flex justify-between items-start mb-5">
         <div>
           <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Catatan Pelanggaran Siswa</h1>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{total} catatan ditemukan</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+            {rosterMode
+              ? `${total} baris — semua siswa di filter (termasuk belum ada catatan)`
+              : `${total} catatan ditemukan — urut input terbaru`}
+          </p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setAddModal(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: "var(--accent)" }}>+ Tambah Catatan</button>
@@ -98,13 +128,31 @@ export default function RecordsClient({ records, total, page, perPage, classes, 
       {/* Filters */}
       <div className="rounded-xl border p-3 mb-4 flex flex-wrap gap-2" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
         <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && navigate({ search })} placeholder="Cari nama siswa... (Enter)" className="px-3 py-2 rounded-lg border text-xs flex-1 min-w-40" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-        <select value={searchParams.grade || ""} onChange={(e) => navigate({ grade: e.target.value })} className="px-3 py-2 rounded-lg border text-xs" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}>
+        <select
+          value={searchParams.grade || ""}
+          onChange={(e) => navigate({ grade: e.target.value, classId: "" })}
+          className="px-3 py-2 rounded-lg border text-xs"
+          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+        >
           <option value="">Semua Angkatan</option>
-          {grades.map(g => <option key={g} value={g}>Kelas {g}</option>)}
+          {grades.map((g) => (
+            <option key={g} value={g}>
+              Angkatan {g}
+            </option>
+          ))}
         </select>
-        <select value={searchParams.classId || ""} onChange={(e) => navigate({ classId: e.target.value })} className="px-3 py-2 rounded-lg border text-xs" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}>
-          <option value="">Semua Kelas</option>
-          {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        <select
+          value={searchParams.classId || ""}
+          onChange={(e) => navigate({ classId: e.target.value })}
+          className="px-3 py-2 rounded-lg border text-xs"
+          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+        >
+          <option value="">{searchParams.grade ? "Semua kelas di angkatan ini" : "Semua Kelas"}</option>
+          {classesFiltered.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
         {(searchParams.grade || searchParams.classId || searchParams.search) && (
           <button onClick={() => { setSearch(""); router.push(pathname); }} className="px-3 py-2 rounded-lg border text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>Reset</button>
@@ -120,28 +168,112 @@ export default function RecordsClient({ records, total, page, perPage, classes, 
               ))}
             </tr></thead>
             <tbody>
-              {records.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>Tidak ada data</td></tr>
-              ) : records.map((r: any) => {
-                const totalPts = totalPointsMap[r.studentId] || 0;
-                return (
-                  <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                    <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>{r.student.name}</td>
-                    <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>{r.student.class?.name || "—"}</td>
-                    <td className="px-4 py-3 text-xs" style={{ color: "var(--text-secondary)", maxWidth: 160 }}><span className="line-clamp-1">{r.violationType.name}</span></td>
-                    <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>{formatDate(r.date)}</td>
-                    <td className="px-4 py-3"><PointBadge points={r.points} /></td>
-                    <td className="px-4 py-3"><PointBadge points={totalPts} /></td>
-                    <td className="px-4 py-3"><StatusBadge points={totalPts} /></td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1.5">
-                        <button onClick={() => { setEditModal(r); setEditPoints(r.points); setEditNotes(r.notes || ""); setEditVtId(r.violationTypeId); }} className="px-2.5 py-1 rounded border text-[11px]" style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}>Edit</button>
-                        <button onClick={() => handleDelete(r.id)} className="px-2.5 py-1 rounded border text-[11px]" style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}>Hapus</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                    Tidak ada data
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row) => {
+                  if (row.type === "placeholder") {
+                    const s = row.student;
+                    const totalPts = totalPointsMap[s.id] || 0;
+                    return (
+                      <tr key={`ph-${s.id}`} className="border-t" style={{ borderColor: "var(--border)" }}>
+                        <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
+                          {s.name}
+                        </td>
+                        <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                          {s.class?.name || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs italic" style={{ color: "var(--text-muted)" }}>
+                          Belum ada catatan
+                        </td>
+                        <td className="px-4 py-3 text-xs" style={{ color: "var(--text-muted)" }}>
+                          —
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                            —
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <PointBadge points={totalPts} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge points={totalPts} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAddStudentId(s.id);
+                              setAddModal(true);
+                            }}
+                            className="px-2.5 py-1 rounded border text-[11px]"
+                            style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                          >
+                            + Catatan
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  const r = row.record;
+                  const totalPts = totalPointsMap[r.studentId] || 0;
+                  return (
+                    <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                      <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
+                        {r.student.name}
+                      </td>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                        {r.student.class?.name || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-xs" style={{ color: "var(--text-secondary)", maxWidth: 160 }}>
+                        <span className="line-clamp-1">{r.violationType.name}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                        {formatDate(r.date)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <PointBadge points={r.points} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <PointBadge points={totalPts} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge points={totalPts} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditModal(r);
+                              setEditPoints(r.points);
+                              setEditNotes(r.notes || "");
+                              setEditVtId(r.violationTypeId);
+                            }}
+                            className="px-2.5 py-1 rounded border text-[11px]"
+                            style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(r.id)}
+                            className="px-2.5 py-1 rounded border text-[11px]"
+                            style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

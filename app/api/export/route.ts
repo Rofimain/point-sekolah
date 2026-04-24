@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const records = await prisma.violationRecord.findMany({
     where,
     include: { student: { include: { class: true } }, violationType: true },
-    orderBy: [{ student: { name: "asc" } }, { date: "desc" }],
+    orderBy: { createdAt: "desc" },
   });
 
   // Compute total points per student

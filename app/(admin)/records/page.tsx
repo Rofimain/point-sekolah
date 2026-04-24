@@ -1,44 +1,104 @@
 import { prisma } from "@/lib/prisma";
 import RecordsClient from "./RecordsClient";
+import type { Prisma } from "@prisma/client";
+import type { RecordsRow } from "./records-view";
 
 export default async function RecordsPage({ searchParams }: { searchParams: { grade?: string; classId?: string; search?: string; page?: string } }) {
-  const page = parseInt(searchParams.page || "1");
+  const page = parseInt(searchParams.page || "1", 10);
   const perPage = 15;
+  const rosterMode = Boolean(searchParams.grade || searchParams.classId);
 
-  const where: any = {};
+  const studentWhere: Prisma.UserWhereInput = {
+    role: "STUDENT",
+    active: true,
+  };
+  if (searchParams.classId) studentWhere.classId = searchParams.classId;
+  if (searchParams.grade) studentWhere.class = { grade: searchParams.grade };
   if (searchParams.search) {
-    where.student = { name: { contains: searchParams.search, mode: "insensitive" } };
-  }
-  if (searchParams.classId) {
-    where.student = { ...where.student, classId: searchParams.classId };
-  }
-  if (searchParams.grade) {
-    where.student = { ...where.student, class: { grade: searchParams.grade } };
+    studentWhere.name = { contains: searchParams.search, mode: "insensitive" };
   }
 
-  const [records, total, classes, violationTypes] = await Promise.all([
-    prisma.violationRecord.findMany({
-      where,
-      include: { student: { include: { class: true } }, violationType: true },
-      orderBy: { date: "desc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
-    }),
-    prisma.violationRecord.count({ where }),
+  const [classes, violationTypes, allRecordsForTotals] = await Promise.all([
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
     prisma.violationType.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    prisma.violationRecord.findMany({ select: { studentId: true, points: true } }),
   ]);
 
-  // Compute total points per student for all records (not paginated)
-  const allRecords = await prisma.violationRecord.findMany({ select: { studentId: true, points: true } });
   const totalPointsMap = new Map<string, number>();
-  for (const r of allRecords) {
+  for (const r of allRecordsForTotals) {
     totalPointsMap.set(r.studentId, (totalPointsMap.get(r.studentId) || 0) + r.points);
+  }
+
+  let rows: RecordsRow[] = [];
+  let total = 0;
+
+  if (rosterMode) {
+    const students = await prisma.user.findMany({
+      where: studentWhere,
+      include: { class: true },
+      orderBy: { name: "asc" },
+    });
+    const studentIds = students.map((s) => s.id);
+    const recordsInScope =
+      studentIds.length === 0
+        ? []
+        : await prisma.violationRecord.findMany({
+            where: { studentId: { in: studentIds } },
+            include: { student: { include: { class: true } }, violationType: true },
+            orderBy: { createdAt: "desc" },
+          });
+
+    const byStudent = new Map<string, typeof recordsInScope>();
+    for (const r of recordsInScope) {
+      const list = byStudent.get(r.studentId) ?? [];
+      list.push(r);
+      byStudent.set(r.studentId, list);
+    }
+
+    for (const st of students) {
+      const rs = byStudent.get(st.id);
+      if (rs?.length) {
+        const sorted = [...rs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        for (const r of sorted) rows.push({ type: "record", record: r });
+      } else {
+        rows.push({ type: "placeholder", student: st });
+      }
+    }
+    total = rows.length;
+    rows = rows.slice((page - 1) * perPage, page * perPage);
+  } else {
+    const recordWhere: Prisma.ViolationRecordWhereInput = {};
+    const studentNested: Prisma.UserWhereInput = {};
+    if (searchParams.search) {
+      studentNested.name = { contains: searchParams.search, mode: "insensitive" };
+    }
+    if (searchParams.classId) {
+      studentNested.classId = searchParams.classId;
+    }
+    if (searchParams.grade) {
+      studentNested.class = { grade: searchParams.grade };
+    }
+    if (Object.keys(studentNested).length > 0) {
+      recordWhere.student = studentNested;
+    }
+
+    const [records, count] = await Promise.all([
+      prisma.violationRecord.findMany({
+        where: recordWhere,
+        include: { student: { include: { class: true } }, violationType: true },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * perPage,
+        take: perPage,
+      }),
+      prisma.violationRecord.count({ where: recordWhere }),
+    ]);
+    total = count;
+    rows = records.map((record) => ({ type: "record", record }));
   }
 
   return (
     <RecordsClient
-      records={records}
+      rows={rows}
       total={total}
       page={page}
       perPage={perPage}
@@ -46,6 +106,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
       violationTypes={violationTypes}
       totalPointsMap={Object.fromEntries(totalPointsMap)}
       searchParams={searchParams}
+      rosterMode={rosterMode}
     />
   );
 }
