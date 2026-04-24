@@ -3,9 +3,9 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { BrandLogo } from "@/components/BrandLogo";
 
 const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME || "SMAN 1 Contoh";
-const SCHOOL_SHORT = process.env.NEXT_PUBLIC_SCHOOL_SHORT || "SK";
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
 
 export default function StudentLoginPage() {
@@ -27,7 +27,7 @@ export default function StudentLoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-10" style={{ background: "var(--bg-primary)" }}>
       <div className="w-full max-w-sm rounded-2xl border p-8" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
         <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl font-bold font-serif mx-auto mb-3" style={{ background: "var(--accent)" }}>{SCHOOL_SHORT}</div>
+          <BrandLogo size={56} priority className="mx-auto mb-3 h-14 w-14" />
           <h1 className="text-base font-semibold font-serif" style={{ color: "var(--text-primary)" }}>{SCHOOL_NAME}</h1>
           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Portal Laporan Pelanggaran Siswa</p>
         </div>
