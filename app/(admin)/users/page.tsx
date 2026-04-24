@@ -1,11 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import UsersClient from "./UsersClient";
 
 export default async function UsersPage({ searchParams }: { searchParams: { role?: string; search?: string; page?: string } }) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeServerSession();
   if (session?.user?.role !== "SUPER_ADMIN") redirect("/dashboard");
 
   const page = parseInt(searchParams.page || "1");

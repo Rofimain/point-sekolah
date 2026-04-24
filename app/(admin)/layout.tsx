@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { TopBar } from "@/components/layouts/TopBar";
 import { AdminSidebar } from "@/components/layouts/AdminSidebar";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeServerSession();
   if (!session || session.user.role === "STUDENT") redirect("/admin/login");
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg-primary)" }}>

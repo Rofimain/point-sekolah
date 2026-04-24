@@ -1,4 +1,4 @@
-import { NextAuthOptions } from "next-auth";
+import { getServerSession, type NextAuthOptions, type Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -126,6 +126,15 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt", maxAge: 8 * 60 * 60 }, // 8 hours
   secret: process.env.NEXTAUTH_SECRET,
 };
+
+/** Returns null instead of throwing when the session cookie is invalid (e.g. after NEXTAUTH_SECRET change). */
+export async function getSafeServerSession(): Promise<Session | null> {
+  try {
+    return await getServerSession(authOptions);
+  } catch {
+    return null;
+  }
+}
 
 // Extend types
 declare module "next-auth" {

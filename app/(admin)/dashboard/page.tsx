@@ -1,7 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDate } from "@/lib/utils";
 
 async function getDashboardData() {
   const [totalStudents, totalTeachers, records, violationTypes] = await Promise.all([
