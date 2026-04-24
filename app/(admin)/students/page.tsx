@@ -8,7 +8,7 @@ import { indonesianAcademicYearLabel } from "@/lib/academic-year";
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: { search?: string; page?: string; tab?: string };
+  searchParams: { search?: string; page?: string; tab?: string; classId?: string };
 }) {
   const session = await getSafeServerSession();
   if (!session?.user?.role || !["TEACHER", "SUPER_ADMIN"].includes(session.user.role)) {
@@ -18,6 +18,9 @@ export default async function StudentsPage({
   const page = parseInt(searchParams.page || "1", 10);
   const perPage = 25;
   const where: Prisma.UserWhereInput = { role: "STUDENT" };
+  if (searchParams.classId) {
+    where.classId = searchParams.classId;
+  }
   if (searchParams.search?.trim()) {
     const q = searchParams.search.trim();
     where.OR = [

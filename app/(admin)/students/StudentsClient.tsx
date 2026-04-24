@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials } from "@/lib/utils";
 import { parseStudentBulkPaste } from "@/lib/parse-student-bulk";
@@ -40,13 +40,14 @@ export default function StudentsClient({
   page: number;
   perPage: number;
   classes: ClassOpt[];
-  searchParams: { search?: string; page?: string; tab?: string };
+  searchParams: { search?: string; page?: string; tab?: string; classId?: string };
   studentDomain: string;
   viewerRole: string;
   suggestedYear: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const totalPages = Math.ceil(total / perPage);
   const tab: "single" | "bulk" | "kelas" =
     searchParams.tab === "kelas" ? "kelas" : searchParams.tab === "bulk" ? "bulk" : "single";
@@ -55,6 +56,7 @@ export default function StudentsClient({
     const sp = new URLSearchParams(searchParams as Record<string, string>);
     if (next === "single") sp.delete("tab");
     else sp.set("tab", next);
+    sp.delete("page");
     const q = sp.toString();
     router.push(q ? `${pathname}?${q}` : pathname);
   }
@@ -180,6 +182,40 @@ export default function StudentsClient({
       setClassName("");
       setClassMajor("");
       setClassModalOpen(false);
+      router.refresh();
+    } catch (err: unknown) {
+      setMsg({ type: "err", text: err instanceof Error ? err.message : "Gagal" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitBulkFile(file: File) {
+    setMsg(null);
+    setBulkResult(null);
+    setLoading(true);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const dp = bulkDefaultPwd.trim();
+      if (dp) fd.set("defaultPassword", dp);
+      const res = await fetch("/api/students/import-file", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Impor file gagal");
+      setBulkResult({
+        created: data.created,
+        failed: data.failed,
+        errors: data.errors || [],
+        truncatedErrors: data.truncatedErrors,
+      });
+      setMsg({
+        type: data.failed ? "err" : "ok",
+        text: `File: ${data.created} siswa ditambahkan${data.failed ? `, ${data.failed} baris gagal.` : "."}`,
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
       router.refresh();
     } catch (err: unknown) {
       setMsg({ type: "err", text: err instanceof Error ? err.message : "Gagal" });
@@ -403,8 +439,9 @@ export default function StudentsClient({
                 Impor banyak siswa
               </h2>
               <p className="text-xs mt-1 max-w-xl leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Salin dari Excel (disarankan: unduh template Excel) atau tempel CSV/tab. Baris pertama boleh berisi judul:{" "}
-                <code className="text-[10px]">nama</code>, <code className="text-[10px]">nisn</code>,{" "}
+                Unggah file <strong style={{ color: "var(--text-secondary)" }}>.xlsx</strong> (sheet{" "}
+                <code className="text-[10px]">Data siswa</code> atau sheet pertama), atau salin dari Excel / tempel CSV/tab.
+                Baris pertama boleh berisi judul: <code className="text-[10px]">nama</code>, <code className="text-[10px]">nisn</code>,{" "}
                 <code className="text-[10px]">nama_kelas</code> (harus sama persis dengan nama kelas di sistem),{" "}
                 <code className="text-[10px]">email</code>, <code className="text-[10px]">password</code> — semua opsional
                 kecuali nama, nisn, kelas.
@@ -418,6 +455,34 @@ export default function StudentsClient({
             >
               Unduh template Excel
             </button>
+          </div>
+
+          <div
+            className="mb-4 rounded-xl border border-dashed p-4 flex flex-wrap items-center gap-3"
+            style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void submitBulkFile(f);
+              }}
+            />
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-50"
+              style={{ background: "var(--accent)" }}
+            >
+              {loading ? "Memproses…" : "Unggah file .xlsx"}
+            </button>
+            <p className="text-[10px] max-w-md leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              Maks. 8 MB. Password default di bawah berlaku untuk baris tanpa kolom password.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4 mb-4">
@@ -664,7 +729,22 @@ export default function StudentsClient({
         </div>
       )}
 
-      <div className="rounded-xl border p-3 mb-4 flex flex-wrap gap-2" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+      <div className="rounded-xl border p-3 mb-4 flex flex-wrap gap-2 items-center" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+        {searchParams.classId && (
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium shrink-0"
+            style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+          >
+            Kelas: {classes.find((c) => c.id === searchParams.classId)?.name ?? "Terpilih"}
+            <button
+              type="button"
+              className="underline opacity-90 hover:opacity-100"
+              onClick={() => navigate({ classId: "" })}
+            >
+              hapus filter
+            </button>
+          </span>
+        )}
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -678,7 +758,7 @@ export default function StudentsClient({
             type="button"
             onClick={() => {
               setSearch("");
-              router.push(pathname);
+              navigate({ search: "" });
             }}
             className="px-3 py-2 rounded-lg border text-xs"
             style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
