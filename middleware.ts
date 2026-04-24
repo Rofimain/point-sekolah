@@ -16,6 +16,7 @@ export default withAuth(
       (!isAdminLoginPath(pathname) && pathname.startsWith("/admin")) ||
       pathname.startsWith("/dashboard") ||
       pathname.startsWith("/records") ||
+      pathname.startsWith("/students") ||
       pathname.startsWith("/violations") ||
       pathname.startsWith("/users");
     if (needsStaffRole) {
@@ -38,7 +39,7 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
         if (isAdminLoginPath(pathname)) return true;
-        if (pathname.startsWith("/form") || pathname.startsWith("/admin") || pathname.startsWith("/dashboard") || pathname.startsWith("/records") || pathname.startsWith("/violations") || pathname.startsWith("/users")) {
+        if (pathname.startsWith("/form") || pathname.startsWith("/admin") || pathname.startsWith("/dashboard") || pathname.startsWith("/records") || pathname.startsWith("/students") || pathname.startsWith("/violations") || pathname.startsWith("/users")) {
           return !!token;
         }
         return true;
@@ -48,5 +49,14 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/form/:path*", "/admin/:path*", "/dashboard/:path*", "/records/:path*", "/violations/:path*", "/users/:path*"],
+  matcher: [
+    "/form/:path*",
+    "/admin/:path*",
+    "/dashboard/:path*",
+    "/records/:path*",
+    "/students",
+    "/students/:path*",
+    "/violations/:path*",
+    "/users/:path*",
+  ],
 };

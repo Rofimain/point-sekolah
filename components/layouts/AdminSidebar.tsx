@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "◉", section: "Utama" },
   { href: "/records", label: "Catatan Siswa", icon: "≡", section: "Utama" },
+  { href: "/students", label: "Data Siswa", icon: "▣", section: "Utama" },
   { href: "/violations", label: "Jenis Pelanggaran", icon: "◈", section: "Pengaturan" },
   { href: "/users", label: "Manajemen User", icon: "◎", section: "Pengaturan", adminOnly: true },
   { href: "/export", label: "Export Excel", icon: "↓", section: "Laporan" },
