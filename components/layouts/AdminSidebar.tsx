@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export type SidebarClass = { id: string; name: string; grade: string };
@@ -19,8 +19,8 @@ function IconBox({ children, className }: { children: React.ReactNode; className
   return (
     <span
       className={cn(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
-        "bg-white/[0.08] text-[var(--text-sidebar-active)]/90 group-[.is-active]:bg-white/[0.12]",
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/90 transition-colors duration-200",
+        "bg-white/[0.08] group-[.is-active]:bg-white/[0.12]",
         className
       )}
     >
@@ -48,7 +48,7 @@ function ChevronToggle({ open, className }: { open: boolean; className?: string 
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--text-muted)" }}>
+    <div className="mb-2 px-2 font-serif text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
       {children}
     </div>
   );
@@ -70,12 +70,12 @@ function SubmenuLink({
       href={href}
       onClick={onPick}
       className={cn(
-        "block rounded-lg px-2.5 py-2 text-[11px] leading-snug outline-none transition-all duration-200 ease-out",
+        "block rounded-lg px-2.5 py-2 font-serif text-[11px] leading-snug outline-none transition-all duration-200 ease-out",
         "hover:bg-white/[0.07] hover:pl-3 motion-safe:hover:translate-x-[1px]",
         "focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-0",
         active
-          ? "bg-white/[0.12] font-medium text-[var(--text-sidebar-active)] shadow-[inset_3px_0_0_rgba(255,255,255,0.55)]"
-          : "text-[var(--text-sidebar)]/85"
+          ? "bg-white/[0.12] font-medium text-white shadow-[inset_3px_0_0_rgba(255,255,255,0.55)]"
+          : "text-white/80 hover:text-white"
       )}
     >
       {children}
@@ -98,15 +98,15 @@ function SimpleNavLink({
     <Link
       href={href}
       className={cn(
-        "group mb-1 flex items-center gap-2.5 rounded-xl px-2.5 py-2 outline-none transition-all duration-200 ease-out",
+        "group mb-1 flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-serif outline-none transition-all duration-200 ease-out",
         "hover:bg-[var(--bg-sidebar-hover)] motion-safe:active:scale-[0.99]",
         "focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-sidebar)]",
-        active && "is-active bg-[var(--bg-sidebar-active)] text-[var(--text-sidebar-active)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-        !active && "text-[var(--text-sidebar)]"
+        active && "is-active bg-[var(--bg-sidebar-active)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+        !active && "text-white/75 hover:text-white/95"
       )}
     >
       <IconBox>{icon}</IconBox>
-      <span className="truncate text-[12px] font-medium tracking-tight">{label}</span>
+      <span className="truncate text-[12px] font-semibold tracking-tight">{label}</span>
     </Link>
   );
 }
@@ -137,19 +137,19 @@ function SplitNavRow({
           "group flex overflow-hidden rounded-xl transition-all duration-200 ease-out",
           "ring-1 ring-transparent hover:ring-white/[0.06]",
           active
-            ? "is-active bg-[var(--bg-sidebar-active)] text-[var(--text-sidebar-active)] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] ring-white/[0.08]"
-            : "text-[var(--text-sidebar)] hover:bg-[var(--bg-sidebar-hover)]"
+            ? "is-active bg-[var(--bg-sidebar-active)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] ring-white/[0.08]"
+            : "text-white/75 hover:bg-[var(--bg-sidebar-hover)] hover:text-white/95"
         )}
       >
         <Link
           href={href}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-2.5 pr-1 outline-none transition-colors duration-200",
+            "flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-2.5 pr-1 font-serif outline-none transition-colors duration-200",
             "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/25"
           )}
         >
           <IconBox>{icon}</IconBox>
-          <span className="truncate text-[12px] font-medium tracking-tight">{label}</span>
+          <span className="truncate text-[12px] font-semibold tracking-tight">{label}</span>
         </Link>
         <button
           type="button"
@@ -157,15 +157,16 @@ function SplitNavRow({
           aria-label={ariaToggle}
           onClick={(e) => {
             e.preventDefault();
+            e.stopPropagation();
             onToggle();
           }}
           className={cn(
-            "flex w-10 shrink-0 items-center justify-center border-l border-white/[0.08] outline-none transition-all duration-200",
-            "hover:bg-black/15 active:bg-black/25 motion-safe:active:scale-[0.94]",
+            "flex w-10 shrink-0 items-center justify-center border-l border-white/[0.08] text-white/80 outline-none transition-all duration-200",
+            "hover:bg-black/15 hover:text-white active:bg-black/25 motion-safe:active:scale-[0.94]",
             "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/30"
           )}
         >
-          <ChevronToggle open={open} className="opacity-80" />
+          <ChevronToggle open={open} className="opacity-90" />
         </button>
       </div>
       <div
@@ -189,7 +190,6 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
 
   const [openMenu, setOpenMenu] = useState<null | "records" | "students" | "users">(null);
-  const sidebarRef = useRef<HTMLElement>(null);
 
   const classId = searchParams.get("classId") || "";
   const roleFilter = searchParams.get("role") || "";
@@ -201,20 +201,11 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
     else setOpenMenu(null);
   }, [pathname]);
 
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (!sidebarRef.current?.contains(e.target as Node)) setOpenMenu(null);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
-
   const closeSub = () => setOpenMenu(null);
 
   return (
     <aside
-      ref={sidebarRef}
-      className="flex w-56 shrink-0 flex-col border-r"
+      className="flex w-56 shrink-0 flex-col border-r font-serif"
       style={{ background: "var(--bg-sidebar)", borderColor: "rgba(255,255,255,0.06)" }}
     >
       <nav className="flex-1 overflow-y-auto py-5">
@@ -354,10 +345,10 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
         <div
           className="rounded-xl border border-white/[0.06] bg-white/[0.05] px-3 py-2.5 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition-colors duration-200 hover:bg-white/[0.07]"
         >
-          <div className="truncate text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.72)" }}>
+          <div className="truncate text-[11px] font-semibold text-white/75">
             {session?.user?.name}
           </div>
-          <div className="mt-0.5 text-[10px]" style={{ color: "rgba(255,255,255,0.38)" }}>
+          <div className="mt-0.5 text-[10px] text-white/40">
             {session?.user?.role === "SUPER_ADMIN" ? "Super Admin" : "Guru"}
           </div>
         </div>
