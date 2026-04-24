@@ -22,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 56px)" }}>
           <Suspense
             fallback={
-              <aside className="w-52 flex-shrink-0 border-r" style={{ background: "var(--bg-sidebar)", borderColor: "rgba(255,255,255,0.06)" }} />
+              <aside className="w-56 shrink-0 border-r" style={{ background: "var(--bg-sidebar)", borderColor: "rgba(255,255,255,0.06)" }} />
             }
           >
             <AdminSidebar classes={sidebarClasses} />

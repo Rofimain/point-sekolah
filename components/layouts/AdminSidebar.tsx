@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 export type SidebarClass = { id: string; name: string; grade: string };
 
@@ -13,6 +14,173 @@ const ROLE_LINKS = [
   { href: "/users?role=TEACHER", label: "Guru", roleKey: "TEACHER" },
   { href: "/users?role=SUPER_ADMIN", label: "Super Admin", roleKey: "SUPER_ADMIN" },
 ];
+
+function IconBox({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
+        "bg-white/[0.08] text-[var(--text-sidebar-active)]/90 group-[.is-active]:bg-white/[0.12]",
+        className
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function ChevronToggle({ open, className }: { open: boolean; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={cn("h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]", open && "rotate-180", className)}
+    >
+      <path d="M6 8l4 4 4-4" />
+    </svg>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--text-muted)" }}>
+      {children}
+    </div>
+  );
+}
+
+function SubmenuLink({
+  href,
+  active,
+  onPick,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  onPick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onPick}
+      className={cn(
+        "block rounded-lg px-2.5 py-2 text-[11px] leading-snug outline-none transition-all duration-200 ease-out",
+        "hover:bg-white/[0.07] hover:pl-3 motion-safe:hover:translate-x-[1px]",
+        "focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-0",
+        active
+          ? "bg-white/[0.12] font-medium text-[var(--text-sidebar-active)] shadow-[inset_3px_0_0_rgba(255,255,255,0.55)]"
+          : "text-[var(--text-sidebar)]/85"
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function SimpleNavLink({
+  href,
+  active,
+  icon,
+  label,
+}: {
+  href: string;
+  active: boolean;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group mb-1 flex items-center gap-2.5 rounded-xl px-2.5 py-2 outline-none transition-all duration-200 ease-out",
+        "hover:bg-[var(--bg-sidebar-hover)] motion-safe:active:scale-[0.99]",
+        "focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-sidebar)]",
+        active && "is-active bg-[var(--bg-sidebar-active)] text-[var(--text-sidebar-active)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+        !active && "text-[var(--text-sidebar)]"
+      )}
+    >
+      <IconBox>{icon}</IconBox>
+      <span className="truncate text-[12px] font-medium tracking-tight">{label}</span>
+    </Link>
+  );
+}
+
+function SplitNavRow({
+  href,
+  active,
+  open,
+  onToggle,
+  icon,
+  label,
+  ariaToggle,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  open: boolean;
+  onToggle: () => void;
+  icon: React.ReactNode;
+  label: string;
+  ariaToggle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-1">
+      <div
+        className={cn(
+          "group flex overflow-hidden rounded-xl transition-all duration-200 ease-out",
+          "ring-1 ring-transparent hover:ring-white/[0.06]",
+          active
+            ? "is-active bg-[var(--bg-sidebar-active)] text-[var(--text-sidebar-active)] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] ring-white/[0.08]"
+            : "text-[var(--text-sidebar)] hover:bg-[var(--bg-sidebar-hover)]"
+        )}
+      >
+        <Link
+          href={href}
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-2.5 pr-1 outline-none transition-colors duration-200",
+            "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/25"
+          )}
+        >
+          <IconBox>{icon}</IconBox>
+          <span className="truncate text-[12px] font-medium tracking-tight">{label}</span>
+        </Link>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={ariaToggle}
+          onClick={(e) => {
+            e.preventDefault();
+            onToggle();
+          }}
+          className={cn(
+            "flex w-10 shrink-0 items-center justify-center border-l border-white/[0.08] outline-none transition-all duration-200",
+            "hover:bg-black/15 active:bg-black/25 motion-safe:active:scale-[0.94]",
+            "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/30"
+          )}
+        >
+          <ChevronToggle open={open} className="opacity-80" />
+        </button>
+      </div>
+      <div
+        className={cn(
+          "overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          open ? "pointer-events-auto mt-1.5 max-h-[15rem] opacity-100" : "pointer-events-none max-h-0 opacity-0"
+        )}
+      >
+        <div className="ml-1.5 max-h-[14rem] space-y-0.5 overflow-y-auto overflow-x-hidden border-l border-white/[0.07] py-0.5 pl-2.5 pr-1">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
   const pathname = usePathname();
@@ -41,287 +209,155 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  function subLinkStyle(active: boolean) {
-    return {
-      display: "block" as const,
-      padding: "6px 10px 6px 12px",
-      marginBottom: 2,
-      borderRadius: 6,
-      fontSize: 11,
-      borderLeft: active ? "2px solid rgba(255,255,255,0.85)" : "2px solid transparent",
-      color: active ? "rgba(255,255,255,0.95)" : "rgba(200,208,230,0.75)",
-      background: active ? "rgba(255,255,255,0.08)" : "transparent",
-    };
-  }
+  const closeSub = () => setOpenMenu(null);
 
   return (
     <aside
       ref={sidebarRef}
-      className="w-52 flex-shrink-0 flex flex-col"
-      style={{ background: "var(--bg-sidebar)" }}
+      className="flex w-56 shrink-0 flex-col border-r"
+      style={{ background: "var(--bg-sidebar)", borderColor: "rgba(255,255,255,0.06)" }}
     >
-      <nav className="flex-1 py-4 overflow-y-auto">
-        <div className="px-3 mb-5">
-          <div className="text-[9px] tracking-[1.5px] uppercase px-2 mb-1.5" style={{ color: "var(--text-muted)" }}>
-            Utama
-          </div>
+      <nav className="flex-1 overflow-y-auto py-5">
+        <div className="px-3 pb-2">
+          <SectionLabel>Utama</SectionLabel>
 
-          <Link
+          <SimpleNavLink
             href="/dashboard"
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 transition-colors"
-            style={{
-              background: pathname === "/dashboard" ? "var(--bg-sidebar-active)" : "transparent",
-              color: pathname === "/dashboard" ? "var(--text-sidebar-active)" : "var(--text-sidebar)",
-            }}
-            onMouseEnter={(e) => {
-              if (pathname !== "/dashboard") (e.currentTarget as HTMLElement).style.background = "var(--bg-sidebar-hover)";
-            }}
-            onMouseLeave={(e) => {
-              if (pathname !== "/dashboard") (e.currentTarget as HTMLElement).style.background = "transparent";
-            }}
+            active={pathname === "/dashboard"}
+            icon={
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z" />
+              </svg>
+            }
+            label="Dashboard"
+          />
+
+          <SplitNavRow
+            href="/records"
+            active={pathname.startsWith("/records")}
+            open={openMenu === "records"}
+            onToggle={() => setOpenMenu((m) => (m === "records" ? null : "records"))}
+            ariaToggle="Buka daftar kelas — Catatan Siswa"
+            icon={
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" strokeLinecap="round" />
+              </svg>
+            }
+            label="Catatan Siswa"
           >
-            <span className="w-4 h-4 rounded flex items-center justify-center text-[10px]" style={{ background: "rgba(255,255,255,0.1)" }}>
-              ◉
-            </span>
-            <span className="text-[12px]">Dashboard</span>
-          </Link>
+            <SubmenuLink href="/records" active={!classId && pathname.startsWith("/records")} onPick={closeSub}>
+              Semua kelas
+            </SubmenuLink>
+            {classes.map((c) => (
+              <SubmenuLink
+                key={c.id}
+                href={`/records?classId=${c.id}`}
+                active={classId === c.id && pathname.startsWith("/records")}
+                onPick={closeSub}
+              >
+                {c.grade} {c.name}
+              </SubmenuLink>
+            ))}
+          </SplitNavRow>
 
-          {/* Catatan Siswa + kelas */}
-          <div className="mb-0.5">
-            <div
-              className="flex items-stretch rounded-lg overflow-hidden"
-              style={{
-                background: pathname.startsWith("/records") ? "var(--bg-sidebar-active)" : "transparent",
-              }}
-            >
-              <Link
-                href="/records"
-                className="flex flex-1 items-center gap-2.5 px-3 py-2.5 min-w-0 transition-colors"
-                style={{
-                  color: pathname.startsWith("/records") ? "var(--text-sidebar-active)" : "var(--text-sidebar)",
-                }}
-                onMouseEnter={(e) => {
-                  if (!pathname.startsWith("/records")) (e.currentTarget as HTMLElement).style.background = "var(--bg-sidebar-hover)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!pathname.startsWith("/records")) (e.currentTarget as HTMLElement).style.background = "transparent";
-                }}
+          <SplitNavRow
+            href="/students"
+            active={pathname.startsWith("/students")}
+            open={openMenu === "students"}
+            onToggle={() => setOpenMenu((m) => (m === "students" ? null : "students"))}
+            ariaToggle="Buka daftar kelas — Data Siswa"
+            icon={
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" strokeLinecap="round" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round" />
+              </svg>
+            }
+            label="Data Siswa"
+          >
+            <SubmenuLink href="/students" active={!classId && pathname.startsWith("/students")} onPick={closeSub}>
+              Semua kelas
+            </SubmenuLink>
+            {classes.map((c) => (
+              <SubmenuLink
+                key={c.id}
+                href={`/students?classId=${c.id}`}
+                active={classId === c.id && pathname.startsWith("/students")}
+                onPick={closeSub}
               >
-                <span className="w-4 h-4 rounded flex items-center justify-center text-[10px] shrink-0" style={{ background: "rgba(255,255,255,0.1)" }}>
-                  ≡
-                </span>
-                <span className="text-[12px] truncate">Catatan Siswa</span>
-              </Link>
-              <button
-                type="button"
-                aria-label="Menu kelas"
-                className="px-2 flex items-center shrink-0 border-l border-white/10"
-                style={{
-                  color: pathname.startsWith("/records") ? "var(--text-sidebar-active)" : "var(--text-sidebar)",
-                  background: "transparent",
-                }}
-                onClick={() => setOpenMenu((m) => (m === "records" ? null : "records"))}
-              >
-                <span className="text-[9px] opacity-80">{openMenu === "records" ? "▾" : "▸"}</span>
-              </button>
-            </div>
-            {openMenu === "records" && (
-              <div className="mt-1 ml-1 pl-2 border-l border-white/10 max-h-52 overflow-y-auto">
-                <Link href="/records" style={subLinkStyle(!classId && pathname.startsWith("/records"))} onClick={() => setOpenMenu(null)}>
-                  Semua kelas
-                </Link>
-                {classes.map((c) => {
-                  const active = classId === c.id && pathname.startsWith("/records");
-                  return (
-                    <Link
-                      key={c.id}
-                      href={`/records?classId=${c.id}`}
-                      style={subLinkStyle(active)}
-                      onClick={() => setOpenMenu(null)}
-                    >
-                      {c.grade} {c.name}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Data Siswa + kelas */}
-          <div className="mb-0.5">
-            <div
-              className="flex items-stretch rounded-lg overflow-hidden"
-              style={{
-                background: pathname.startsWith("/students") ? "var(--bg-sidebar-active)" : "transparent",
-              }}
-            >
-              <Link
-                href="/students"
-                className="flex flex-1 items-center gap-2.5 px-3 py-2.5 min-w-0 transition-colors"
-                style={{
-                  color: pathname.startsWith("/students") ? "var(--text-sidebar-active)" : "var(--text-sidebar)",
-                }}
-                onMouseEnter={(e) => {
-                  if (!pathname.startsWith("/students")) (e.currentTarget as HTMLElement).style.background = "var(--bg-sidebar-hover)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!pathname.startsWith("/students")) (e.currentTarget as HTMLElement).style.background = "transparent";
-                }}
-              >
-                <span className="w-4 h-4 rounded flex items-center justify-center text-[10px] shrink-0" style={{ background: "rgba(255,255,255,0.1)" }}>
-                  ▣
-                </span>
-                <span className="text-[12px] truncate">Data Siswa</span>
-              </Link>
-              <button
-                type="button"
-                aria-label="Menu kelas"
-                className="px-2 flex items-center shrink-0 border-l border-white/10"
-                style={{
-                  color: pathname.startsWith("/students") ? "var(--text-sidebar-active)" : "var(--text-sidebar)",
-                  background: "transparent",
-                }}
-                onClick={() => setOpenMenu((m) => (m === "students" ? null : "students"))}
-              >
-                <span className="text-[9px] opacity-80">{openMenu === "students" ? "▾" : "▸"}</span>
-              </button>
-            </div>
-            {openMenu === "students" && (
-              <div className="mt-1 ml-1 pl-2 border-l border-white/10 max-h-52 overflow-y-auto">
-                <Link href="/students" style={subLinkStyle(!classId && pathname.startsWith("/students"))} onClick={() => setOpenMenu(null)}>
-                  Semua kelas
-                </Link>
-                {classes.map((c) => {
-                  const active = classId === c.id && pathname.startsWith("/students");
-                  return (
-                    <Link
-                      key={c.id}
-                      href={`/students?classId=${c.id}`}
-                      style={subLinkStyle(active)}
-                      onClick={() => setOpenMenu(null)}
-                    >
-                      {c.grade} {c.name}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                {c.grade} {c.name}
+              </SubmenuLink>
+            ))}
+          </SplitNavRow>
         </div>
 
-        <div className="px-3 mb-5">
-          <div className="text-[9px] tracking-[1.5px] uppercase px-2 mb-1.5" style={{ color: "var(--text-muted)" }}>
-            Pengaturan
-          </div>
-          <Link
+        <div className="px-3 pb-2 pt-2">
+          <SectionLabel>Pengaturan</SectionLabel>
+
+          <SimpleNavLink
             href="/violations"
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 transition-colors"
-            style={{
-              background: pathname.startsWith("/violations") ? "var(--bg-sidebar-active)" : "transparent",
-              color: pathname.startsWith("/violations") ? "var(--text-sidebar-active)" : "var(--text-sidebar)",
-            }}
-            onMouseEnter={(e) => {
-              if (!pathname.startsWith("/violations")) (e.currentTarget as HTMLElement).style.background = "var(--bg-sidebar-hover)";
-            }}
-            onMouseLeave={(e) => {
-              if (!pathname.startsWith("/violations")) (e.currentTarget as HTMLElement).style.background = "transparent";
-            }}
-          >
-            <span className="w-4 h-4 rounded flex items-center justify-center text-[10px]" style={{ background: "rgba(255,255,255,0.1)" }}>
-              ◈
-            </span>
-            <span className="text-[12px]">Jenis Pelanggaran</span>
-          </Link>
+            active={pathname.startsWith("/violations")}
+            icon={
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
+            label="Jenis Pelanggaran"
+          />
 
           {isSuperAdmin && (
-            <div className="mb-0.5">
-              <div
-                className="flex items-stretch rounded-lg overflow-hidden"
-                style={{
-                  background: pathname.startsWith("/users") ? "var(--bg-sidebar-active)" : "transparent",
-                }}
-              >
-                <Link
-                  href="/users"
-                  className="flex flex-1 items-center gap-2.5 px-3 py-2.5 min-w-0 transition-colors"
-                  style={{
-                    color: pathname.startsWith("/users") ? "var(--text-sidebar-active)" : "var(--text-sidebar)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!pathname.startsWith("/users")) (e.currentTarget as HTMLElement).style.background = "var(--bg-sidebar-hover)";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!pathname.startsWith("/users")) (e.currentTarget as HTMLElement).style.background = "transparent";
-                  }}
+            <SplitNavRow
+              href="/users"
+              active={pathname.startsWith("/users")}
+              open={openMenu === "users"}
+              onToggle={() => setOpenMenu((m) => (m === "users" ? null : "users"))}
+              ariaToggle="Buka filter role — Manajemen User"
+              icon={
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" strokeLinecap="round" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round" />
+                </svg>
+              }
+              label="Manajemen User"
+            >
+              {ROLE_LINKS.map((r) => (
+                <SubmenuLink
+                  key={r.href}
+                  href={r.href}
+                  active={pathname.startsWith("/users") && (r.roleKey === "" ? !roleFilter : roleFilter === r.roleKey)}
+                  onPick={closeSub}
                 >
-                  <span className="w-4 h-4 rounded flex items-center justify-center text-[10px] shrink-0" style={{ background: "rgba(255,255,255,0.1)" }}>
-                    ◎
-                  </span>
-                  <span className="text-[12px] truncate">Manajemen User</span>
-                </Link>
-                <button
-                  type="button"
-                  aria-label="Menu role"
-                  className="px-2 flex items-center shrink-0 border-l border-white/10"
-                  style={{
-                    color: pathname.startsWith("/users") ? "var(--text-sidebar-active)" : "var(--text-sidebar)",
-                    background: "transparent",
-                  }}
-                  onClick={() => setOpenMenu((m) => (m === "users" ? null : "users"))}
-                >
-                  <span className="text-[9px] opacity-80">{openMenu === "users" ? "▾" : "▸"}</span>
-                </button>
-              </div>
-              {openMenu === "users" && (
-                <div className="mt-1 ml-1 pl-2 border-l border-white/10">
-                  {ROLE_LINKS.map((r) => {
-                    const active =
-                      pathname.startsWith("/users") &&
-                      (r.roleKey === "" ? !roleFilter : roleFilter === r.roleKey);
-                    return (
-                      <Link key={r.href} href={r.href} style={subLinkStyle(active)} onClick={() => setOpenMenu(null)}>
-                        {r.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                  {r.label}
+                </SubmenuLink>
+              ))}
+            </SplitNavRow>
           )}
         </div>
 
-        <div className="px-3 mb-5">
-          <div className="text-[9px] tracking-[1.5px] uppercase px-2 mb-1.5" style={{ color: "var(--text-muted)" }}>
-            Laporan
-          </div>
-          <Link
+        <div className="px-3 pb-2 pt-2">
+          <SectionLabel>Laporan</SectionLabel>
+          <SimpleNavLink
             href="/export"
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 transition-colors"
-            style={{
-              background: pathname.startsWith("/export") ? "var(--bg-sidebar-active)" : "transparent",
-              color: pathname.startsWith("/export") ? "var(--text-sidebar-active)" : "var(--text-sidebar)",
-            }}
-            onMouseEnter={(e) => {
-              if (!pathname.startsWith("/export")) (e.currentTarget as HTMLElement).style.background = "var(--bg-sidebar-hover)";
-            }}
-            onMouseLeave={(e) => {
-              if (!pathname.startsWith("/export")) (e.currentTarget as HTMLElement).style.background = "transparent";
-            }}
-          >
-            <span className="w-4 h-4 rounded flex items-center justify-center text-[10px]" style={{ background: "rgba(255,255,255,0.1)" }}>
-              ↓
-            </span>
-            <span className="text-[12px]">Export Excel</span>
-          </Link>
+            active={pathname.startsWith("/export")}
+            icon={
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
+            label="Export Excel"
+          />
         </div>
       </nav>
 
-      <div className="p-3 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-        <div className="rounded-lg p-2.5" style={{ background: "rgba(255,255,255,0.06)" }}>
-          <div className="text-[11px]" style={{ color: "rgba(255,255,255,0.65)" }}>
+      <div className="border-t p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div
+          className="rounded-xl border border-white/[0.06] bg-white/[0.05] px-3 py-2.5 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition-colors duration-200 hover:bg-white/[0.07]"
+        >
+          <div className="truncate text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.72)" }}>
             {session?.user?.name}
           </div>
-          <div className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <div className="mt-0.5 text-[10px]" style={{ color: "rgba(255,255,255,0.38)" }}>
             {session?.user?.role === "SUPER_ADMIN" ? "Super Admin" : "Guru"}
           </div>
         </div>
