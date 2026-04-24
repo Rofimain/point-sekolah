@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String
+  password  String
+  role      Role      @default(STUDENT)
+  nisn      String?   @unique
+  nip       String?   @unique
+  classId   String?
+  class     Class?    @relation(fields: [classId], references: [id])
+  records   ViolationRecord[]
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  SUPER_ADMIN
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  name      String
+  grade     String
+  major     String
+  year      String
+  students  User[]
+  createdAt DateTime @default(now())
+}
+
+model ViolationType {
+  id          String    @id @default(cuid())
+  name        String
+  category    Category
+  points      Int
+  description String?
+  active      Boolean   @default(true)
+  records     ViolationRecord[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum Category {
+  RINGAN
+  SEDANG
+  BERAT
+}
+
+model ViolationRecord {
+  id              String        @id @default(cuid())
+  student         User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId       String
+  violationType   ViolationType @relation(fields: [violationTypeId], references: [id])
+  violationTypeId String
+  session         String?
+  notes           String?
+  points          Int
+  date            DateTime      @default(now())
+  createdByName   String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
