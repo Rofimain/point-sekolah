@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   getEffectivePointsBreakdown,
+  isPointAdjustmentTableMissing,
   QUIET_MONTH_REASON,
   quietPeriodMs,
 } from "@/lib/student-effective-points";
@@ -15,12 +16,17 @@ export async function getLastViolationDate(studentId: string): Promise<Date | nu
 }
 
 async function getLastQuietMonthAdjustmentDate(studentId: string): Promise<Date | null> {
-  const last = await prisma.pointAdjustment.findFirst({
-    where: { studentId, reason: QUIET_MONTH_REASON },
-    orderBy: { createdAt: "desc" },
-    select: { createdAt: true },
-  });
-  return last?.createdAt ?? null;
+  try {
+    const last = await prisma.pointAdjustment.findFirst({
+      where: { studentId, reason: QUIET_MONTH_REASON },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+    return last?.createdAt ?? null;
+  } catch (e) {
+    if (isPointAdjustmentTableMissing(e)) return null;
+    throw e;
+  }
 }
 
 /**
@@ -76,14 +82,19 @@ export async function applyQuietMonthReductionForStudent(
 
   const pointsDelta = -Math.min(deduct, gross);
 
-  await prisma.pointAdjustment.create({
-    data: {
-      studentId,
-      pointsDelta,
-      reason: QUIET_MONTH_REASON,
-      grossTotalBefore: gross,
-    },
-  });
+  try {
+    await prisma.pointAdjustment.create({
+      data: {
+        studentId,
+        pointsDelta,
+        reason: QUIET_MONTH_REASON,
+        grossTotalBefore: gross,
+      },
+    });
+  } catch (e) {
+    if (isPointAdjustmentTableMissing(e)) return null;
+    throw e;
+  }
 
   const { effective } = await getEffectivePointsBreakdown(studentId);
   return {

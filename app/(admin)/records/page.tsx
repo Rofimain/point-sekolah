@@ -4,6 +4,8 @@ import type { Prisma } from "@prisma/client";
 import type { RecordsRow } from "./records-view";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 
+export const dynamic = "force-dynamic";
+
 export default async function RecordsPage({ searchParams }: { searchParams: { grade?: string; classId?: string; search?: string; page?: string } }) {
   const page = parseInt(searchParams.page || "1", 10);
   const perPage = 15;

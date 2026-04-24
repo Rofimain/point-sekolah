@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 
+export const dynamic = "force-dynamic";
+
 async function getDashboardData() {
   const [totalStudents, totalTeachers, records, violationTypes, effectivePointsMap] = await Promise.all([
     prisma.user.count({ where: { role: "STUDENT", active: true } }),
