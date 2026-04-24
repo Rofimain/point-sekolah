@@ -44,9 +44,18 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (session.user.role === "STUDENT") {
-    const records = await prisma.violationRecord.findMany({ where: { studentId: session.user.id }, include: { violationType: true }, orderBy: { date: "desc" } });
+    const records = await prisma.violationRecord.findMany({
+      where: { studentId: session.user.id },
+      include: { violationType: true },
+      orderBy: { date: "desc" },
+      take: 500,
+    });
     return NextResponse.json(records);
   }
-  const records = await prisma.violationRecord.findMany({ include: { student: { include: { class: true } }, violationType: true }, orderBy: { date: "desc" } });
+  const records = await prisma.violationRecord.findMany({
+    include: { student: { include: { class: true } }, violationType: true },
+    orderBy: { date: "desc" },
+    take: 3000,
+  });
   return NextResponse.json(records);
 }

@@ -36,20 +36,32 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
   let total = 0;
 
   if (rosterMode) {
-    const students = await prisma.user.findMany({
-      where: studentWhere,
-      include: { class: true },
-      orderBy: { name: "asc" },
-    });
+    const ROSTER_RECORDS_PER_STUDENT = 40;
+    const [studentCount, students] = await Promise.all([
+      prisma.user.count({ where: studentWhere }),
+      prisma.user.findMany({
+        where: studentWhere,
+        include: { class: true },
+        orderBy: { name: "asc" },
+        skip: (page - 1) * perPage,
+        take: perPage,
+      }),
+    ]);
     const studentIds = students.map((s) => s.id);
-    const recordsInScope =
+    const recordLists =
       studentIds.length === 0
         ? []
-        : await prisma.violationRecord.findMany({
-            where: { studentId: { in: studentIds } },
-            include: { student: { include: { class: true } }, violationType: true },
-            orderBy: { createdAt: "desc" },
-          });
+        : await Promise.all(
+            studentIds.map((id) =>
+              prisma.violationRecord.findMany({
+                where: { studentId: id },
+                take: ROSTER_RECORDS_PER_STUDENT,
+                orderBy: { createdAt: "desc" },
+                include: { student: { include: { class: true } }, violationType: true },
+              })
+            )
+          );
+    const recordsInScope = recordLists.flat();
 
     const byStudent = new Map<string, typeof recordsInScope>();
     for (const r of recordsInScope) {
@@ -67,8 +79,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
         rows.push({ type: "placeholder", student: st });
       }
     }
-    total = rows.length;
-    rows = rows.slice((page - 1) * perPage, page * perPage);
+    total = studentCount;
   } else {
     const recordWhere: Prisma.ViolationRecordWhereInput = {};
     const studentNested: Prisma.UserWhereInput = {};

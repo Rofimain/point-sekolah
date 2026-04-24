@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -37,5 +38,6 @@ export async function POST(req: NextRequest) {
   const cls = await prisma.class.create({
     data: { name: n, grade: g, major: (major?.trim() || "") || "", year: y },
   });
+  revalidateTag("sidebar-classes");
   return NextResponse.json({ class: cls }, { status: 201 });
 }

@@ -3,59 +3,115 @@ import { getEffectivePointsMap } from "@/lib/student-effective-points";
 
 export const dynamic = "force-dynamic";
 
-async function getDashboardData() {
-  const [totalStudents, totalTeachers, records, violationTypes, effectivePointsMap] = await Promise.all([
-    prisma.user.count({ where: { role: "STUDENT", active: true } }),
-    prisma.user.count({ where: { role: { in: ["TEACHER", "SUPER_ADMIN"] }, active: true } }),
-    prisma.violationRecord.findMany({ include: { student: { include: { class: true } }, violationType: true }, orderBy: { date: "desc" } }),
-    prisma.violationType.findMany({ where: { active: true } }),
-    getEffectivePointsMap(),
-  ]);
+const CRITICAL_POINTS = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
 
+async function getDashboardData() {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
-  const thisMonthRecords = records.filter(r => r.date >= startOfMonth);
-  const lastMonthRecords = records.filter(r => r.date >= lastMonth && r.date <= endLastMonth);
+  const monthRanges = Array.from({ length: 6 }, (_, i) => {
+    const offset = 5 - i;
+    const d = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() - offset + 1, 0, 23, 59, 59, 999);
+    return {
+      d,
+      end,
+      label: d.toLocaleString("id-ID", { month: "short" }),
+    };
+  });
 
-  // Students with effective total points (termasuk pengurangan bulan tenang)
-  const studentPointsMap = new Map<string, { student: any; total: number }>();
-  for (const r of records) {
-    if (studentPointsMap.has(r.studentId)) continue;
-    studentPointsMap.set(r.studentId, {
-      student: r.student,
-      total: effectivePointsMap.get(r.studentId) ?? 0,
-    });
-  }
-  const criticalStudents = Array.from(studentPointsMap.values())
-    .filter(s => s.total >= parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75"))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 10);
+  const [
+    totalStudents,
+    totalTeachers,
+    thisMonthCount,
+    lastMonthCount,
+    vtGroups,
+    effectivePointsMap,
+    ...monthCounts
+  ] = await Promise.all([
+    prisma.user.count({ where: { role: "STUDENT", active: true } }),
+    prisma.user.count({ where: { role: { in: ["TEACHER", "SUPER_ADMIN"] }, active: true } }),
+    prisma.violationRecord.count({ where: { date: { gte: startOfMonth } } }),
+    prisma.violationRecord.count({
+      where: { date: { gte: lastMonthStart, lte: endLastMonth } },
+    }),
+    prisma.violationRecord.groupBy({
+      by: ["violationTypeId"],
+      where: { date: { gte: startOfMonth } },
+      _count: { id: true },
+    }),
+    getEffectivePointsMap(),
+    ...monthRanges.map(({ d, end }) =>
+      prisma.violationRecord.count({ where: { date: { gte: d, lte: end } } })
+    ),
+  ]);
 
-  const topStudents = Array.from(studentPointsMap.values())
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
+  const monthlyData = monthRanges.map((mr, i) => ({
+    label: mr.label,
+    count: monthCounts[i] ?? 0,
+  }));
 
-  // Monthly trend (last 6 months)
-  const monthlyData: { label: string; count: number }[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-    const count = records.filter(r => r.date >= d && r.date <= end).length;
-    monthlyData.push({ label: d.toLocaleString("id-ID", { month: "short" }), count });
-  }
+  const sortedVt = [...vtGroups].sort((a, b) => b._count.id - a._count.id).slice(0, 5);
+  const vtIds = sortedVt.map((g) => g.violationTypeId);
+  const vtNames =
+    vtIds.length === 0
+      ? []
+      : await prisma.violationType.findMany({
+          where: { id: { in: vtIds } },
+          select: { id: true, name: true },
+        });
+  const nameById = new Map(vtNames.map((t) => [t.id, t.name]));
+  const topViolations = sortedVt.map((g) => ({
+    name: nameById.get(g.violationTypeId) ?? "—",
+    count: g._count.id,
+  }));
 
-  // Top violation types this month
-  const vtCount = new Map<string, { name: string; count: number }>();
-  for (const r of thisMonthRecords) {
-    const existing = vtCount.get(r.violationTypeId);
-    if (existing) existing.count++; else vtCount.set(r.violationTypeId, { name: r.violationType.name, count: 1 });
-  }
-  const topViolations = Array.from(vtCount.values()).sort((a, b) => b.count - a.count).slice(0, 5);
+  const ranked = Array.from(effectivePointsMap.entries())
+    .map(([studentId, total]) => ({ studentId, total }))
+    .sort((a, b) => b.total - a.total);
 
-  return { totalStudents, totalTeachers, thisMonthCount: thisMonthRecords.length, lastMonthCount: lastMonthRecords.length, criticalStudents, topStudents, monthlyData, topViolations };
+  const top5 = ranked.slice(0, 5);
+  const criticalRanked = ranked.filter((x) => x.total >= CRITICAL_POINTS).slice(0, 10);
+  const needIdSet = new Set<string>();
+  top5.forEach((x) => needIdSet.add(x.studentId));
+  criticalRanked.forEach((x) => needIdSet.add(x.studentId));
+  const needIds = Array.from(needIdSet);
+
+  const users =
+    needIds.length === 0
+      ? []
+      : await prisma.user.findMany({
+          where: { id: { in: needIds } },
+          include: { class: { select: { name: true } } },
+        });
+  const userById = new Map(users.map((u) => [u.id, u]));
+
+  const topStudents = top5
+    .map((x) => {
+      const student = userById.get(x.studentId);
+      return student ? { student, total: x.total } : null;
+    })
+    .filter(Boolean) as { student: (typeof users)[0]; total: number }[];
+
+  const criticalStudents = criticalRanked
+    .map((x) => {
+      const student = userById.get(x.studentId);
+      return student ? { student, total: x.total } : null;
+    })
+    .filter(Boolean) as { student: (typeof users)[0]; total: number }[];
+
+  return {
+    totalStudents,
+    totalTeachers,
+    thisMonthCount,
+    lastMonthCount,
+    criticalStudents,
+    topStudents,
+    monthlyData,
+    topViolations,
+  };
 }
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
@@ -80,7 +136,7 @@ function StatusBadge({ points }: { points: number }) {
 
 export default async function DashboardPage() {
   const { totalStudents, totalTeachers, thisMonthCount, lastMonthCount, criticalStudents, topStudents, monthlyData, topViolations } = await getDashboardData();
-  const maxCount = Math.max(...monthlyData.map(m => m.count), 1);
+  const maxCount = Math.max(...monthlyData.map((m) => m.count), 1);
   const trend = lastMonthCount > 0 ? ((thisMonthCount - lastMonthCount) / lastMonthCount * 100).toFixed(0) : null;
 
   return (
@@ -90,7 +146,6 @@ export default async function DashboardPage() {
         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Ringkasan data seluruh siswa · Tahun Ajaran 2025/2026</p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <StatCard label="Total Siswa Aktif" value={totalStudents} sub={`${totalTeachers} guru / staff`} />
         <StatCard label="Pelanggaran Bulan Ini" value={thisMonthCount} sub={trend ? `${parseInt(trend) > 0 ? "+" : ""}${trend}% dari bulan lalu` : undefined} color="var(--warning)" />
@@ -104,7 +159,6 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
-        {/* Chart */}
         <div className="rounded-xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
           <div className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>Pelanggaran per Bulan (6 Bulan Terakhir)</div>
           <div className="flex items-end gap-2 h-24 px-1">
@@ -122,7 +176,6 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Top violations */}
         <div className="rounded-xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
           <div className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>Top Jenis Pelanggaran Bulan Ini</div>
           {topViolations.length === 0 ? (
@@ -140,7 +193,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Top Students */}
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
         <div className="px-4 py-3 border-b flex justify-between items-center" style={{ borderColor: "var(--border)" }}>
           <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>Siswa Poin Tertinggi</h2>

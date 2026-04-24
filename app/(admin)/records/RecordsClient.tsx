@@ -118,7 +118,7 @@ export default function RecordsClient({
           <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Catatan Pelanggaran Siswa</h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {rosterMode
-              ? `${total} baris — semua siswa di filter (termasuk belum ada catatan)`
+              ? `${total} siswa sesuai filter — tiap halaman ${perPage} siswa (catatan terbaru, maks. 40 per siswa)`
               : `${total} catatan ditemukan — urut input terbaru`}
           </p>
         </div>

@@ -1,19 +1,14 @@
 import { Suspense } from "react";
 import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/layouts/TopBar";
 import { AdminSidebar } from "@/components/layouts/AdminSidebar";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { getCachedSidebarClasses } from "@/lib/cached-queries";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSafeServerSession();
+  const [session, sidebarClasses] = await Promise.all([getSafeServerSession(), getCachedSidebarClasses()]);
   if (!session || session.user.role === "STUDENT") redirect("/admin/login");
-
-  const sidebarClasses = await prisma.class.findMany({
-    select: { id: true, name: true, grade: true },
-    orderBy: [{ grade: "asc" }, { name: "asc" }],
-  });
 
   return (
     <SessionProvider session={session}>

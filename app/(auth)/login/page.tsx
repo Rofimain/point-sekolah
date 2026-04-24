@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 
@@ -9,7 +8,6 @@ const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME || "SMAN 1 Contoh";
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
 
 export default function StudentLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,7 +18,11 @@ export default function StudentLoginPage() {
     setError(""); setLoading(true);
     const result = await signIn("student-login", { email: email.trim().toLowerCase(), password, redirect: false });
     setLoading(false);
-    if (result?.error) { setError(result.error); } else { router.push("/form"); router.refresh(); }
+    if (result?.error) {
+      setError(result.error);
+    } else {
+      window.location.assign("/form");
+    }
   }
 
   return (
