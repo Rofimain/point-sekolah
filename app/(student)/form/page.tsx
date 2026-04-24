@@ -2,6 +2,7 @@ import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import StudentFormClient from "./StudentFormClient";
+import { getEffectivePointsBreakdown } from "@/lib/student-effective-points";
 
 export default async function StudentFormPage() {
   const session = await getSafeServerSession();
@@ -19,7 +20,7 @@ export default async function StudentFormPage() {
     take: 20,
   });
 
-  const totalPoints = records.reduce((sum, r) => sum + r.points, 0);
+  const { gross, adjustmentSum, effective } = await getEffectivePointsBreakdown(session.user.id);
 
   const student = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -31,7 +32,9 @@ export default async function StudentFormPage() {
       session={session}
       violationTypes={violationTypes}
       records={records}
-      totalPoints={totalPoints}
+      totalPoints={effective}
+      grossPoints={gross}
+      adjustmentSum={adjustmentSum}
       studentClass={student?.class?.name ?? null}
       studentNisn={student?.nisn ?? null}
     />

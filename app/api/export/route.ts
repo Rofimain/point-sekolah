@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import ExcelJS from "exceljs";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -22,18 +23,14 @@ export async function GET(req: NextRequest) {
   if (classId) where.student = { ...where.student, classId };
   if (grade) where.student = { ...where.student, class: { grade } };
 
-  const records = await prisma.violationRecord.findMany({
-    where,
-    include: { student: { include: { class: true } }, violationType: true },
-    orderBy: { createdAt: "desc" },
-  });
-
-  // Compute total points per student
-  const allRecords = await prisma.violationRecord.findMany({ select: { studentId: true, points: true } });
-  const totalPointsMap = new Map<string, number>();
-  for (const r of allRecords) {
-    totalPointsMap.set(r.studentId, (totalPointsMap.get(r.studentId) || 0) + r.points);
-  }
+  const [records, effectivePointsMap] = await Promise.all([
+    prisma.violationRecord.findMany({
+      where,
+      include: { student: { include: { class: true } }, violationType: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    getEffectivePointsMap(),
+  ]);
 
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Sistem Poin Pelanggaran";
@@ -70,7 +67,7 @@ export async function GET(req: NextRequest) {
   const catLabels: Record<string, string> = { RINGAN: "Ringan", SEDANG: "Sedang", BERAT: "Berat" };
 
   records.forEach((r, i) => {
-    const total = totalPointsMap.get(r.studentId) || 0;
+    const total = effectivePointsMap.get(r.studentId) || 0;
     const status = total >= 75 ? "Kritis" : total >= 50 ? "Perhatian" : "Normal";
     const row = sheet1.addRow({
       no: i + 1, name: r.student.name, nisn: r.student.nisn || "—", class: r.student.class?.name || "—",
@@ -108,9 +105,21 @@ export async function GET(req: NextRequest) {
   const studentMap = new Map<string, { name: string; nisn: string; class: string; count: number; total: number }>();
   for (const r of records) {
     const existing = studentMap.get(r.studentId);
-    if (existing) { existing.count++; existing.total += r.points; }
-    else { studentMap.set(r.studentId, { name: r.student.name, nisn: r.student.nisn || "—", class: r.student.class?.name || "—", count: 1, total: r.points }); }
+    if (existing) {
+      existing.count++;
+    } else {
+      studentMap.set(r.studentId, {
+        name: r.student.name,
+        nisn: r.student.nisn || "—",
+        class: r.student.class?.name || "—",
+        count: 1,
+        total: 0,
+      });
+    }
   }
+  studentMap.forEach((row, id) => {
+    row.total = effectivePointsMap.get(id) ?? 0;
+  });
 
   Array.from(studentMap.values()).sort((a, b) => b.total - a.total).forEach((s, i) => {
     const status = s.total >= 75 ? "Kritis" : s.total >= 50 ? "Perhatian" : "Normal";

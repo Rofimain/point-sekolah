@@ -26,7 +26,16 @@ function CategoryBadge({ category }: { category: string }) {
   return <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: bg, color }}>{labels[category] || category}</span>;
 }
 
-export default function StudentFormClient({ session, violationTypes, records, totalPoints, studentClass, studentNisn }: any) {
+export default function StudentFormClient({
+  session,
+  violationTypes,
+  records,
+  totalPoints,
+  grossPoints = 0,
+  adjustmentSum = 0,
+  studentClass,
+  studentNisn,
+}: any) {
   const router = useRouter();
   const [vtId, setVtId] = useState("");
   const [sessionSlot, setSessionSlot] = useState("");
@@ -78,6 +87,17 @@ export default function StudentFormClient({ session, violationTypes, records, to
             <div className="text-[9px] capitalize" style={{ color: pointColor }}>{pointStatus}</div>
           </div>
         </div>
+
+        {adjustmentSum < 0 && (
+          <div
+            className="p-3 rounded-lg text-[11px] mb-4 leading-relaxed"
+            style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid var(--accent-border)" }}
+          >
+            <strong>Pengurangan periode tenang:</strong> total dari catatan pelanggaran {grossPoints} poin, penyesuaian{" "}
+            <strong>{adjustmentSum}</strong> poin (25% dari total saat diterapkan, setelah ≥30 hari tanpa pelanggaran
+            baru). <strong>Poin yang dipakai: {totalPoints}.</strong>
+          </div>
+        )}
 
         {/* Warning if high points */}
         {totalPoints >= WARNING && (

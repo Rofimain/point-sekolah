@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getEffectivePointsBreakdown } from "@/lib/student-effective-points";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -11,9 +11,6 @@ export async function GET(req: NextRequest) {
   const studentId = searchParams.get("studentId");
   if (!studentId) return NextResponse.json({ error: "studentId required" }, { status: 400 });
 
-  const result = await prisma.violationRecord.aggregate({
-    where: { studentId },
-    _sum: { points: true },
-  });
-  return NextResponse.json({ total: result._sum.points || 0 });
+  const { gross, adjustmentSum, effective } = await getEffectivePointsBreakdown(studentId);
+  return NextResponse.json({ total: effective, gross, adjustmentSum });
 }

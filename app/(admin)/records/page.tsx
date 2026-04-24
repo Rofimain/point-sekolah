@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import RecordsClient from "./RecordsClient";
 import type { Prisma } from "@prisma/client";
 import type { RecordsRow } from "./records-view";
+import { getEffectivePointsMap } from "@/lib/student-effective-points";
 
 export default async function RecordsPage({ searchParams }: { searchParams: { grade?: string; classId?: string; search?: string; page?: string } }) {
   const page = parseInt(searchParams.page || "1", 10);
@@ -18,21 +19,16 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
     studentWhere.name = { contains: searchParams.search, mode: "insensitive" };
   }
 
-  const [classes, violationTypes, allRecordsForTotals, studentsForPicker] = await Promise.all([
+  const [classes, violationTypes, studentsForPicker, totalPointsMap] = await Promise.all([
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
     prisma.violationType.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
-    prisma.violationRecord.findMany({ select: { studentId: true, points: true } }),
     prisma.user.findMany({
       where: { role: "STUDENT", active: true },
       select: { id: true, name: true, nisn: true, class: { select: { name: true, grade: true } } },
       orderBy: { name: "asc" },
     }),
+    getEffectivePointsMap(),
   ]);
-
-  const totalPointsMap = new Map<string, number>();
-  for (const r of allRecordsForTotals) {
-    totalPointsMap.set(r.studentId, (totalPointsMap.get(r.studentId) || 0) + r.points);
-  }
 
   let rows: RecordsRow[] = [];
   let total = 0;

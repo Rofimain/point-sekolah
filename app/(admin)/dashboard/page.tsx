@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { getEffectivePointsMap } from "@/lib/student-effective-points";
 
 async function getDashboardData() {
-  const [totalStudents, totalTeachers, records, violationTypes] = await Promise.all([
+  const [totalStudents, totalTeachers, records, violationTypes, effectivePointsMap] = await Promise.all([
     prisma.user.count({ where: { role: "STUDENT", active: true } }),
     prisma.user.count({ where: { role: { in: ["TEACHER", "SUPER_ADMIN"] }, active: true } }),
     prisma.violationRecord.findMany({ include: { student: { include: { class: true } }, violationType: true }, orderBy: { date: "desc" } }),
     prisma.violationType.findMany({ where: { active: true } }),
+    getEffectivePointsMap(),
   ]);
 
   const now = new Date();
@@ -16,12 +18,14 @@ async function getDashboardData() {
   const thisMonthRecords = records.filter(r => r.date >= startOfMonth);
   const lastMonthRecords = records.filter(r => r.date >= lastMonth && r.date <= endLastMonth);
 
-  // Students with total points
+  // Students with effective total points (termasuk pengurangan bulan tenang)
   const studentPointsMap = new Map<string, { student: any; total: number }>();
   for (const r of records) {
-    const existing = studentPointsMap.get(r.studentId);
-    if (existing) { existing.total += r.points; }
-    else { studentPointsMap.set(r.studentId, { student: r.student, total: r.points }); }
+    if (studentPointsMap.has(r.studentId)) continue;
+    studentPointsMap.set(r.studentId, {
+      student: r.student,
+      total: effectivePointsMap.get(r.studentId) ?? 0,
+    });
   }
   const criticalStudents = Array.from(studentPointsMap.values())
     .filter(s => s.total >= parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75"))
@@ -89,7 +93,12 @@ export default async function DashboardPage() {
         <StatCard label="Total Siswa Aktif" value={totalStudents} sub={`${totalTeachers} guru / staff`} />
         <StatCard label="Pelanggaran Bulan Ini" value={thisMonthCount} sub={trend ? `${parseInt(trend) > 0 ? "+" : ""}${trend}% dari bulan lalu` : undefined} color="var(--warning)" />
         <StatCard label="Siswa Poin Kritis (≥75)" value={criticalStudents.length} sub="Perlu tindak lanjut" color="var(--danger)" />
-        <StatCard label="Total Pelanggaran" value={topStudents.reduce((s, x) => s + x.total, 0)} sub="Seluruh waktu" color="var(--success)" />
+        <StatCard
+          label="Jumlah Poin Efektif (Top 5)"
+          value={topStudents.reduce((s, x) => s + x.total, 0)}
+          sub="Termasuk potongan periode tenang bila ada"
+          color="var(--success)"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">

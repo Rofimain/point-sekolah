@@ -9,19 +9,20 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String
-  password  String
-  role      Role      @default(STUDENT)
-  nisn      String?   @unique
-  nip       String?   @unique
-  classId   String?
-  class     Class?    @relation(fields: [classId], references: [id])
-  records   ViolationRecord[]
-  active    Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id               String            @id @default(cuid())
+  email            String            @unique
+  name             String
+  password         String
+  role             Role              @default(STUDENT)
+  nisn             String?           @unique
+  nip              String?           @unique
+  classId          String?
+  class            Class?            @relation(fields: [classId], references: [id])
+  records          ViolationRecord[]
+  pointAdjustments PointAdjustment[]
+  active           Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 enum Role {
@@ -71,4 +72,18 @@ model ViolationRecord {
   createdByName   String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+}
+
+/// Koreksi poin (nilai negatif). Digunakan untuk pengurangan 25% setelah periode tenang.
+model PointAdjustment {
+  id                String   @id @default(cuid())
+  studentId         String
+  student           User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  pointsDelta       Int
+  reason            String
+  grossTotalBefore  Int
+  createdAt         DateTime @default(now())
+
+  @@index([studentId])
+  @@index([studentId, reason])
 }

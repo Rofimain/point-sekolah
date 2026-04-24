@@ -1,7 +1,16 @@
 import { PrismaClient, Role, Category } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { QUIET_MONTH_REASON } from "../lib/student-effective-points";
+import { applyQuietMonthReductionForStudent } from "../lib/quiet-month-reduction";
 
 const prisma = new PrismaClient();
+
+function daysAgo(days: number): Date {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() - days);
+  return d;
+}
 
 async function main() {
   console.log("🌱 Seeding database...");
@@ -106,11 +115,150 @@ async function main() {
     }
   }
 
+  // --- Dummy: pengurangan 25% setelah ≥30 hari tanpa pelanggaran baru ---
+  const demoTenang = await prisma.user.upsert({
+    where: { email: "0051111111@siswa.sman1contoh.sch.id" },
+    update: {},
+    create: {
+      email: "0051111111@siswa.sman1contoh.sch.id",
+      name: "Ali Pratama (Demo Periode Tenang)",
+      nisn: "0051111111",
+      classId: "cls-x-mipa1",
+      password: studentPwd,
+      role: Role.STUDENT,
+    },
+  });
+  const demoAktif = await prisma.user.upsert({
+    where: { email: "0052222222@siswa.sman1contoh.sch.id" },
+    update: {},
+    create: {
+      email: "0052222222@siswa.sman1contoh.sch.id",
+      name: "Bima Sakti (Demo Masih Aktif)",
+      nisn: "0052222222",
+      classId: "cls-x-mipa2",
+      password: studentPwd,
+      role: Role.STUDENT,
+    },
+  });
+  const demoManual = await prisma.user.upsert({
+    where: { email: "0053333333@siswa.sman1contoh.sch.id" },
+    update: {},
+    create: {
+      email: "0053333333@siswa.sman1contoh.sch.id",
+      name: "Citra Lestari (Demo Potongan Manual)",
+      nisn: "0053333333",
+      classId: "cls-xi-ipa1",
+      password: studentPwd,
+      role: Role.STUDENT,
+    },
+  });
+
+  if ((await prisma.violationRecord.count({ where: { studentId: demoTenang.id } })) === 0) {
+    await prisma.violationRecord.createMany({
+      data: [
+        {
+          studentId: demoTenang.id,
+          violationTypeId: "vt-005",
+          points: 25,
+          session: "Jam 3-4",
+          notes: "Demo: pelanggaran terakhir >30 hari lalu",
+          date: daysAgo(38),
+          createdByName: "Sistem (seed)",
+        },
+        {
+          studentId: demoTenang.id,
+          violationTypeId: "vt-004",
+          points: 15,
+          session: "Jam 1-2",
+          date: daysAgo(40),
+          createdByName: "Sistem (seed)",
+        },
+      ],
+    });
+  }
+  const adjTenang = await prisma.pointAdjustment.count({
+    where: { studentId: demoTenang.id, reason: QUIET_MONTH_REASON },
+  });
+  if (adjTenang === 0) {
+    const applied = await applyQuietMonthReductionForStudent(demoTenang.id);
+    if (applied) {
+      console.log(
+        `   Demo periode tenang: ${demoTenang.name} bruto ${applied.grossTotalBefore} → potong ${applied.pointsDelta} → efektif ${applied.effectiveAfter}`
+      );
+    }
+  }
+
+  if ((await prisma.violationRecord.count({ where: { studentId: demoAktif.id } })) === 0) {
+    await prisma.violationRecord.create({
+      data: {
+        studentId: demoAktif.id,
+        violationTypeId: "vt-006",
+        points: 50,
+        session: "Istirahat",
+        notes: "Demo: pelanggaran baru-baru ini (tidak dapat potongan)",
+        date: daysAgo(5),
+        createdByName: "Sistem (seed)",
+      },
+    });
+  }
+
+  if ((await prisma.violationRecord.count({ where: { studentId: demoManual.id } })) === 0) {
+    await prisma.violationRecord.createMany({
+      data: [
+        {
+          studentId: demoManual.id,
+          violationTypeId: "vt-007",
+          points: 75,
+          session: "Umum",
+          notes: "Demo: histori lama",
+          date: daysAgo(60),
+          createdByName: "Sistem (seed)",
+        },
+        {
+          studentId: demoManual.id,
+          violationTypeId: "vt-002",
+          points: 10,
+          session: "Umum",
+          date: daysAgo(55),
+          createdByName: "Sistem (seed)",
+        },
+      ],
+    });
+  }
+  const adjManual = await prisma.pointAdjustment.count({
+    where: { studentId: demoManual.id, reason: QUIET_MONTH_REASON },
+  });
+  if (adjManual === 0) {
+    const manualAgg = await prisma.violationRecord.aggregate({
+      where: { studentId: demoManual.id },
+      _sum: { points: true },
+    });
+    const manualGross = manualAgg._sum.points ?? 0;
+    if (manualGross > 0) {
+      const cut = Math.round(manualGross * 0.25);
+      await prisma.pointAdjustment.create({
+        data: {
+          studentId: demoManual.id,
+          pointsDelta: -cut,
+          reason: QUIET_MONTH_REASON,
+          grossTotalBefore: manualGross,
+        },
+      });
+      console.log(
+        `   Demo bukti manual: ${demoManual.name} bruto ${manualGross} → potong -${cut} (disimpan di seed)`
+      );
+    }
+  }
+
   console.log("✅ Seeding complete!");
   console.log("\nAkun Login:");
   console.log("Super Admin: admin@sman1contoh.sch.id / Admin@1234");
   console.log("Guru:        s.rahayu@sman1contoh.sch.id / Guru@1234");
   console.log("Siswa:       0051234567@siswa.sman1contoh.sch.id / Siswa@1234");
+  console.log("\nDemo pengurangan 25% (bulan tenang, password Siswa@1234):");
+  console.log("  Ali (otomatis lewat logic): 0051111111@siswa.sman1contoh.sch.id");
+  console.log("  Bima (masih ada pelanggaran baru, tanpa potongan): 0052222222@siswa.sman1contoh.sch.id");
+  console.log("  Citra (potongan disimpan di seed sebagai bukti): 0053333333@siswa.sman1contoh.sch.id");
 }
 
 main()
