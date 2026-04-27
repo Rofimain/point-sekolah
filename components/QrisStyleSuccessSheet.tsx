@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { downloadViolationReceiptHtml } from "@/lib/download-violation-receipt-html";
 
 export type QrisSuccessDetail = { label: string; value: string };
+
+const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME || "Sekolah";
 
 /**
  * Overlay sukses bergaya konfirmasi pembayaran QRIS (kartu, centang hijau, detail, tombol Selesai).
@@ -39,6 +42,15 @@ export function QrisStyleSuccessSheet({
   }, [open, autoCloseMs, onClose]);
 
   if (!open) return null;
+
+  function handleDownload() {
+    downloadViolationReceiptHtml({
+      schoolName: SCHOOL_NAME,
+      title,
+      subtitle,
+      details,
+    });
+  }
 
   return (
     <div
@@ -85,7 +97,14 @@ export function QrisStyleSuccessSheet({
           </div>
         )}
 
-        <div className="p-5 pt-6">
+        <div className="p-5 pt-6 space-y-2.5">
+          <button
+            type="button"
+            onClick={handleDownload}
+            className="w-full rounded-xl border-2 border-emerald-600 bg-white py-3 text-[15px] font-semibold text-emerald-700 transition hover:bg-emerald-50 active:scale-[0.99] motion-reduce:transition-none"
+          >
+            Unduh bukti (.html)
+          </button>
           <button
             type="button"
             onClick={onClose}
@@ -93,7 +112,9 @@ export function QrisStyleSuccessSheet({
           >
             Selesai
           </button>
-          <p className="mt-3 text-center text-[11px] text-neutral-400">Simpan atau tangkapan layar bila diperlukan untuk arsip.</p>
+          <p className="pt-1 text-center text-[11px] text-neutral-400 leading-relaxed">
+            File HTML bisa dibuka di HP/komputer; untuk PDF gunakan buka file → Cetak → Simpan sebagai PDF. Tangkapan layar juga tetap boleh.
+          </p>
         </div>
       </div>
     </div>
