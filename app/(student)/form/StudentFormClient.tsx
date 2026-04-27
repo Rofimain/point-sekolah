@@ -170,7 +170,7 @@ export default function StudentFormClient({
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
+    <div className="min-h-screen min-h-[100dvh]" style={{ background: "var(--bg-primary)" }}>
       {successSheet && (
         <QrisStyleSuccessSheet
           open
@@ -181,7 +181,7 @@ export default function StudentFormClient({
         />
       )}
       <TopBar />
-      <div className="mx-auto max-w-2xl px-3 py-4 pb-8 sm:px-5 sm:py-5 sm:pb-10">
+      <div className="mx-auto max-w-2xl px-3 pt-4 pb-safe-bottom sm:px-5 sm:pt-5">
         <div className="mb-4 flex items-center gap-3 rounded-xl p-3 sm:p-4" style={{ background: "var(--bg-sidebar)" }}>
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-white font-serif text-sm"

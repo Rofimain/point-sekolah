@@ -639,7 +639,7 @@ export default function StudentsClient({
           onClick={() => setClassModalOpen(false)}
         >
           <form
-            className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border p-4 shadow-xl sm:rounded-2xl sm:p-6"
+            className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-xl sm:rounded-2xl sm:p-6"
             style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
             onClick={(e) => e.stopPropagation()}
             onSubmit={submitClass}

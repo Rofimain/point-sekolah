@@ -452,7 +452,7 @@ export default function RecordsClient({
           onClick={() => setEditModal(null)}
         >
           <div
-            className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border p-4 sm:mx-0 sm:rounded-xl sm:p-6"
+            className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom sm:mx-0 sm:rounded-xl sm:p-6"
             style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -506,7 +506,7 @@ export default function RecordsClient({
           }}
         >
           <div
-            className="my-0 max-h-[95dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border p-4 shadow-2xl sm:my-6 sm:rounded-2xl sm:p-6"
+            className="my-0 max-h-[95dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-2xl sm:my-6 sm:rounded-2xl sm:p-6"
             style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}
             onClick={(e) => e.stopPropagation()}
           >

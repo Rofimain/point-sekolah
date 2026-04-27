@@ -50,7 +50,7 @@ export default function AdminChrome({
             <AdminSidebar classes={sidebarClasses} />
           </Suspense>
         </div>
-        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5 sm:py-5 sm:pb-5">
+        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-pb-safe-bottom px-3 pt-4 pb-safe-bottom sm:px-5 sm:pt-5">
           {children}
         </main>
       </div>

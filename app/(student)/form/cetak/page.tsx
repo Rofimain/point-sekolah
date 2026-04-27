@@ -21,9 +21,9 @@ export default async function StudentPrintPointsPage() {
   const issued = new Date();
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
+    <div className="min-h-screen min-h-[100dvh]" style={{ background: "var(--bg-primary)" }}>
       <TopBar />
-      <div className="mx-auto max-w-3xl px-3 py-4 pb-20 sm:px-5 sm:py-5 sm:pb-16">
+      <div className="mx-auto max-w-3xl px-3 pt-4 pb-safe-bottom sm:px-5 sm:pt-5">
         <div className="no-print mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/form" className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
             ← Kembali ke portal

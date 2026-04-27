@@ -77,6 +77,48 @@
 }
 
 @layer utilities {
+  /**
+   * Ruang bawah agar konten tidak “nempel” toolbar Chrome/Android & home indicator iOS.
+   * Pakai di root scroll (admin main) dan halaman penuh (siswa, login).
+   */
+  .pb-safe-bottom {
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 640px) {
+    .pb-safe-bottom {
+      padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+  @media (min-width: 1024px) {
+    .pb-safe-bottom {
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  .scroll-pb-safe-bottom {
+    scroll-padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 640px) {
+    .scroll-pb-safe-bottom {
+      scroll-padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+  @media (min-width: 1024px) {
+    .scroll-pb-safe-bottom {
+      scroll-padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  /** Isi modal / bottom sheet yang bisa di-scroll — ruang bawah + safe area */
+  .pb-sheet-bottom {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px) + 1.25rem);
+  }
+  @media (min-width: 640px) {
+    .pb-sheet-bottom {
+      padding-bottom: 1.5rem;
+    }
+  }
+
   .bg-primary { background-color: var(--bg-primary); }
   .bg-secondary { background-color: var(--bg-secondary); }
   .bg-tertiary { background-color: var(--bg-tertiary); }

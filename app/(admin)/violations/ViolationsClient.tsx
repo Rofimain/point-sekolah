@@ -114,7 +114,7 @@ export default function ViolationsClient({ violations }: { violations: any[] }) 
           onClick={() => setModal(null)}
         >
           <div
-            className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border p-4 shadow-2xl sm:mx-4 sm:rounded-xl sm:p-6"
+            className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-2xl sm:mx-4 sm:rounded-xl sm:p-6"
             style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
             onClick={(e) => e.stopPropagation()}
           >

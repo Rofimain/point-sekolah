@@ -26,7 +26,10 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-10" style={{ background: "var(--bg-primary)" }}>
+    <div
+      className="flex min-h-screen min-h-[100dvh] flex-col items-center justify-center px-4 pt-10 pb-safe-bottom"
+      style={{ background: "var(--bg-primary)" }}
+    >
       <div className="w-full max-w-sm rounded-2xl border p-5 sm:p-8" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
         <div className="text-center mb-6">
           <BrandLogo size={56} priority className="mx-auto mb-3 h-14 w-14" />
