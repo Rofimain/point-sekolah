@@ -44,16 +44,23 @@ export default function ViolationsClient({ violations }: { violations: any[] }) 
 
   return (
     <div>
-      <div className="flex justify-between items-start mb-5">
-        <div>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Manajemen Jenis Pelanggaran</h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Kelola daftar pelanggaran dan poin yang berlaku</p>
         </div>
-        <button onClick={openAdd} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: "var(--accent)" }}>+ Tambah Pelanggaran</button>
+        <button
+          type="button"
+          onClick={openAdd}
+          className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
+          style={{ background: "var(--accent)" }}
+        >
+          + Tambah Pelanggaran
+        </button>
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {CATS.map(cat => {
           const count = violations.filter(v => v.category === cat).length;
           const c: Record<string,string[]> = { RINGAN: ["var(--success-bg)","var(--success)"], SEDANG: ["var(--warning-bg)","var(--warning)"], BERAT: ["var(--danger-bg)","var(--danger)"] };
@@ -67,8 +74,9 @@ export default function ViolationsClient({ violations }: { violations: any[] }) 
         })}
       </div>
 
-      <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        <table className="w-full">
+      <div className="overflow-hidden rounded-xl border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead><tr style={{ background: "var(--bg-primary)" }}>
             {["Nama Pelanggaran","Kategori","Poin","Keterangan","Status","Aksi"].map(h => (
               <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{h}</th>
@@ -96,19 +104,27 @@ export default function ViolationsClient({ violations }: { violations: any[] }) 
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Modal */}
       {modal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: "rgba(0,0,0,0.5)" }} onClick={() => setModal(null)}>
-          <div className="rounded-xl border p-6 w-full max-w-md mx-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }} onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          onClick={() => setModal(null)}
+        >
+          <div
+            className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border p-4 shadow-2xl sm:mx-4 sm:rounded-xl sm:p-6"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-sm font-serif mb-4 pb-3 border-b" style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}>{modal === "add" ? "Tambah Jenis Pelanggaran" : `Edit: ${modal.name}`}</h3>
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Nama Pelanggaran *</label>
                 <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Contoh: Terlambat masuk sekolah" className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Kategori</label>
                   <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as any })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}>

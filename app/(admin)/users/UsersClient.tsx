@@ -78,16 +78,23 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
 
   return (
     <div>
-      <div className="flex justify-between items-start mb-5">
-        <div>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Manajemen Pengguna</h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>CRUD akun siswa, guru, dan super admin</p>
         </div>
-        <button onClick={openAdd} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: "var(--accent)" }}>+ Tambah Pengguna</button>
+        <button
+          type="button"
+          onClick={openAdd}
+          className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
+          style={{ background: "var(--accent)" }}
+        >
+          + Tambah Pengguna
+        </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+      <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
         {[
           ["Siswa", "STUDENT", "var(--accent)"],
           ["Guru", "TEACHER", "var(--warning)"],
@@ -95,9 +102,9 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
           ["Wali Kelas", "WALI_KELAS", "#4338ca"],
           ["Super Admin", "SUPER_ADMIN", "var(--danger)"],
         ].map(([label, role, color]) => (
-          <div key={role} className="rounded-xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-            <div className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{label}</div>
-            <div className="text-2xl font-serif" style={{ color: color as string }}>{users.filter((u: any) => u.role === role).length + (total > 20 ? "+" : "")}</div>
+          <div key={role} className="rounded-xl border p-3 sm:p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+            <div className="text-[10px] sm:text-xs mb-1 leading-tight" style={{ color: "var(--text-muted)" }}>{label}</div>
+            <div className="text-xl font-serif sm:text-2xl" style={{ color: color as string }}>{users.filter((u: any) => u.role === role).length + (total > 20 ? "+" : "")}</div>
           </div>
         ))}
       </div>
@@ -112,7 +119,7 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
 
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[560px]">
             <thead><tr style={{ background: "var(--bg-primary)" }}>
               {["Nama","Email","Role","Kelas / Jabatan","Status","Aksi"].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
@@ -134,7 +141,7 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
                     <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)", color: u.active ? "var(--success)" : "var(--text-muted)" }}>{u.active ? "Aktif" : "Nonaktif"}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
                       <button onClick={() => openEdit(u)} className="px-2.5 py-1 rounded border text-[11px]" style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}>Edit</button>
                       <button onClick={() => toggleActive(u.id, u.active)} className="px-2.5 py-1 rounded border text-[11px]" style={{ borderColor: "var(--border)", color: u.active ? "var(--warning)" : "var(--success)", background: u.active ? "var(--warning-bg)" : "var(--success-bg)" }}>{u.active ? "Blokir" : "Aktifkan"}</button>
                       <button onClick={() => handleDelete(u.id, u.name)} className="px-2.5 py-1 rounded border text-[11px]" style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}>Hapus</button>
@@ -146,9 +153,9 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t flex justify-between items-center" style={{ borderColor: "var(--border)" }}>
+          <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
             <span className="text-xs" style={{ color: "var(--text-muted)" }}>Halaman {page} dari {totalPages} · {total} pengguna</span>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map(p => (
                 <button key={p} onClick={() => { const sp = new URLSearchParams(searchParams); sp.set("page", String(p)); router.push(`${pathname}?${sp.toString()}`); }} className="w-7 h-7 rounded text-xs" style={{ background: p === page ? "var(--accent)" : "var(--bg-primary)", color: p === page ? "white" : "var(--text-secondary)", border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}` }}>{p}</button>
               ))}
@@ -159,11 +166,18 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
 
       {/* Modal */}
       {modal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.5)" }} onClick={() => setModal(null)}>
-          <div className="rounded-xl border p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }} onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          onClick={() => setModal(null)}
+        >
+          <div
+            className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border p-4 sm:rounded-xl sm:p-6"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-sm font-serif mb-4 pb-3 border-b" style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}>{modal === "add" ? "Tambah Pengguna Baru" : `Edit: ${modal.name}`}</h3>
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Nama Lengkap *</label>
                   <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />

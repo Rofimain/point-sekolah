@@ -72,7 +72,11 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
         </p>
       </div>
 
-      <form onSubmit={handleSave} className="max-w-2xl space-y-4 rounded-xl border p-5" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+      <form
+        onSubmit={handleSave}
+        className="w-full max-w-2xl space-y-4 rounded-xl border p-4 sm:p-5"
+        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+      >
         {SETTING_KEYS.map((key) => (
           <div key={key}>
             <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>

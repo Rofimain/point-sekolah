@@ -181,8 +181,8 @@ export default function StudentFormClient({
         />
       )}
       <TopBar />
-      <div className="max-w-2xl mx-auto p-5">
-        <div className="rounded-xl p-4 mb-4 flex items-center gap-3" style={{ background: "var(--bg-sidebar)" }}>
+      <div className="mx-auto max-w-2xl px-3 py-4 pb-8 sm:px-5 sm:py-5 sm:pb-10">
+        <div className="mb-4 flex items-center gap-3 rounded-xl p-3 sm:p-4" style={{ background: "var(--bg-sidebar)" }}>
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-white font-serif text-sm"
             style={{ background: "rgba(255,255,255,0.15)" }}
@@ -208,11 +208,11 @@ export default function StudentFormClient({
           </div>
         </div>
 
-        <div className="flex gap-2 mb-4">
+        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
           <button
             type="button"
             onClick={() => setTab("lapor")}
-            className="flex-1 text-center py-2.5 rounded-lg text-xs font-semibold border"
+            className="w-full touch-manipulation rounded-lg border py-2.5 text-center text-xs font-semibold"
             style={{
               background: tab === "lapor" ? "var(--accent)" : "var(--bg-secondary)",
               color: tab === "lapor" ? "white" : "var(--text-secondary)",
@@ -224,7 +224,7 @@ export default function StudentFormClient({
           <button
             type="button"
             onClick={() => setTab("tata")}
-            className="flex-1 text-center py-2.5 rounded-lg text-xs font-semibold border"
+            className="w-full touch-manipulation rounded-lg border py-2.5 text-center text-xs font-semibold"
             style={{
               background: tab === "tata" ? "var(--accent)" : "var(--bg-secondary)",
               color: tab === "tata" ? "white" : "var(--text-secondary)",
@@ -235,7 +235,7 @@ export default function StudentFormClient({
           </button>
           <Link
             href="/form/cetak"
-            className="flex-1 text-center py-2.5 rounded-lg text-xs font-semibold border inline-flex items-center justify-center"
+            className="inline-flex w-full touch-manipulation items-center justify-center rounded-lg border py-2.5 text-center text-xs font-semibold"
             style={{ background: "var(--bg-secondary)", color: "var(--text-secondary)", borderColor: "var(--border)" }}
           >
             Cetak info poin
@@ -322,7 +322,7 @@ export default function StudentFormClient({
               bukti foto dan/atau pengakuan tertulis (nama lengkap).
             </div>
 
-            <div className="rounded-xl border p-5 mb-5" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+            <div className="mb-5 rounded-xl border p-4 sm:p-5" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
               <h2
                 className="text-sm font-serif mb-4 pb-3 border-b"
                 style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}

@@ -97,7 +97,7 @@ export function QrisStyleSuccessSheet({
           </div>
         )}
 
-        <div className="p-5 pt-6 space-y-2.5">
+        <div className="space-y-2.5 p-5 pt-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-5">
           <button
             type="button"
             onClick={handleDownload}

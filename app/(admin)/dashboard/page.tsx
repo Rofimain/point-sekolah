@@ -134,10 +134,18 @@ async function getDashboardData() {
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div className="rounded-xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-      <div className="text-xs mb-1.5 tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</div>
-      <div className="text-3xl font-serif" style={{ color: color || "var(--text-primary)" }}>{value}</div>
-      {sub && <div className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>{sub}</div>}
+    <div className="rounded-xl border p-3 sm:p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+      <div className="text-[11px] sm:text-xs mb-1.5 tracking-wide leading-snug" style={{ color: "var(--text-muted)" }}>
+        {label}
+      </div>
+      <div className="text-2xl font-serif sm:text-3xl" style={{ color: color || "var(--text-primary)" }}>
+        {value}
+      </div>
+      {sub && (
+        <div className="text-[9px] sm:text-[10px] mt-1 leading-snug" style={{ color: "var(--text-muted)" }}>
+          {sub}
+        </div>
+      )}
     </div>
   );
 }
@@ -192,7 +200,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Siswa Aktif" value={totalStudents} sub={`${totalTeachers} staf (guru / piket / walas / admin)`} />
         <StatCard label="Pelanggaran Bulan Ini" value={thisMonthCount} sub={trend ? `${parseInt(trend) > 0 ? "+" : ""}${trend}% dari bulan lalu` : undefined} color="var(--warning)" />
         <StatCard label="Siswa poin di atas 25" value={over25Students.length} sub="Perhatian wali kelas / BK" color="var(--warning)" />
@@ -202,12 +210,12 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
         <div className="rounded-xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
           <div className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>Pelanggaran per Bulan (6 Bulan Terakhir)</div>
-          <div className="flex items-end gap-2 h-24 px-1">
+          <div className="flex h-24 min-w-0 items-end gap-1 px-0.5 sm:gap-2 sm:px-1">
             {monthlyData.map((m, i) => {
               const h = maxCount > 0 ? Math.max((m.count / maxCount) * 100, 4) : 4;
               const isLast = i === monthlyData.length - 1;
               return (
-                <div key={m.label} className="flex-1 flex flex-col items-center gap-1">
+                <div key={m.label} className="flex min-w-0 flex-1 flex-col items-center gap-1">
                   <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>{m.count}</span>
                   <div className="w-full rounded-t" style={{ height: `${h}%`, background: isLast ? "var(--accent)" : "var(--accent-light)", border: `1px solid var(--accent-border)`, minHeight: 4 }} />
                   <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>{m.label}</span>
@@ -234,8 +242,8 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border overflow-hidden mb-5" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
+      <div className="mb-5 overflow-hidden rounded-xl border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+        <div className="border-b px-3 py-3 sm:px-4" style={{ borderColor: "var(--border)" }}>
           <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>Siswa dengan poin efektif di atas {ALERT_POINTS}</h2>
           <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>Berdasarkan poin setelah remisi periode tenang (jika ada).</p>
         </div>
@@ -244,16 +252,17 @@ export default async function DashboardPage() {
             Tidak ada siswa di atas {ALERT_POINTS} poin.
           </div>
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[280px]">
             <thead>
               <tr style={{ background: "var(--bg-primary)" }}>
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4" style={{ color: "var(--text-muted)" }}>
                   Nama
                 </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide hidden sm:table-cell" style={{ color: "var(--text-muted)" }}>
+                <th className="hidden px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:table-cell sm:px-4" style={{ color: "var(--text-muted)" }}>
                   Kelas
                 </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4" style={{ color: "var(--text-muted)" }}>
                   Poin
                 </th>
               </tr>
@@ -261,44 +270,47 @@ export default async function DashboardPage() {
             <tbody>
               {over25Students.map(({ student, total }) => (
                 <tr key={student.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                  <td className="px-4 py-2.5 text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                  <td className="px-3 py-2.5 text-xs font-medium sm:px-4" style={{ color: "var(--text-primary)" }}>
                     {student.name}
                   </td>
-                  <td className="px-4 py-2.5 text-xs hidden sm:table-cell" style={{ color: "var(--text-secondary)" }}>
+                  <td className="hidden px-3 py-2.5 text-xs sm:table-cell sm:px-4" style={{ color: "var(--text-secondary)" }}>
                     {student.class?.name || "—"}
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-3 py-2.5 sm:px-4">
                     <PointBadge points={total} />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
-      <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        <div className="px-4 py-3 border-b flex justify-between items-center" style={{ borderColor: "var(--border)" }}>
+      <div className="overflow-hidden rounded-xl border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+        <div className="flex flex-col gap-1 border-b px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
           <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>Siswa poin tertinggi (top 5)</h2>
         </div>
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[300px]">
           <thead><tr style={{ background: "var(--bg-primary)" }}>
-            <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Nama Siswa</th>
-            <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide hidden sm:table-cell" style={{ color: "var(--text-muted)" }}>Kelas</th>
-            <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Total Poin</th>
-            <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Status</th>
+            <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4" style={{ color: "var(--text-muted)" }}>Nama Siswa</th>
+            <th className="hidden px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:table-cell sm:px-4" style={{ color: "var(--text-muted)" }}>Kelas</th>
+            <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4" style={{ color: "var(--text-muted)" }}>Total Poin</th>
+            <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4" style={{ color: "var(--text-muted)" }}>Status</th>
           </tr></thead>
           <tbody>
             {topStudents.map(({ student, total }) => (
               <tr key={student.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                <td className="px-4 py-3 text-xs" style={{ color: "var(--text-primary)" }}>{student.name}</td>
-                <td className="px-4 py-3 text-xs hidden sm:table-cell" style={{ color: "var(--text-secondary)" }}>{student.class?.name || "—"}</td>
-                <td className="px-4 py-3"><PointBadge points={total} /></td>
-                <td className="px-4 py-3"><StatusBadge points={total} /></td>
+                <td className="px-3 py-3 text-xs sm:px-4" style={{ color: "var(--text-primary)" }}>{student.name}</td>
+                <td className="hidden px-3 py-3 text-xs sm:table-cell sm:px-4" style={{ color: "var(--text-secondary)" }}>{student.class?.name || "—"}</td>
+                <td className="px-3 py-3 sm:px-4"><PointBadge points={total} /></td>
+                <td className="px-3 py-3 sm:px-4"><StatusBadge points={total} /></td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

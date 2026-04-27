@@ -72,7 +72,7 @@ function SubmenuLink({
       href={href}
       onClick={onPick}
       className={cn(
-        "block rounded-lg px-2.5 py-2 font-serif text-[11px] leading-snug outline-none transition-all duration-200 ease-out",
+        "block touch-manipulation rounded-lg px-2.5 py-2.5 font-serif text-[11px] leading-snug outline-none transition-all duration-200 ease-out",
         "hover:bg-white/[0.07] hover:pl-3 motion-safe:hover:translate-x-[1px]",
         "focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-0",
         active
@@ -100,7 +100,7 @@ function SimpleNavLink({
     <Link
       href={href}
       className={cn(
-        "group mb-1 flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-serif outline-none transition-all duration-200 ease-out",
+        "group mb-1 flex touch-manipulation items-center gap-2.5 rounded-xl px-2.5 py-2.5 font-serif outline-none transition-all duration-200 ease-out",
         "hover:bg-[var(--bg-sidebar-hover)] motion-safe:active:scale-[0.99]",
         "focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-sidebar)]",
         active && "is-active bg-[var(--bg-sidebar-active)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
@@ -163,7 +163,7 @@ function SplitNavRow({
             onToggle();
           }}
           className={cn(
-            "flex w-10 shrink-0 items-center justify-center border-l border-white/[0.08] text-white/80 outline-none transition-all duration-200",
+            "flex w-10 shrink-0 touch-manipulation items-center justify-center border-l border-white/[0.08] text-white/80 outline-none transition-all duration-200",
             "hover:bg-black/15 hover:text-white active:bg-black/25 motion-safe:active:scale-[0.94]",
             "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/30"
           )}
@@ -206,11 +206,8 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
   const closeSub = () => setOpenMenu(null);
 
   return (
-    <aside
-      className="flex w-56 shrink-0 flex-col border-r font-serif"
-      style={{ background: "var(--bg-sidebar)", borderColor: "rgba(255,255,255,0.06)" }}
-    >
-      <nav className="flex-1 overflow-y-auto py-5">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden font-serif">
+      <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-4 sm:py-5">
         <div className="px-3 pb-2">
           <SectionLabel>Utama</SectionLabel>
 
@@ -370,6 +367,6 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
           <div className="mt-0.5 text-[10px] text-white/40">{session?.user?.role ? getRoleLabel(session.user.role) : ""}</div>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }

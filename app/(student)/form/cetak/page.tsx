@@ -23,8 +23,8 @@ export default async function StudentPrintPointsPage() {
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
       <TopBar />
-      <div className="max-w-3xl mx-auto p-5 pb-16">
-        <div className="no-print flex items-center justify-between gap-3 mb-6">
+      <div className="mx-auto max-w-3xl px-3 py-4 pb-20 sm:px-5 sm:py-5 sm:pb-16">
+        <div className="no-print mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/form" className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
             ← Kembali ke portal
           </Link>
@@ -32,7 +32,7 @@ export default async function StudentPrintPointsPage() {
         </div>
 
         <article
-          className="rounded-xl border p-8 bg-white text-black shadow-sm print:shadow-none print:border-0"
+          className="rounded-xl border bg-white p-4 text-black shadow-sm sm:p-8 print:border-0 print:shadow-none"
           style={{ borderColor: "var(--border)" }}
         >
           <header className="text-center border-b border-neutral-300 pb-4 mb-6">

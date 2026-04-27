@@ -236,16 +236,16 @@ export default function RecordsClient({
           details={successSheet.details}
         />
       )}
-      <div className="flex justify-between items-start mb-5">
-        <div>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Catatan Pelanggaran Siswa</h1>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+          <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             {rosterMode
               ? `${total} siswa sesuai filter — tiap halaman ${perPage} siswa (catatan terbaru, maks. 40 per siswa)`
               : `${total} catatan ditemukan — urut input terbaru`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
           <button
             type="button"
             onClick={() => {
@@ -257,12 +257,18 @@ export default function RecordsClient({
               setAddSignatureText("");
               setAddModal(true);
             }}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
+            className="w-full touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
             style={{ background: "var(--accent)" }}
           >
             + Tambah Catatan
           </button>
-          <button onClick={handleExport} disabled={exporting} className="px-3 py-1.5 rounded-lg text-xs font-semibold border disabled:opacity-60" style={{ background: "var(--success-bg)", color: "var(--success)", borderColor: "var(--success)" }}>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            className="w-full touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-1.5"
+            style={{ background: "var(--success-bg)", color: "var(--success)", borderColor: "var(--success)" }}
+          >
             {exporting ? "Mengekspor..." : "↓ Export Excel"}
           </button>
         </div>
@@ -303,8 +309,8 @@ export default function RecordsClient({
       </div>
 
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0">
+          <table className="w-full min-w-[720px]">
             <thead><tr style={{ background: "var(--bg-primary)" }}>
               {["Nama Siswa","Kelas","Pelanggaran","Tanggal","Poin","Total Poin","Status","Aksi"].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
@@ -428,9 +434,9 @@ export default function RecordsClient({
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t flex justify-between items-center" style={{ borderColor: "var(--border)" }}>
+          <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
             <span className="text-xs" style={{ color: "var(--text-muted)" }}>Halaman {page} dari {totalPages}</span>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map(p => (
                 <button key={p} onClick={() => { const sp = new URLSearchParams(searchParams); sp.set("page", String(p)); router.push(`${pathname}?${sp.toString()}`); }} className="w-7 h-7 rounded text-xs" style={{ background: p === page ? "var(--accent)" : "var(--bg-primary)", color: p === page ? "white" : "var(--text-secondary)", border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}` }}>{p}</button>
               ))}
@@ -441,8 +447,15 @@ export default function RecordsClient({
 
       {/* Edit Modal */}
       {editModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: "rgba(0,0,0,0.5)" }} onClick={() => setEditModal(null)}>
-          <div className="rounded-xl border p-6 w-full max-w-md mx-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }} onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          onClick={() => setEditModal(null)}
+        >
+          <div
+            className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border p-4 sm:mx-0 sm:rounded-xl sm:p-6"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-sm font-serif mb-4 pb-3 border-b" style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}>Edit Catatan — {editModal.student.name}</h3>
             <div className="space-y-3">
               <div>
@@ -487,14 +500,13 @@ export default function RecordsClient({
       {/* Add Modal */}
       {addModal && (
         <div
-          className="fixed inset-0 flex items-center justify-center z-50 p-4 overflow-y-auto"
-          style={{ background: "rgba(0,0,0,0.55)" }}
+          className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/55 p-0 sm:items-center sm:p-4"
           onClick={() => {
             setAddModal(false);
           }}
         >
           <div
-            className="rounded-2xl border p-6 w-full max-w-lg shadow-2xl my-6"
+            className="my-0 max-h-[95dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border p-4 shadow-2xl sm:my-6 sm:rounded-2xl sm:p-6"
             style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}
             onClick={(e) => e.stopPropagation()}
           >
