@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
 import { TopBar } from "@/components/layouts/TopBar";
 import { formatDate, getInitials, getCategoryLabel } from "@/lib/utils";
 import type { Session } from "next-auth";
@@ -68,6 +69,11 @@ export default function StudentFormClient({
   const [signatureText, setSignatureText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successSheet, setSuccessSheet] = useState<{
+    title: string;
+    subtitle: string;
+    details: QrisSuccessDetail[];
+  } | null>(null);
 
   const selectedVt = violationTypes.find((v: any) => v.id === vtId);
   const resolvedPoints = selectedVt?.points ?? 0;
@@ -134,10 +140,19 @@ export default function StudentFormClient({
         const d = await res.json();
         throw new Error(d.error || "Gagal mengirim");
       }
-      toast.success("Pelanggaran tercatat", {
-        description: "Laporan Anda sudah masuk ke sistem.",
-        duration: 4000,
-        className: "font-sans",
+      const vtLabel = selectedVt?.name ?? "Pelanggaran";
+      const pts = resolvedPoints;
+      const when = new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+      const details: QrisSuccessDetail[] = [
+        { label: "Jenis", value: vtLabel },
+        { label: "Poin", value: `${pts} poin` },
+        { label: "Waktu", value: when },
+      ];
+      if (sessionSlot.trim()) details.splice(2, 0, { label: "Sesi", value: sessionSlot.trim() });
+      setSuccessSheet({
+        title: "Berhasil",
+        subtitle: "Laporan pelanggaran Anda sudah masuk dan tercatat di sistem sekolah.",
+        details,
       });
       setVtId("");
       setSessionSlot("");
@@ -156,6 +171,15 @@ export default function StudentFormClient({
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
+      {successSheet && (
+        <QrisStyleSuccessSheet
+          open
+          onClose={() => setSuccessSheet(null)}
+          title={successSheet.title}
+          subtitle={successSheet.subtitle}
+          details={successSheet.details}
+        />
+      )}
       <TopBar />
       <div className="max-w-2xl mx-auto p-5">
         <div className="rounded-xl p-4 mb-4 flex items-center gap-3" style={{ background: "var(--bg-sidebar)" }}>

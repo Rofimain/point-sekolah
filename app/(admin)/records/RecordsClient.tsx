@@ -2,6 +2,7 @@
 import { useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
+import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
 import { formatDate } from "@/lib/utils";
 import type { RecordsRow } from "./records-view";
 import { AddRecordStudentPicker, type PickerStudent } from "./AddRecordStudentPicker";
@@ -67,6 +68,11 @@ export default function RecordsClient({
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(searchParams.search || "");
   const [exporting, setExporting] = useState(false);
+  const [successSheet, setSuccessSheet] = useState<{
+    title: string;
+    subtitle: string;
+    details: QrisSuccessDetail[];
+  } | null>(null);
 
   function navigate(params: Record<string, string>) {
     const sp = new URLSearchParams(searchParams);
@@ -98,7 +104,18 @@ export default function RecordsClient({
       toast.error(d.error || "Gagal menyimpan");
       return;
     }
-    toast.success("Catatan diperbarui");
+    const vt = violationTypes.find((v: any) => v.id === editVtId);
+    const when = new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+    setSuccessSheet({
+      title: "Berhasil",
+      subtitle: "Perubahan catatan pelanggaran telah disimpan.",
+      details: [
+        { label: "Siswa", value: editModal.student?.name ?? "—" },
+        { label: "Pelanggaran", value: vt?.name ?? "—" },
+        { label: "Poin", value: `${editPoints} poin` },
+        { label: "Waktu", value: when },
+      ],
+    });
     setEditModal(null);
     setEditEvidenceDataUrl("");
     setEditSignatureText("");
@@ -133,7 +150,20 @@ export default function RecordsClient({
       toast.error(d.error || "Gagal menyimpan");
       return;
     }
-    toast.success("Catatan pelanggaran disimpan");
+    const st = studentsForPicker.find((s) => s.id === addStudentId);
+    const when = new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+    const detailRows: QrisSuccessDetail[] = [
+      { label: "Siswa", value: st?.name ?? "—" },
+      { label: "Pelanggaran", value: vt?.name ?? "—" },
+      { label: "Poin", value: `${pts} poin` },
+    ];
+    if (addSession.trim()) detailRows.push({ label: "Sesi", value: addSession.trim() });
+    detailRows.push({ label: "Waktu", value: when });
+    setSuccessSheet({
+      title: "Berhasil",
+      subtitle: "Catatan pelanggaran sudah masuk ke sistem.",
+      details: detailRows,
+    });
     setAddModal(false);
     setAddStudentId("");
     setAddVtId("");
@@ -197,6 +227,15 @@ export default function RecordsClient({
 
   return (
     <div>
+      {successSheet && (
+        <QrisStyleSuccessSheet
+          open
+          onClose={() => setSuccessSheet(null)}
+          title={successSheet.title}
+          subtitle={successSheet.subtitle}
+          details={successSheet.details}
+        />
+      )}
       <div className="flex justify-between items-start mb-5">
         <div>
           <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Catatan Pelanggaran Siswa</h1>
