@@ -28,6 +28,8 @@ model User {
 enum Role {
   STUDENT
   TEACHER
+  PIKET
+  WALI_KELAS
   SUPER_ADMIN
 }
 
@@ -60,18 +62,29 @@ enum Category {
 }
 
 model ViolationRecord {
-  id              String        @id @default(cuid())
-  student         User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId       String
-  violationType   ViolationType @relation(fields: [violationTypeId], references: [id])
-  violationTypeId String
-  session         String?
-  notes           String?
-  points          Int
-  date            DateTime      @default(now())
-  createdByName   String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                    String        @id @default(cuid())
+  student               User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId             String
+  violationType         ViolationType @relation(fields: [violationTypeId], references: [id])
+  violationTypeId       String
+  session               String?
+  notes                 String?
+  points                Int
+  date                  DateTime      @default(now())
+  createdByName         String?
+  /// Bukti foto (data URL base64), wajib untuk poin > ambang bila tidak ada tanda tangan
+  evidenceImageData     String?       @db.Text
+  /// Tanda tangan digital murid (data URL gambar atau teks pengakuan)
+  studentSignatureData  String?       @db.Text
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+}
+
+/// Pengaturan key–value (koordinator cetak, redaksi, jadwal review).
+model AppSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
 }
 
 /// Koreksi poin (nilai negatif). Digunakan untuk pengurangan 25% setelah periode tenang.

@@ -45,6 +45,8 @@ export function getRoleLabel(role: string) {
   const map: Record<string, string> = {
     STUDENT: "Siswa",
     TEACHER: "Guru",
+    PIKET: "Piket",
+    WALI_KELAS: "Wali Kelas",
     SUPER_ADMIN: "Super Admin",
   };
   return map[role] || role;

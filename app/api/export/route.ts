@@ -6,10 +6,11 @@ import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import ExcelJS from "exceljs";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { isStaffRole } from "@/lib/staff-roles";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role === "STUDENT") {
+  if (!session || !isStaffRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

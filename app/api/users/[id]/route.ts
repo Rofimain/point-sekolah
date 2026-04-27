@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { Role } from "@prisma/client";
+
+const VALID_ROLES = new Set<string>(Object.values(Role));
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -12,7 +15,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (body.name) updateData.name = body.name;
   if (body.email) updateData.email = body.email;
   if (body.password) updateData.password = await bcrypt.hash(body.password, 12);
-  if (body.role) updateData.role = body.role;
+  if (body.role !== undefined) {
+    if (!VALID_ROLES.has(String(body.role))) {
+      return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
+    }
+    updateData.role = body.role as Role;
+  }
   if (body.nisn !== undefined) updateData.nisn = body.nisn || null;
   if (body.nip !== undefined) updateData.nip = body.nip || null;
   if (body.classId !== undefined) updateData.classId = body.classId || null;

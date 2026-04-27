@@ -15,7 +15,19 @@ export default async function StudentFormPage() {
 
   const records = await prisma.violationRecord.findMany({
     where: { studentId: session.user.id },
-    include: { violationType: true },
+    select: {
+      id: true,
+      studentId: true,
+      violationTypeId: true,
+      session: true,
+      notes: true,
+      points: true,
+      date: true,
+      createdByName: true,
+      createdAt: true,
+      updatedAt: true,
+      violationType: true,
+    },
     orderBy: { date: "desc" },
     take: 20,
   });

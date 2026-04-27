@@ -3,12 +3,18 @@ import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials, getRoleLabel } from "@/lib/utils";
 
-const ROLES = ["STUDENT","TEACHER","SUPER_ADMIN"] as const;
+const ROLES = ["STUDENT", "TEACHER", "PIKET", "WALI_KELAS", "SUPER_ADMIN"] as const;
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
 const STAFF_DOMAIN = process.env.NEXT_PUBLIC_STAFF_DOMAIN || "sman1contoh.sch.id";
 
 function RoleBadge({ role }: { role: string }) {
-  const c: Record<string,string[]> = { STUDENT: ["var(--accent-light)","var(--accent)"], TEACHER: ["var(--warning-bg)","var(--warning)"], SUPER_ADMIN: ["var(--danger-bg)","var(--danger)"] };
+  const c: Record<string, string[]> = {
+    STUDENT: ["var(--accent-light)", "var(--accent)"],
+    TEACHER: ["var(--warning-bg)", "var(--warning)"],
+    PIKET: ["var(--success-bg)", "var(--success)"],
+    WALI_KELAS: ["#e0e7ff", "#4338ca"],
+    SUPER_ADMIN: ["var(--danger-bg)", "var(--danger)"],
+  };
   const [bg, color] = c[role] || ["var(--bg-tertiary)","var(--text-muted)"];
   return <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: bg, color }}>{getRoleLabel(role)}</span>;
 }
@@ -61,7 +67,14 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
     router.refresh();
   }
 
-  const roleFilter = [{ v: "", l: "Semua Role" }, { v: "STUDENT", l: "Siswa" }, { v: "TEACHER", l: "Guru" }, { v: "SUPER_ADMIN", l: "Super Admin" }];
+  const roleFilter = [
+    { v: "", l: "Semua Role" },
+    { v: "STUDENT", l: "Siswa" },
+    { v: "TEACHER", l: "Guru" },
+    { v: "PIKET", l: "Piket" },
+    { v: "WALI_KELAS", l: "Wali Kelas" },
+    { v: "SUPER_ADMIN", l: "Super Admin" },
+  ];
 
   return (
     <div>
@@ -74,8 +87,14 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        {[["Siswa", "STUDENT", "var(--accent)"],["Guru", "TEACHER", "var(--warning)"],["Super Admin", "SUPER_ADMIN", "var(--danger)"]].map(([label, role, color]) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+        {[
+          ["Siswa", "STUDENT", "var(--accent)"],
+          ["Guru", "TEACHER", "var(--warning)"],
+          ["Piket", "PIKET", "var(--success)"],
+          ["Wali Kelas", "WALI_KELAS", "#4338ca"],
+          ["Super Admin", "SUPER_ADMIN", "var(--danger)"],
+        ].map(([label, role, color]) => (
           <div key={role} className="rounded-xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
             <div className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{label}</div>
             <div className="text-2xl font-serif" style={{ color: color as string }}>{users.filter((u: any) => u.role === role).length + (total > 20 ? "+" : "")}</div>
@@ -165,19 +184,21 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
                   </select>
                 </div>
                 {form.role === "STUDENT" && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>NISN</label>
-                      <input value={form.nisn} onChange={e => setForm({ ...form, nisn: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Kelas</label>
-                      <select value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}>
-                        <option value="">— Pilih kelas —</option>
-                        {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                    </div>
-                  </>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>NISN</label>
+                    <input value={form.nisn} onChange={e => setForm({ ...form, nisn: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
+                  </div>
+                )}
+                {(form.role === "STUDENT" || form.role === "WALI_KELAS") && (
+                  <div>
+                    <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                      {form.role === "WALI_KELAS" ? "Kelas yang diampu (walas)" : "Kelas"}
+                    </label>
+                    <select value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}>
+                      <option value="">— Pilih kelas —</option>
+                      {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
                 )}
                 {form.role !== "STUDENT" && (
                   <div>

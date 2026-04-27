@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { buildStudentCreateInput, DEFAULT_STUDENT_PASSWORD, studentEmailFromNisn } from "@/lib/student-upsert";
+import { isStaffRole } from "@/lib/staff-roles";
 
 function staffOk(role: string | undefined) {
-  return role === "TEACHER" || role === "SUPER_ADMIN";
+  return isStaffRole(role);
 }
 
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";

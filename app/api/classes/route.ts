@@ -3,14 +3,11 @@ import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-function staffOk(role: string | undefined) {
-  return role === "TEACHER" || role === "SUPER_ADMIN";
-}
+import { isStaffRole } from "@/lib/staff-roles";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || !staffOk(session.user.role)) {
+  if (!session || !isStaffRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -22,7 +19,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || !staffOk(session.user.role)) {
+  if (!session || !isStaffRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

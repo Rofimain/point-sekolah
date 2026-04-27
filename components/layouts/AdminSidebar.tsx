@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, getRoleLabel } from "@/lib/utils";
 
 export type SidebarClass = { id: string; name: string; grade: string };
 
@@ -12,6 +12,8 @@ const ROLE_LINKS = [
   { href: "/users", label: "Semua", roleKey: "" },
   { href: "/users?role=STUDENT", label: "Siswa", roleKey: "STUDENT" },
   { href: "/users?role=TEACHER", label: "Guru", roleKey: "TEACHER" },
+  { href: "/users?role=PIKET", label: "Piket", roleKey: "PIKET" },
+  { href: "/users?role=WALI_KELAS", label: "Wali Kelas", roleKey: "WALI_KELAS" },
   { href: "/users?role=SUPER_ADMIN", label: "Super Admin", roleKey: "SUPER_ADMIN" },
 ];
 
@@ -285,6 +287,23 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
         <div className="px-3 pb-2 pt-2">
           <SectionLabel>Pengaturan</SectionLabel>
 
+          {isSuperAdmin && (
+            <SimpleNavLink
+              href="/settings"
+              active={pathname.startsWith("/settings")}
+              icon={
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              }
+              label="Pengaturan sekolah"
+            />
+          )}
+
           <SimpleNavLink
             href="/violations"
             active={pathname.startsWith("/violations")}
@@ -348,9 +367,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
           <div className="truncate text-[11px] font-semibold text-white/75">
             {session?.user?.name}
           </div>
-          <div className="mt-0.5 text-[10px] text-white/40">
-            {session?.user?.role === "SUPER_ADMIN" ? "Super Admin" : "Guru"}
-          </div>
+          <div className="mt-0.5 text-[10px] text-white/40">{session?.user?.role ? getRoleLabel(session.user.role) : ""}</div>
         </div>
       </div>
     </aside>

@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import ExcelJS from "exceljs";
+import { isStaffRole } from "@/lib/staff-roles";
 
 function staffOk(role: string | undefined) {
-  return role === "TEACHER" || role === "SUPER_ADMIN";
+  return isStaffRole(role);
 }
 
 export async function GET() {

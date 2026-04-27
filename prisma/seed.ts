@@ -250,10 +250,52 @@ async function main() {
     }
   }
 
+  const appSettingSeeds: Record<string, string> = {
+    coord_name: "Drs. Hartanto",
+    coord_title: "Koordinator BP/BK",
+    redaksi_print:
+      "Dengan ini menyatakan bahwa data poin pelanggaran di bawah merupakan catatan resmi sekolah sesuai tata tertib yang berlaku. Dokumen ini dapat digunakan untuk arsip orang tua/wali dan tindak lanjut pembinaan.",
+    next_review_violations: "2026-07-01",
+    next_review_roster: "2026-07-15",
+  };
+  for (const [key, value] of Object.entries(appSettingSeeds)) {
+    await prisma.appSetting.upsert({
+      where: { key },
+      update: { value },
+      create: { key, value },
+    });
+  }
+
+  await prisma.user.upsert({
+    where: { email: "piket@sman1contoh.sch.id" },
+    update: { role: Role.PIKET, active: true },
+    create: {
+      email: "piket@sman1contoh.sch.id",
+      name: "Staff Piket",
+      password: teacherPwd,
+      role: Role.PIKET,
+      nip: "198201011990032001",
+    },
+  });
+  await prisma.user.upsert({
+    where: { email: "walas.mipa1@sman1contoh.sch.id" },
+    update: { role: Role.WALI_KELAS, classId: "cls-x-mipa1", active: true },
+    create: {
+      email: "walas.mipa1@sman1contoh.sch.id",
+      name: "Wali Kelas X MIPA 1",
+      password: teacherPwd,
+      role: Role.WALI_KELAS,
+      nip: "198303031990033001",
+      classId: "cls-x-mipa1",
+    },
+  });
+
   console.log("✅ Seeding complete!");
   console.log("\nAkun Login:");
   console.log("Super Admin: admin@sman1contoh.sch.id / Admin@1234");
   console.log("Guru:        s.rahayu@sman1contoh.sch.id / Guru@1234");
+  console.log("Piket:       piket@sman1contoh.sch.id / Guru@1234");
+  console.log("Walas:       walas.mipa1@sman1contoh.sch.id / Guru@1234");
   console.log("Siswa:       0051234567@siswa.sman1contoh.sch.id / Siswa@1234");
   console.log("\nDemo pengurangan 25% (bulan tenang, password Siswa@1234):");
   console.log("  Ali (otomatis lewat logic): 0051111111@siswa.sman1contoh.sch.id");

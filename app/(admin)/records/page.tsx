@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import RecordsClient from "./RecordsClient";
 import type { Prisma } from "@prisma/client";
-import type { RecordsRow } from "./records-view";
+import { RECORD_LIST_SELECT, type RecordsRow } from "./records-view";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +57,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
                 where: { studentId: id },
                 take: ROSTER_RECORDS_PER_STUDENT,
                 orderBy: { createdAt: "desc" },
-                include: { student: { include: { class: true } }, violationType: true },
+                select: RECORD_LIST_SELECT,
               })
             )
           );
@@ -99,7 +99,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
     const [records, count] = await Promise.all([
       prisma.violationRecord.findMany({
         where: recordWhere,
-        include: { student: { include: { class: true } }, violationType: true },
+        select: RECORD_LIST_SELECT,
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * perPage,
         take: perPage,

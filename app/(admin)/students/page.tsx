@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import StudentsClient from "./StudentsClient";
 import type { Prisma } from "@prisma/client";
 import { indonesianAcademicYearLabel } from "@/lib/academic-year";
+import { isStaffRole } from "@/lib/staff-roles";
 
 export default async function StudentsPage({
   searchParams,
@@ -11,7 +12,7 @@ export default async function StudentsPage({
   searchParams: { search?: string; page?: string; tab?: string; classId?: string };
 }) {
   const session = await getSafeServerSession();
-  if (!session?.user?.role || !["TEACHER", "SUPER_ADMIN"].includes(session.user.role)) {
+  if (!session?.user?.role || !isStaffRole(session.user.role)) {
     redirect("/dashboard");
   }
 

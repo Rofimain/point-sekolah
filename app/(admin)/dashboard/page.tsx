@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
+import { getAppSetting, APP_KEYS } from "@/lib/app-settings";
 
 export const dynamic = "force-dynamic";
 
 const CRITICAL_POINTS = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
+const ALERT_POINTS = 25;
 
 async function getDashboardData() {
   const now = new Date();
@@ -29,10 +31,12 @@ async function getDashboardData() {
     lastMonthCount,
     vtGroups,
     effectivePointsMap,
+    nextReviewViolations,
+    nextReviewRoster,
     ...monthCounts
   ] = await Promise.all([
     prisma.user.count({ where: { role: "STUDENT", active: true } }),
-    prisma.user.count({ where: { role: { in: ["TEACHER", "SUPER_ADMIN"] }, active: true } }),
+    prisma.user.count({ where: { role: { not: "STUDENT" }, active: true } }),
     prisma.violationRecord.count({ where: { date: { gte: startOfMonth } } }),
     prisma.violationRecord.count({
       where: { date: { gte: lastMonthStart, lte: endLastMonth } },
@@ -43,6 +47,8 @@ async function getDashboardData() {
       _count: { id: true },
     }),
     getEffectivePointsMap(),
+    getAppSetting(APP_KEYS.NEXT_REVIEW_VIOLATIONS),
+    getAppSetting(APP_KEYS.NEXT_REVIEW_ROSTER),
     ...monthRanges.map(({ d, end }) =>
       prisma.violationRecord.count({ where: { date: { gte: d, lte: end } } })
     ),
@@ -74,9 +80,11 @@ async function getDashboardData() {
 
   const top5 = ranked.slice(0, 5);
   const criticalRanked = ranked.filter((x) => x.total >= CRITICAL_POINTS).slice(0, 10);
+  const over25Ranked = ranked.filter((x) => x.total > ALERT_POINTS).slice(0, 35);
   const needIdSet = new Set<string>();
   top5.forEach((x) => needIdSet.add(x.studentId));
   criticalRanked.forEach((x) => needIdSet.add(x.studentId));
+  over25Ranked.forEach((x) => needIdSet.add(x.studentId));
   const needIds = Array.from(needIdSet);
 
   const users =
@@ -102,15 +110,25 @@ async function getDashboardData() {
     })
     .filter(Boolean) as { student: (typeof users)[0]; total: number }[];
 
+  const over25Students = over25Ranked
+    .map((x) => {
+      const student = userById.get(x.studentId);
+      return student ? { student, total: x.total } : null;
+    })
+    .filter(Boolean) as { student: (typeof users)[0]; total: number }[];
+
   return {
     totalStudents,
     totalTeachers,
     thisMonthCount,
     lastMonthCount,
     criticalStudents,
+    over25Students,
     topStudents,
     monthlyData,
     topViolations,
+    nextReviewViolations,
+    nextReviewRoster,
   };
 }
 
@@ -135,7 +153,19 @@ function StatusBadge({ points }: { points: number }) {
 }
 
 export default async function DashboardPage() {
-  const { totalStudents, totalTeachers, thisMonthCount, lastMonthCount, criticalStudents, topStudents, monthlyData, topViolations } = await getDashboardData();
+  const {
+    totalStudents,
+    totalTeachers,
+    thisMonthCount,
+    lastMonthCount,
+    criticalStudents,
+    over25Students,
+    topStudents,
+    monthlyData,
+    topViolations,
+    nextReviewViolations,
+    nextReviewRoster,
+  } = await getDashboardData();
   const maxCount = Math.max(...monthlyData.map((m) => m.count), 1);
   const trend = lastMonthCount > 0 ? ((thisMonthCount - lastMonthCount) / lastMonthCount * 100).toFixed(0) : null;
 
@@ -146,16 +176,27 @@ export default async function DashboardPage() {
         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Ringkasan data seluruh siswa · Tahun Ajaran 2025/2026</p>
       </div>
 
+      {(nextReviewViolations.trim() || nextReviewRoster.trim()) && (
+        <div
+          className="mb-4 rounded-xl border p-3 text-xs leading-relaxed"
+          style={{ background: "var(--accent-light)", borderColor: "var(--accent-border)", color: "var(--accent)" }}
+        >
+          <strong>Pengingat pembaharuan:</strong>
+          {nextReviewViolations.trim() ? (
+            <span className="block mt-1">Review poin / jenis pelanggaran (target): {nextReviewViolations}</span>
+          ) : null}
+          {nextReviewRoster.trim() ? (
+            <span className="block mt-1">Review data murid dan guru (target): {nextReviewRoster}</span>
+          ) : null}
+          <span className="block mt-1 opacity-90">Atur tanggal di menu Pengaturan sekolah (super admin).</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <StatCard label="Total Siswa Aktif" value={totalStudents} sub={`${totalTeachers} guru / staff`} />
+        <StatCard label="Total Siswa Aktif" value={totalStudents} sub={`${totalTeachers} staf (guru / piket / walas / admin)`} />
         <StatCard label="Pelanggaran Bulan Ini" value={thisMonthCount} sub={trend ? `${parseInt(trend) > 0 ? "+" : ""}${trend}% dari bulan lalu` : undefined} color="var(--warning)" />
-        <StatCard label="Siswa Poin Kritis (≥75)" value={criticalStudents.length} sub="Perlu tindak lanjut" color="var(--danger)" />
-        <StatCard
-          label="Jumlah Poin Efektif (Top 5)"
-          value={topStudents.reduce((s, x) => s + x.total, 0)}
-          sub="Termasuk potongan periode tenang bila ada"
-          color="var(--success)"
-        />
+        <StatCard label="Siswa poin di atas 25" value={over25Students.length} sub="Perhatian wali kelas / BK" color="var(--warning)" />
+        <StatCard label="Siswa poin kritis (≥75)" value={criticalStudents.length} sub="Tindak lanjut segera" color="var(--danger)" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
@@ -193,9 +234,52 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      <div className="rounded-xl border overflow-hidden mb-5" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+        <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
+          <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>Siswa dengan poin efektif di atas {ALERT_POINTS}</h2>
+          <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>Berdasarkan poin setelah remisi periode tenang (jika ada).</p>
+        </div>
+        {over25Students.length === 0 ? (
+          <div className="px-4 py-6 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+            Tidak ada siswa di atas {ALERT_POINTS} poin.
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr style={{ background: "var(--bg-primary)" }}>
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                  Nama
+                </th>
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide hidden sm:table-cell" style={{ color: "var(--text-muted)" }}>
+                  Kelas
+                </th>
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                  Poin
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {over25Students.map(({ student, total }) => (
+                <tr key={student.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                  <td className="px-4 py-2.5 text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                    {student.name}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs hidden sm:table-cell" style={{ color: "var(--text-secondary)" }}>
+                    {student.class?.name || "—"}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <PointBadge points={total} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
         <div className="px-4 py-3 border-b flex justify-between items-center" style={{ borderColor: "var(--border)" }}>
-          <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>Siswa Poin Tertinggi</h2>
+          <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>Siswa poin tertinggi (top 5)</h2>
         </div>
         <table className="w-full">
           <thead><tr style={{ background: "var(--bg-primary)" }}>

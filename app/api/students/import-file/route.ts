@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth";
 import ExcelJS from "exceljs";
 import { worksheetToBulkRows } from "@/lib/parse-student-excel-sheet";
 import { runBulkStudentImport } from "@/lib/students-bulk-run";
+import { isStaffRole } from "@/lib/staff-roles";
 
 function staffOk(role: string | undefined) {
-  return role === "TEACHER" || role === "SUPER_ADMIN";
+  return isStaffRole(role);
 }
 
 const MAX_BYTES = 8 * 1024 * 1024;

@@ -1,9 +1,11 @@
 "use client";
 import { useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { RecordsRow } from "./records-view";
 import { AddRecordStudentPicker, type PickerStudent } from "./AddRecordStudentPicker";
+import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
 
 const SESSION_SLOTS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 
@@ -58,6 +60,10 @@ export default function RecordsClient({
   const [addVtId, setAddVtId] = useState("");
   const [addSession, setAddSession] = useState("");
   const [addNotes, setAddNotes] = useState("");
+  const [addEvidenceDataUrl, setAddEvidenceDataUrl] = useState("");
+  const [addSignatureText, setAddSignatureText] = useState("");
+  const [editEvidenceDataUrl, setEditEvidenceDataUrl] = useState("");
+  const [editSignatureText, setEditSignatureText] = useState("");
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(searchParams.search || "");
   const [exporting, setExporting] = useState(false);
@@ -76,25 +82,98 @@ export default function RecordsClient({
   }
 
   async function handleEdit() {
+    if (!editModal) return;
     setLoading(true);
-    await fetch(`/api/records/${editModal.id}`, {
+    const body: Record<string, unknown> = { points: editPoints, notes: editNotes, violationTypeId: editVtId };
+    if (editEvidenceDataUrl.trim()) body.evidenceImageData = editEvidenceDataUrl.trim();
+    if (editSignatureText.trim()) body.studentSignatureData = editSignatureText.trim();
+    const res = await fetch(`/api/records/${editModal.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ points: editPoints, notes: editNotes, violationTypeId: editVtId }),
+      body: JSON.stringify(body),
     });
-    setLoading(false); setEditModal(null); router.refresh();
+    setLoading(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      toast.error(d.error || "Gagal menyimpan");
+      return;
+    }
+    toast.success("Catatan diperbarui");
+    setEditModal(null);
+    setEditEvidenceDataUrl("");
+    setEditSignatureText("");
+    router.refresh();
   }
 
   async function handleAdd() {
     if (!addStudentId || !addVtId) return;
-    setLoading(true);
     const vt = violationTypes.find((v: any) => v.id === addVtId);
-    await fetch("/api/records", {
+    const pts = vt?.points ?? 0;
+    if (violationNeedsEvidence(pts) && !addEvidenceDataUrl.trim() && addSignatureText.trim().length < 12) {
+      toast.error(`Di atas ${heavyViolationPointsThreshold()} poin wajib foto bukti dan/atau pengakuan murid (≥12 karakter).`);
+      return;
+    }
+    setLoading(true);
+    const res = await fetch("/api/records", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studentId: addStudentId, violationTypeId: addVtId, session: addSession, notes: addNotes, points: vt?.points }),
+      body: JSON.stringify({
+        studentId: addStudentId,
+        violationTypeId: addVtId,
+        session: addSession,
+        notes: addNotes,
+        points: vt?.points,
+        evidenceImageData: addEvidenceDataUrl.trim() || undefined,
+        studentSignatureData: addSignatureText.trim() || undefined,
+      }),
     });
-    setLoading(false); setAddModal(false); setAddStudentId(""); setAddVtId(""); setAddSession(""); setAddNotes(""); router.refresh();
+    setLoading(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      toast.error(d.error || "Gagal menyimpan");
+      return;
+    }
+    toast.success("Catatan pelanggaran disimpan");
+    setAddModal(false);
+    setAddStudentId("");
+    setAddVtId("");
+    setAddSession("");
+    setAddNotes("");
+    setAddEvidenceDataUrl("");
+    setAddSignatureText("");
+    router.refresh();
+  }
+
+  function onAddEvidenceFile(file: File | null) {
+    setAddEvidenceDataUrl("");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Gunakan file gambar.");
+      return;
+    }
+    if (file.size > 400 * 1024) {
+      toast.error("Foto terlalu besar (maks. ~400 KB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setAddEvidenceDataUrl(String(reader.result || ""));
+    reader.readAsDataURL(file);
+  }
+
+  function onEditEvidenceFile(file: File | null) {
+    setEditEvidenceDataUrl("");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Gunakan file gambar.");
+      return;
+    }
+    if (file.size > 400 * 1024) {
+      toast.error("Foto terlalu besar (maks. ~400 KB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setEditEvidenceDataUrl(String(reader.result || ""));
+    reader.readAsDataURL(file);
   }
 
   async function handleExport() {
@@ -110,6 +189,11 @@ export default function RecordsClient({
   }
 
   const grades = ["X", "XI", "XII"];
+
+  const addResolvedPts = violationTypes.find((v: any) => v.id === addVtId)?.points ?? 0;
+  const addNeedEvidence = violationNeedsEvidence(addResolvedPts);
+  const editNeedEvidence = editModal ? violationNeedsEvidence(editPoints) : false;
+  const heavyTh = heavyViolationPointsThreshold();
 
   return (
     <div>
@@ -130,6 +214,8 @@ export default function RecordsClient({
               setAddVtId("");
               setAddNotes("");
               setAddSession("");
+              setAddEvidenceDataUrl("");
+              setAddSignatureText("");
               setAddModal(true);
             }}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
@@ -230,6 +316,8 @@ export default function RecordsClient({
                               setAddVtId("");
                               setAddNotes("");
                               setAddSession("");
+                              setAddEvidenceDataUrl("");
+                              setAddSignatureText("");
                               setAddModal(true);
                             }}
                             className="px-2.5 py-1 rounded border text-[11px]"
@@ -275,6 +363,8 @@ export default function RecordsClient({
                               setEditPoints(r.points);
                               setEditNotes(r.notes || "");
                               setEditVtId(r.violationTypeId);
+                              setEditEvidenceDataUrl("");
+                              setEditSignatureText("");
                             }}
                             className="px-2.5 py-1 rounded border text-[11px]"
                             style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
@@ -330,6 +420,22 @@ export default function RecordsClient({
                 <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Keterangan</label>
                 <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border text-sm resize-none" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
               </div>
+              {editNeedEvidence && (
+                <div className="rounded-lg border p-3 space-y-2" style={{ background: "var(--bg-primary)", borderColor: "var(--accent-border)" }}>
+                  <p className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>
+                    Bukti untuk poin di atas {heavyTh} (isi jika belum ada atau perlu diperbarui)
+                  </p>
+                  <input type="file" accept="image/*" className="w-full text-xs" onChange={(e) => onEditEvidenceFile(e.target.files?.[0] ?? null)} />
+                  <textarea
+                    value={editSignatureText}
+                    onChange={(e) => setEditSignatureText(e.target.value)}
+                    rows={2}
+                    placeholder="Pengakuan / nama lengkap murid (min. 12 karakter)"
+                    className="w-full px-3 py-2 rounded-lg border text-xs resize-none"
+                    style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                  />
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setEditModal(null)} className="px-4 py-2 rounded-lg border text-sm" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>Batal</button>
@@ -429,6 +535,38 @@ export default function RecordsClient({
                   style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
                 />
               </div>
+
+              {addNeedEvidence && (
+                <div className="rounded-xl border p-3 space-y-3" style={{ background: "var(--bg-primary)", borderColor: "var(--accent-border)" }}>
+                  <p className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
+                    Bukti tambahan (wajib): pelanggaran di atas {heavyTh} poin
+                  </p>
+                  <div>
+                    <label className="block text-[10px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                      Foto bukti
+                    </label>
+                    <input type="file" accept="image/*" className="w-full text-xs" onChange={(e) => onAddEvidenceFile(e.target.files?.[0] ?? null)} />
+                    {addEvidenceDataUrl ? (
+                      <span className="text-[10px]" style={{ color: "var(--success)" }}>
+                        Foto terpasang
+                      </span>
+                    ) : null}
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                      Pengakuan / tanda tangan (teks, min. 12 karakter)
+                    </label>
+                    <textarea
+                      value={addSignatureText}
+                      onChange={(e) => setAddSignatureText(e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 rounded-lg border text-xs resize-none"
+                      style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                      placeholder="Nama lengkap & pengakuan"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 mt-6 pt-4 border-t" style={{ borderColor: "var(--border)" }}>

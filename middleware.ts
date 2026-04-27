@@ -1,5 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { isStaffRole } from "@/lib/staff-roles";
 
 /** Public admin auth page — must not require a session (otherwise guests can never open it). */
 function isAdminLoginPath(pathname: string) {
@@ -11,16 +12,18 @@ export default withAuth(
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
 
-    // Admin routes: only TEACHER or SUPER_ADMIN (skip /admin/login)
+    // Area staf: guru, piket, walas, super admin (skip /admin/login)
     const needsStaffRole =
       (!isAdminLoginPath(pathname) && pathname.startsWith("/admin")) ||
       pathname.startsWith("/dashboard") ||
       pathname.startsWith("/records") ||
       pathname.startsWith("/students") ||
       pathname.startsWith("/violations") ||
-      pathname.startsWith("/users");
+      pathname.startsWith("/users") ||
+      pathname.startsWith("/settings") ||
+      pathname.startsWith("/export");
     if (needsStaffRole) {
-      if (!token || (token.role !== "TEACHER" && token.role !== "SUPER_ADMIN")) {
+      if (!token || !isStaffRole(token.role as string)) {
         return NextResponse.redirect(new URL("/admin/login", req.url));
       }
     }
@@ -39,7 +42,17 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
         if (isAdminLoginPath(pathname)) return true;
-        if (pathname.startsWith("/form") || pathname.startsWith("/admin") || pathname.startsWith("/dashboard") || pathname.startsWith("/records") || pathname.startsWith("/students") || pathname.startsWith("/violations") || pathname.startsWith("/users")) {
+        if (
+          pathname.startsWith("/form") ||
+          pathname.startsWith("/admin") ||
+          pathname.startsWith("/dashboard") ||
+          pathname.startsWith("/records") ||
+          pathname.startsWith("/students") ||
+          pathname.startsWith("/violations") ||
+          pathname.startsWith("/users") ||
+          pathname.startsWith("/settings") ||
+          pathname.startsWith("/export")
+        ) {
           return !!token;
         }
         return true;
@@ -58,5 +71,7 @@ export const config = {
     "/students/:path*",
     "/violations/:path*",
     "/users/:path*",
+    "/settings/:path*",
+    "/export/:path*",
   ],
 };
