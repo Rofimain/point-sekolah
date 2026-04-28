@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import { getAppSetting, APP_KEYS } from "@/lib/app-settings";
+import DashboardRankedTables from "@/components/dashboard/DashboardRankedTables";
 
 export const dynamic = "force-dynamic";
 
@@ -150,16 +151,6 @@ function StatCard({ label, value, sub, color }: { label: string; value: string |
   );
 }
 
-function PointBadge({ points }: { points: number }) {
-  const c = points >= 75 ? ["var(--danger-bg)", "var(--danger)"] : points >= 50 ? ["var(--warning-bg)", "var(--warning)"] : ["var(--success-bg)", "var(--success)"];
-  return <span className="inline-flex items-center justify-center w-9 h-5 rounded-full text-xs font-bold" style={{ background: c[0], color: c[1] }}>{points}</span>;
-}
-
-function StatusBadge({ points }: { points: number }) {
-  const s = points >= 75 ? ["var(--danger-bg)", "var(--danger)", "Kritis"] : points >= 50 ? ["var(--warning-bg)", "var(--warning)", "Perhatian"] : ["var(--success-bg)", "var(--success)", "Normal"];
-  return <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: s[0], color: s[1] }}>{s[2]}</span>;
-}
-
 export default async function DashboardPage() {
   const {
     totalStudents,
@@ -176,6 +167,19 @@ export default async function DashboardPage() {
   } = await getDashboardData();
   const maxCount = Math.max(...monthlyData.map((m) => m.count), 1);
   const trend = lastMonthCount > 0 ? ((thisMonthCount - lastMonthCount) / lastMonthCount * 100).toFixed(0) : null;
+
+  const over25Rows = over25Students.map(({ student, total }) => ({
+    id: student.id,
+    name: student.name,
+    className: student.class?.name ?? null,
+    total,
+  }));
+  const top5Rows = topStudents.map(({ student, total }) => ({
+    id: student.id,
+    name: student.name,
+    className: student.class?.name ?? null,
+    total,
+  }));
 
   return (
     <div>
@@ -242,76 +246,12 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="mb-5 overflow-hidden rounded-xl border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        <div className="border-b px-3 py-3 sm:px-4" style={{ borderColor: "var(--border)" }}>
-          <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>Siswa dengan poin efektif di atas {ALERT_POINTS}</h2>
-          <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>Berdasarkan poin setelah remisi periode tenang (jika ada).</p>
-        </div>
-        {over25Students.length === 0 ? (
-          <div className="px-4 py-6 text-center text-xs" style={{ color: "var(--text-muted)" }}>
-            Tidak ada siswa di atas {ALERT_POINTS} poin.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-          <table className="w-full min-w-[280px]">
-            <thead>
-              <tr style={{ background: "var(--bg-primary)" }}>
-                <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4" style={{ color: "var(--text-muted)" }}>
-                  Nama
-                </th>
-                <th className="hidden px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:table-cell sm:px-4" style={{ color: "var(--text-muted)" }}>
-                  Kelas
-                </th>
-                <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4" style={{ color: "var(--text-muted)" }}>
-                  Poin
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {over25Students.map(({ student, total }) => (
-                <tr key={student.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                  <td className="px-3 py-2.5 text-xs font-medium sm:px-4" style={{ color: "var(--text-primary)" }}>
-                    {student.name}
-                  </td>
-                  <td className="hidden px-3 py-2.5 text-xs sm:table-cell sm:px-4" style={{ color: "var(--text-secondary)" }}>
-                    {student.class?.name || "—"}
-                  </td>
-                  <td className="px-3 py-2.5 sm:px-4">
-                    <PointBadge points={total} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
-        )}
-      </div>
-
-      <div className="overflow-hidden rounded-xl border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        <div className="flex flex-col gap-1 border-b px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
-          <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>Siswa poin tertinggi (top 5)</h2>
-        </div>
-        <div className="overflow-x-auto">
-        <table className="w-full min-w-[300px]">
-          <thead><tr style={{ background: "var(--bg-primary)" }}>
-            <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4" style={{ color: "var(--text-muted)" }}>Nama Siswa</th>
-            <th className="hidden px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:table-cell sm:px-4" style={{ color: "var(--text-muted)" }}>Kelas</th>
-            <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4" style={{ color: "var(--text-muted)" }}>Total Poin</th>
-            <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4" style={{ color: "var(--text-muted)" }}>Status</th>
-          </tr></thead>
-          <tbody>
-            {topStudents.map(({ student, total }) => (
-              <tr key={student.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                <td className="px-3 py-3 text-xs sm:px-4" style={{ color: "var(--text-primary)" }}>{student.name}</td>
-                <td className="hidden px-3 py-3 text-xs sm:table-cell sm:px-4" style={{ color: "var(--text-secondary)" }}>{student.class?.name || "—"}</td>
-                <td className="px-3 py-3 sm:px-4"><PointBadge points={total} /></td>
-                <td className="px-3 py-3 sm:px-4"><StatusBadge points={total} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
-      </div>
+      <DashboardRankedTables
+        over25={over25Rows}
+        top5={top5Rows}
+        alertPoints={ALERT_POINTS}
+        criticalPoints={CRITICAL_POINTS}
+      />
     </div>
   );
 }

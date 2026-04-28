@@ -84,11 +84,12 @@ export default async function StudentPrintPointsPage() {
             </p>
           </div>
 
-          <div className="mt-12 flex flex-col sm:flex-row sm:justify-end gap-12">
+          <div className="mt-12 flex flex-col gap-12 sm:flex-row sm:justify-end">
             <div className="text-sm">
-              <p className="mb-16 text-neutral-600">Mengetahui,</p>
-              <p className="font-semibold border-t border-neutral-400 pt-2 min-w-[200px]">{print.coordinatorName}</p>
-              <p className="text-neutral-600 text-xs mt-0.5">{print.coordinatorTitle}</p>
+              <p className="mb-4 text-neutral-600">Mengetahui,</p>
+              <p className="text-[11px] text-neutral-500 mb-10">Tanda tangan dan stempel sekolah (bila ada)</p>
+              <p className="min-w-[200px] border-t border-neutral-400 pt-2 font-semibold">{print.coordinatorName}</p>
+              <p className="mt-0.5 text-xs text-neutral-600">{print.coordinatorTitle}</p>
             </div>
           </div>
         </article>

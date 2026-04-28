@@ -37,6 +37,48 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
   const [error, setError] = useState("");
   const [ok, setOk] = useState(false);
 
+  const [qmLoading, setQmLoading] = useState(false);
+  const [qmPreview, setQmPreview] = useState<{ quietDays: number; eligible: { id: string; name: string }[] } | null>(
+    null
+  );
+  const [qmMsg, setQmMsg] = useState("");
+
+  async function loadQuietPreview() {
+    setQmLoading(true);
+    setQmMsg("");
+    try {
+      const res = await fetch("/api/admin/quiet-month-preview");
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || "Gagal memuat pratinjau");
+      setQmPreview({ quietDays: d.quietDays ?? 30, eligible: d.eligible ?? [] });
+    } catch (err: unknown) {
+      setQmPreview(null);
+      setQmMsg(err instanceof Error ? err.message : "Gagal");
+    } finally {
+      setQmLoading(false);
+    }
+  }
+
+  async function runQuietApply() {
+    if (!confirm("Terapkan remisi 25% untuk semua siswa yang saat ini memenuhi syarat? Tindakan ini menulis penyesuaian poin di basis data.")) {
+      return;
+    }
+    setQmLoading(true);
+    setQmMsg("");
+    try {
+      const res = await fetch("/api/admin/quiet-month-apply", { method: "POST" });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || "Gagal menerapkan remisi");
+      setQmMsg(`Selesai: ${d.count ?? 0} siswa mendapat remisi.`);
+      setQmPreview(null);
+      router.refresh();
+    } catch (err: unknown) {
+      setQmMsg(err instanceof Error ? err.message : "Gagal");
+    } finally {
+      setQmLoading(false);
+    }
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -121,6 +163,67 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
           {loading ? "Menyimpan…" : "Simpan pengaturan"}
         </button>
       </form>
+
+      <div
+        className="mt-8 w-full max-w-2xl space-y-3 rounded-xl border p-4 sm:p-5"
+        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+      >
+        <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
+          Remisi otomatis (periode tenang)
+        </h2>
+        <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          Bila siswa memiliki poin dari pelanggaran dan <strong>tidak ada catatan pelanggaran baru</strong> selama minimal
+          jumlah hari di environment <code className="text-[10px]">POINT_REDUCTION_QUIET_DAYS</code> (default 30), sistem
+          dapat mengurangi <strong>25% dari total poin bruto</strong> lewat penyesuaian poin. Untuk produksi, panggil
+          endpoint cron <code className="text-[10px]">POST /api/cron/quiet-month-points</code> dengan header{" "}
+          <code className="text-[10px]">x-cron-secret</code> sesuai <code className="text-[10px]">CRON_SECRET</code>.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={qmLoading}
+            onClick={loadQuietPreview}
+            className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-50"
+            style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
+          >
+            {qmLoading ? "Memuat…" : "Cek siswa layak remisi"}
+          </button>
+          <button
+            type="button"
+            disabled={qmLoading}
+            onClick={runQuietApply}
+            className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            style={{ background: "var(--accent)" }}
+          >
+            Terapkan remisi sekarang
+          </button>
+        </div>
+        {qmPreview && (
+          <div className="rounded-lg border p-3 text-xs" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
+            <p className="font-semibold" style={{ color: "var(--text-secondary)" }}>
+              Periode tenang: {qmPreview.quietDays} hari tanpa pelanggaran baru · Layak saat ini: {qmPreview.eligible.length}{" "}
+              siswa
+            </p>
+            {qmPreview.eligible.length > 0 ? (
+              <ul className="mt-2 max-h-36 list-inside list-disc space-y-0.5 overflow-y-auto" style={{ color: "var(--text-muted)" }}>
+                {qmPreview.eligible.map((s) => (
+                  <li key={s.id}>{s.name}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2" style={{ color: "var(--text-muted)" }}>
+                Tidak ada siswa yang memenuhi syarat (belum cukup hari tenang sejak pelanggaran terakhir, atau remisi
+                untuk periode itu sudah pernah diterapkan).
+              </p>
+            )}
+          </div>
+        )}
+        {qmMsg && (
+          <p className="text-xs" style={{ color: qmMsg.startsWith("Selesai") ? "var(--success)" : "var(--danger)" }}>
+            {qmMsg}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

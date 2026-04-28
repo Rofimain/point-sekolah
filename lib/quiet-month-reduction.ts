@@ -119,3 +119,19 @@ export async function applyQuietMonthReductionForAllStudents(
   }
   return out;
 }
+
+/** Daftar siswa yang saat ini memenuhi syarat remisi 25% (belum diterapkan). */
+export async function previewEligibleQuietMonthStudents(
+  now: Date = new Date()
+): Promise<{ id: string; name: string }[]> {
+  const students = await prisma.user.findMany({
+    where: { role: "STUDENT", active: true },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+  const out: { id: string; name: string }[] = [];
+  for (const s of students) {
+    if (await isEligibleForQuietMonthReduction(s.id, now)) out.push(s);
+  }
+  return out;
+}

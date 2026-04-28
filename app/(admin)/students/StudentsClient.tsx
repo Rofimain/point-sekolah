@@ -84,6 +84,7 @@ export default function StudentsClient({
   const [classGrade, setClassGrade] = useState<string>("X");
   const [classMajor, setClassMajor] = useState("");
   const [classYear, setClassYear] = useState(suggestedYear);
+  const [deletingClassId, setDeletingClassId] = useState<string | null>(null);
 
   const previewRows = useMemo(() => {
     try {
@@ -187,6 +188,28 @@ export default function StudentsClient({
       setMsg({ type: "err", text: err instanceof Error ? err.message : "Gagal" });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function deleteClassRow(classId: string, classLabel: string, studentCount: number) {
+    const warn =
+      studentCount > 0
+        ? `Hapus kelas "${classLabel}"?\n\n${studentCount} siswa akan dilepas dari kelas ini (akun & riwayat pelanggaran tetap ada).`
+        : `Hapus kelas "${classLabel}"?`;
+    if (!confirm(warn)) return;
+    setDeletingClassId(classId);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/classes/${encodeURIComponent(classId)}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus kelas");
+      setMsg({ type: "ok", text: `Kelas "${data.removedClassName ?? classLabel}" berhasil dihapus.` });
+      if (searchParams.classId === classId) navigate({ classId: "" });
+      router.refresh();
+    } catch (err: unknown) {
+      setMsg({ type: "err", text: err instanceof Error ? err.message : "Gagal" });
+    } finally {
+      setDeletingClassId(null);
     }
   }
 
@@ -561,7 +584,8 @@ export default function StudentsClient({
               </h2>
               <p className="text-xs mt-1 max-w-xl leading-relaxed" style={{ color: "var(--text-muted)" }}>
                 Kelas dipakai di form siswa dan kolom <code className="text-[10px]">nama_kelas</code> pada impor Excel. Contoh nama:{" "}
-                <strong>X MIPA 1</strong>.
+                <strong>X MIPA 1</strong>. Untuk menghapus kelas, gunakan tombol <strong>Hapus</strong> pada baris — siswa di kelas itu
+                otomatis tidak memiliki kelas sampai Anda pilih kelas lagi.
               </p>
             </div>
             <button
@@ -582,7 +606,7 @@ export default function StudentsClient({
               <table className="w-full">
                 <thead>
                   <tr style={{ background: "var(--bg-secondary)" }}>
-                    {["Nama kelas", "Angkatan", "Jurusan", "Tahun ajaran", "Jumlah siswa"].map((h) => (
+                    {["Nama kelas", "Angkatan", "Jurusan", "Tahun ajaran", "Jumlah siswa", "Aksi"].map((h) => (
                       <th
                         key={h}
                         className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
@@ -596,7 +620,7 @@ export default function StudentsClient({
                 <tbody>
                   {classes.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+                      <td colSpan={6} className="px-4 py-8 text-center text-xs" style={{ color: "var(--text-muted)" }}>
                         Belum ada kelas. Klik &quot;Tambah kelas&quot;.
                       </td>
                     </tr>
@@ -622,6 +646,21 @@ export default function StudentsClient({
                           >
                             {c._count.students}
                           </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            disabled={deletingClassId === c.id}
+                            onClick={() => deleteClassRow(c.id, c.name, c._count.students)}
+                            className="touch-manipulation rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold disabled:opacity-50"
+                            style={{
+                              borderColor: "var(--danger)",
+                              color: "var(--danger)",
+                              background: "var(--bg-secondary)",
+                            }}
+                          >
+                            {deletingClassId === c.id ? "Menghapus…" : "Hapus"}
+                          </button>
                         </td>
                       </tr>
                     ))
