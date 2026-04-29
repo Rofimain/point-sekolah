@@ -245,7 +245,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
                 active={classId === c.id && pathname.startsWith("/records")}
                 onPick={closeSub}
               >
-                {c.grade} {c.name}
+                {c.name.trim() || c.grade || "—"}
               </SubmenuLink>
             ))}
           </SplitNavRow>
@@ -275,7 +275,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
                 active={classId === c.id && pathname.startsWith("/students")}
                 onPick={closeSub}
               >
-                {c.grade} {c.name}
+                {c.name.trim() || c.grade || "—"}
               </SubmenuLink>
             ))}
           </SplitNavRow>
