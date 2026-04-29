@@ -311,12 +311,12 @@ export default function StudentsClient({
           </h1>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
             {tab === null
-              ? "Daftar di bawah ini tampil dulu. Tambah siswa, impor file, atau atur kelas lewat tombol di kanan."
+              ? "Daftar di bawah. Tambah, impor, atau kelola kelas lewat tombol di kanan — tampil sebagai popup agar daftar tidak ikut turun meski data ribuan baris."
               : tab === "single"
-                ? "Form tambah satu siswa. Email otomatis dari NISN bila dikosongkan; password mengikuti DEFAULT_STUDENT_PASSWORD / Siswa@1234."
+                ? "Popup: tambah satu siswa. Tutup lewat tombol Tutup atau area gelap di luar kartu."
                 : tab === "bulk"
-                  ? "Impor banyak siswa. Nama kelas di file harus sama persis dengan daftar di tab Kelas."
-                  : "Kelola daftar kelas untuk form siswa dan impor Excel."}
+                  ? "Popup: impor banyak siswa. Nama kelas di file harus sama persis dengan daftar kelas."
+                  : "Popup: kelola daftar kelas."}
           </p>
           {tab === null && (
             <p className="mt-1 hidden max-w-2xl text-[10px] leading-relaxed text-balance sm:block" style={{ color: "var(--text-muted)" }}>
@@ -327,16 +327,6 @@ export default function StudentsClient({
         </div>
         <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:min-w-[min(100%,18rem)]">
           <div className="flex flex-wrap gap-2">
-            {tab !== null && (
-              <button
-                type="button"
-                onClick={() => setTabQuery(null)}
-                className="touch-manipulation order-last w-full rounded-xl border px-3 py-2 text-xs font-semibold sm:order-first sm:w-auto"
-                style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-secondary)" }}
-              >
-                Tutup panel
-              </button>
-            )}
             <button
               type="button"
               onClick={() => setTabQuery("single")}
@@ -537,7 +527,7 @@ export default function StudentsClient({
 
       {classModalOpen && (
         <div
-          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
           onClick={() => setClassModalOpen(false)}
         >
           <form
@@ -631,14 +621,32 @@ export default function StudentsClient({
       )}
 
       {tab === "single" && (
-        <form
-          onSubmit={submitSingle}
-          className="mb-8 mt-6 w-full max-w-xl rounded-2xl border border-t-4 p-4 sm:p-6"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", borderTopColor: "var(--accent)" }}
+        <div
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="student-add-title"
+          onClick={() => setTabQuery(null)}
         >
-          <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-            Form siswa baru
-          </h2>
+          <div
+            className="max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-xl sm:mx-4 sm:max-h-[min(92dvh,42rem)] sm:rounded-2xl sm:p-6"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start justify-between gap-3 border-b pb-3" style={{ borderColor: "var(--border)" }}>
+              <h2 id="student-add-title" className="text-base font-semibold font-serif" style={{ color: "var(--text-primary)" }}>
+                Tambah siswa
+              </h2>
+              <button
+                type="button"
+                onClick={() => setTabQuery(null)}
+                className="touch-manipulation shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold"
+                style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+              >
+                Tutup
+              </button>
+            </div>
+            <form onSubmit={submitSingle}>
           <div className="space-y-4">
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
@@ -719,22 +727,32 @@ export default function StudentsClient({
           <button
             type="submit"
             disabled={loading}
-            className="mt-5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            className="mt-5 w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50 sm:w-auto"
             style={{ background: "var(--accent)" }}
           >
             {loading ? "Menyimpan…" : "Simpan siswa"}
           </button>
-        </form>
+            </form>
+          </div>
+        </div>
       )}
 
       {tab === "bulk" && (
         <div
-          className="mb-8 mt-6 rounded-2xl border border-t-4 p-4 sm:p-6"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", borderTopColor: "var(--accent)" }}
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bulk-import-title"
+          onClick={() => setTabQuery(null)}
         >
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          <div
+            className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-xl sm:mx-4 sm:max-h-[min(92dvh,48rem)] sm:rounded-2xl sm:p-6"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b pb-3" style={{ borderColor: "var(--border)" }}>
+              <div className="min-w-0 flex-1">
+              <h2 id="bulk-import-title" className="text-base font-semibold font-serif" style={{ color: "var(--text-primary)" }}>
                 Impor banyak siswa
               </h2>
               <p className="mt-1 max-w-xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
@@ -744,16 +762,26 @@ export default function StudentsClient({
                 <code className="text-[10px]">nama_kelas</code>, <code className="text-[10px]">email</code>,{" "}
                 <code className="text-[10px]">password</code> — semua opsional kecuali nama, nisn, kelas.
               </p>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void downloadExcelTemplate()}
+                className="rounded-xl border px-3 py-2 text-xs font-semibold"
+                style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+              >
+                Unduh template Excel
+              </button>
+              <button
+                type="button"
+                onClick={() => setTabQuery(null)}
+                className="touch-manipulation rounded-lg border px-3 py-2 text-xs font-semibold"
+                style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+              >
+                Tutup
+              </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => void downloadExcelTemplate()}
-              className="shrink-0 rounded-xl border px-3 py-2 text-xs font-semibold"
-              style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
-            >
-              Unduh template Excel
-            </button>
-          </div>
 
           <div
             className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-dashed p-4"
@@ -807,7 +835,7 @@ export default function StudentsClient({
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
-            rows={12}
+            rows={8}
             placeholder={`Contoh (tab):\nnama\tnisn\tnama_kelas\nBudi\t0011122233\tX MIPA 1`}
             className="w-full rounded-xl border px-3 py-2 font-mono text-sm"
             style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
@@ -847,17 +875,26 @@ export default function StudentsClient({
               )}
             </div>
           )}
+          </div>
         </div>
       )}
 
       {tab === "kelas" && (
         <div
-          className="mb-8 mt-6 rounded-2xl border border-t-4 p-4 sm:p-6"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", borderTopColor: "var(--accent)" }}
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="class-list-title"
+          onClick={() => setTabQuery(null)}
         >
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          <div
+            className="flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl border shadow-xl sm:mx-4 sm:max-h-[min(92dvh,50rem)] sm:rounded-2xl"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+          <div className="flex shrink-0 flex-wrap items-start justify-between gap-3 border-b px-4 py-4 sm:px-6" style={{ borderColor: "var(--border)" }}>
+            <div className="min-w-0 flex-1">
+              <h2 id="class-list-title" className="text-base font-semibold font-serif" style={{ color: "var(--text-primary)" }}>
                 Daftar kelas
               </h2>
               <p className="mt-1 max-w-xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
@@ -866,6 +903,7 @@ export default function StudentsClient({
                 tidak memiliki kelas sampai Anda pilih kelas lagi.
               </p>
             </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
             <button
               type="button"
               onClick={() => {
@@ -873,14 +911,24 @@ export default function StudentsClient({
                 setMsg(null);
                 setClassYear(suggestedYear);
               }}
-              className="shrink-0 rounded-xl border px-3 py-2 text-xs font-semibold"
+              className="rounded-xl border px-3 py-2 text-xs font-semibold"
               style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
             >
               + Tambah kelas
             </button>
+            <button
+              type="button"
+              onClick={() => setTabQuery(null)}
+              className="touch-manipulation rounded-lg border px-3 py-2 text-xs font-semibold"
+              style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+            >
+              Tutup
+            </button>
+            </div>
           </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-sheet-bottom pt-2 sm:px-6">
           <div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
-            <div className="overflow-x-auto">
+            <div className="max-h-[min(55vh,24rem)] overflow-auto">
               <table className="w-full">
                 <thead>
                   <tr style={{ background: "var(--bg-secondary)" }}>
@@ -946,6 +994,8 @@ export default function StudentsClient({
                 </tbody>
               </table>
             </div>
+          </div>
+          </div>
           </div>
         </div>
       )}
