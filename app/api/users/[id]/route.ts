@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { normalizeParentTelegram } from "@/lib/student-upsert";
+import { newParentLinkToken } from "@/lib/parent-telegram-link";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 
@@ -41,12 +42,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (body.parentTelegram !== undefined) {
       updateData.parentTelegram = normalizeParentTelegram(body.parentTelegram) ?? null;
     }
+    if (existing.role !== "STUDENT" && updateData.role === "STUDENT") {
+      updateData.parentTelegramLinkToken = newParentLinkToken();
+    }
   } else {
     updateData.parentTelegram = null;
+    updateData.parentTelegramLinkToken = null;
   }
 
   const user = await prisma.user.update({ where: { id: params.id }, data: updateData as any });
-  const { password: _, ...safe } = user;
+  const { password: _, parentTelegramLinkToken: __, ...safe } = user;
   return NextResponse.json(safe);
 }
 

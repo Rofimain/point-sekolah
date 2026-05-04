@@ -10,6 +10,7 @@ import {
   studentEmailFromNisn,
 } from "@/lib/student-upsert";
 import { isStaffRole } from "@/lib/staff-roles";
+import { buildParentTelegramDeepLink } from "@/lib/parent-telegram-link";
 
 function staffOk(role: string | undefined) {
   return isStaffRole(role);
@@ -70,6 +71,9 @@ export async function POST(req: NextRequest) {
   });
 
   const user = await prisma.user.create({ data, include: { class: true } });
-  const { password: _, ...safe } = user;
-  return NextResponse.json(safe, { status: 201 });
+  const { password: _, parentTelegramLinkToken: linkTok, ...safe } = user;
+  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
+  const ortuTelegramLink =
+    bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;
+  return NextResponse.json({ ...safe, ortuTelegramLink }, { status: 201 });
 }

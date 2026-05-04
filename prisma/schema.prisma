@@ -17,7 +17,9 @@ model User {
   nisn             String?           @unique
   nip              String?           @unique
   /// Chat ID angka atau @username Telegram orang tua/wali (untuk notifikasi pelanggaran)
-  parentTelegram   String?
+  parentTelegram         String?
+  /// Token sekali pakai untuk tautan t.me/bot?start=ortu_<token> — ortu tap Start, ID tersimpan otomatis
+  parentTelegramLinkToken String? @unique
   classId          String?
   class            Class?            @relation(fields: [classId], references: [id])
   records          ViolationRecord[]

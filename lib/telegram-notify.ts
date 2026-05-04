@@ -108,9 +108,9 @@ export function humanizeTelegramSendError(apiDescription: string): string {
   const d = (apiDescription || "").toLowerCase();
   if (d.includes("chat not found")) {
     return (
-      "Chat tidak ditemukan. Biasanya karena penerima belum pernah buka bot sekolah & ketik /start, " +
-      "atau username/ID salah. Minta akun penerima: (1) buka bot persis yang token-nya di .env, (2) tekan Start, " +
-      "(3) isi data siswa dengan chat ID angka dari https://api.telegram.org/bot<TOKEN>/getUpdates kalau perlu."
+      "Chat tidak ditemukan. Untuk chat pribadi, Telegram sering menolak kirim ke @username — " +
+      "pakai tautan resmi sekolah (t.me/bot?start=ortu_...) supaya ortu cukup Start, atau isi chat ID angka. " +
+      "Pastikan ortu sudah menekan Start ke bot yang token-nya dipakai aplikasi."
     );
   }
   if (d.includes("blocked") || d.includes("blocked by user")) {

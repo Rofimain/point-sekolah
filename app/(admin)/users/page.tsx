@@ -14,7 +14,26 @@ export default async function UsersPage({ searchParams }: { searchParams: { role
   if (searchParams.search) where.name = { contains: searchParams.search, mode: "insensitive" };
 
   const [users, total, classes] = await Promise.all([
-    prisma.user.findMany({ where, include: { class: true }, orderBy: [{ role: "asc" }, { name: "asc" }], skip: (page - 1) * perPage, take: perPage }),
+    prisma.user.findMany({
+      where,
+      orderBy: [{ role: "asc" }, { name: "asc" }],
+      skip: (page - 1) * perPage,
+      take: perPage,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        nisn: true,
+        nip: true,
+        parentTelegram: true,
+        classId: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+        class: true,
+      },
+    }),
     prisma.user.count({ where }),
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
   ]);

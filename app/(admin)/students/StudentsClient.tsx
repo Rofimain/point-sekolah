@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
+import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials } from "@/lib/utils";
 import { parseStudentBulkPaste } from "@/lib/parse-student-bulk";
@@ -154,6 +155,14 @@ export default function StudentsClient({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Gagal menyimpan");
       setMsg({ type: "ok", text: `Siswa "${name}" berhasil ditambahkan.` });
+      if (data.ortuTelegramLink) {
+        try {
+          await navigator.clipboard.writeText(data.ortuTelegramLink);
+          toast.success("Tautan untuk ortu sudah disalin — kirim lewat WA; ortu buka lalu Start.");
+        } catch {
+          toast.info(data.ortuTelegramLink);
+        }
+      }
       setName("");
       setNisn("");
       setClassId("");

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { normalizeParentTelegram } from "@/lib/student-upsert";
+import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 
@@ -31,9 +32,13 @@ export async function POST(req: NextRequest) {
       nip: nip || null,
       classId: r === "STUDENT" || r === "WALI_KELAS" ? classId || null : null,
       parentTelegram: r === "STUDENT" ? normalizeParentTelegram(parentTelegram) ?? null : null,
+      parentTelegramLinkToken: r === "STUDENT" ? newParentLinkToken() : null,
       active: active ?? true,
     },
   });
-  const { password: _, ...safe } = user;
-  return NextResponse.json(safe, { status: 201 });
+  const { password: _, parentTelegramLinkToken: linkTok, ...safe } = user;
+  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
+  const ortuTelegramLink =
+    r === "STUDENT" && bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;
+  return NextResponse.json({ ...safe, ortuTelegramLink }, { status: 201 });
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials, getRoleLabel } from "@/lib/utils";
 
@@ -95,7 +96,16 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
       const url = modal === "add" ? "/api/users" : `/api/users/${modal.id}`;
       const method = modal === "add" ? "POST" : "PATCH";
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Gagal menyimpan"); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal menyimpan");
+      if (modal === "add" && data.ortuTelegramLink && form.role === "STUDENT") {
+        try {
+          await navigator.clipboard.writeText(data.ortuTelegramLink);
+          toast.success("Tautan Telegram ortu disalin — kirim ke orang tua (buka link → Start).");
+        } catch {
+          toast.info(`Tautan ortu: ${data.ortuTelegramLink}`);
+        }
+      }
       setModal(null); router.refresh();
     } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
@@ -105,6 +115,27 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
     if (!confirm(`Hapus user "${name}"? Semua catatan pelanggaran juga akan terhapus.`)) return;
     await fetch(`/api/users/${id}`, { method: "DELETE" });
     router.refresh();
+  }
+
+  async function copyOrtuLink(studentId: string) {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(studentId)}/parent-telegram-link`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Gagal membuat tautan");
+        return;
+      }
+      const url = data.url || data.ortuTelegramLink;
+      if (url) {
+        await navigator.clipboard.writeText(url);
+        toast.success("Tautan disalin. Ortu buka di Telegram lalu Start — tanpa ketik chat ID.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function toggleActive(id: string, active: boolean) {
@@ -265,8 +296,21 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
                       style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
                     />
                     <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                      Kalau pesan tidak masuk: pastikan akun itu sudah buka bot dan ketik /start. Uji dengan chat ID numerik dari{" "}
-                      <code className="text-[9px]">getUpdates</code> bila perlu.
+                      Atau pakai tautan resmi (tanpa isi ID): tombol di bawah. Ortu buka link → Start; webhook menyimpan chat ID otomatis.
+                    </p>
+                    {modal !== "add" && modal?.id && (
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => void copyOrtuLink(modal.id)}
+                        className="mt-2 w-full rounded-lg border px-3 py-2 text-left text-xs font-semibold"
+                        style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                      >
+                        Salin tautan Telegram ortu (disarankan)
+                      </button>
+                    )}
+                    <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                      Isi manual chat ID / @username sering gagal untuk DM — tautan + webhook lebih andal (set NEXT_PUBLIC_TELEGRAM_BOT_USERNAME & webhook di Vercel).
                     </p>
                   </div>
                   </>

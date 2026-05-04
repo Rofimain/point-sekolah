@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { newParentLinkToken } from "@/lib/parent-telegram-link";
 
 export const DEFAULT_STUDENT_PASSWORD = process.env.DEFAULT_STUDENT_PASSWORD || "Siswa@1234";
 
@@ -28,6 +29,7 @@ export function buildStudentCreateInput(input: {
     role: "STUDENT",
     nisn: input.nisn.trim(),
     parentTelegram: normalizeParentTelegram(input.parentTelegram ?? undefined) ?? null,
+    parentTelegramLinkToken: newParentLinkToken(),
     class: { connect: { id: input.classId } },
     active: true,
   };
