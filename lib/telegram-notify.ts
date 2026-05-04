@@ -32,9 +32,41 @@ function buildMessage(p: ParentViolationNotifyPayload): string {
   return lines.join("\n");
 }
 
+/** Normalisasi: chat ID angka atau @username (tanpa spasi). */
+export function normalizeTelegramRecipient(raw: string): string {
+  let s = raw.trim();
+  if (!s) return s;
+  if (!s.startsWith("@") && !/^-?\d+$/.test(s)) {
+    s = `@${s}`;
+  }
+  return s;
+}
+
 /**
- * Mengirim pesan ke orang tua lewat Bot Telegram. `chatIdOrUsername` = ID numerik (string) atau @username
- * setelah orang tua pernah /start ke bot.
+ * Ubah @username / id ke chat id numerik bisa dikirim bot (setelah user pernah /start).
+ * Untuk DM, Telegram lebih andal pakai angka hasil getChat daripada @username mentah.
+ */
+async function resolveChatIdForSend(token: string, raw: string): Promise<string> {
+  const t = normalizeTelegramRecipient(raw);
+  if (!t) return t;
+  if (/^-?\d+$/.test(t)) return t;
+
+  const url = `${TG_API}/bot${encodeURIComponent(token)}/getChat?chat_id=${encodeURIComponent(t)}`;
+  const res = await fetch(url);
+  const data = (await res.json().catch(() => ({}))) as {
+    ok?: boolean;
+    result?: { id?: number };
+    description?: string;
+  };
+  if (data.ok && data.result?.id != null) {
+    return String(data.result.id);
+  }
+  return t;
+}
+
+/**
+ * Mengirim pesan ke orang tua lewat Bot Telegram. Isi bisa chat ID angka atau @username
+ * (user harus sudah menekan /start pada bot sekolah).
  */
 export async function sendParentViolationTelegram(
   chatIdOrUsername: string,
@@ -44,11 +76,12 @@ export async function sendParentViolationTelegram(
   if (!token) {
     return { ok: false, error: "TELEGRAM_BOT_TOKEN tidak diatur" };
   }
-  const chat_id = chatIdOrUsername.trim();
-  if (!chat_id) {
+  const chatRaw = chatIdOrUsername.trim();
+  if (!chatRaw) {
     return { ok: false, error: "Chat Telegram kosong" };
   }
 
+  const chat_id = await resolveChatIdForSend(token, chatRaw);
   const text = buildMessage(payload);
   const url = `${TG_API}/bot${encodeURIComponent(token)}/sendMessage`;
   const res = await fetch(url, {
@@ -64,7 +97,10 @@ export async function sendParentViolationTelegram(
 
   const data = (await res.json().catch(() => ({}))) as { ok?: boolean; description?: string };
   if (!res.ok || data.ok === false) {
-    const err = data.description || res.statusText || "Gagal kirim Telegram";
+    const err =
+      data.description ||
+      res.statusText ||
+      "Gagal kirim Telegram (pastikan ortu sudah /start ke bot, atau pakai chat ID angka dari getUpdates)";
     return { ok: false, error: err };
   }
   return { ok: true };
@@ -78,7 +114,9 @@ export function scheduleParentViolationTelegram(
   if (!chat) return;
   if (!process.env.TELEGRAM_BOT_TOKEN?.trim()) return;
 
-  void sendParentViolationTelegram(chat, payload).catch((e: unknown) => {
+  void sendParentViolationTelegram(chat, payload).then((r) => {
+    if (!r.ok) console.error("[telegram] notify parent failed:", r.error);
+  }).catch((e: unknown) => {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[telegram] notify parent failed:", msg);
   });

@@ -4,14 +4,18 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
+import { normalizeParentTelegram } from "@/lib/student-upsert";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const existing = await prisma.user.findUnique({ where: { id: params.id } });
+  if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
+
   const body = await req.json();
-  const updateData: any = {};
+  const updateData: Record<string, unknown> = {};
   if (body.name) updateData.name = body.name;
   if (body.email) updateData.email = body.email;
   if (body.password) updateData.password = await bcrypt.hash(body.password, 12);
@@ -23,9 +27,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
   if (body.nisn !== undefined) updateData.nisn = body.nisn || null;
   if (body.nip !== undefined) updateData.nip = body.nip || null;
-  if (body.classId !== undefined) updateData.classId = body.classId || null;
   if (body.active !== undefined) updateData.active = body.active;
-  const user = await prisma.user.update({ where: { id: params.id }, data: updateData });
+
+  const nextRole = (updateData.role as Role | undefined) ?? existing.role;
+
+  if (nextRole === "STUDENT" || nextRole === "WALI_KELAS") {
+    if (body.classId !== undefined) updateData.classId = body.classId || null;
+  } else {
+    updateData.classId = null;
+  }
+
+  if (nextRole === "STUDENT") {
+    if (body.parentTelegram !== undefined) {
+      updateData.parentTelegram = normalizeParentTelegram(body.parentTelegram) ?? null;
+    }
+  } else {
+    updateData.parentTelegram = null;
+  }
+
+  const user = await prisma.user.update({ where: { id: params.id }, data: updateData as any });
   const { password: _, ...safe } = user;
   return NextResponse.json(safe);
 }

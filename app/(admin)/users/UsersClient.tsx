@@ -19,7 +19,23 @@ function RoleBadge({ role }: { role: string }) {
   return <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: bg, color }}>{getRoleLabel(role)}</span>;
 }
 
-const emptyForm = { name: "", email: "", password: "", role: "STUDENT" as typeof ROLES[number], nisn: "", nip: "", classId: "", active: true };
+const emptyForm = {
+  name: "",
+  email: "",
+  password: "",
+  role: "STUDENT" as typeof ROLES[number],
+  nisn: "",
+  nip: "",
+  classId: "",
+  parentTelegram: "",
+  active: true,
+};
+
+function kelasAtauJabatan(u: { role: string; class?: { name: string } | null; nisn?: string | null; nip?: string | null }) {
+  if (u.role === "STUDENT") return u.class?.name || u.nisn || "—";
+  if (u.role === "WALI_KELAS") return u.class?.name || "—";
+  return u.nip || "—";
+}
 
 export default function UsersClient({ users, total, page, perPage, classes, searchParams }: any) {
   const router = useRouter();
@@ -38,14 +54,43 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
   }
 
   function openAdd() { setForm({ ...emptyForm }); setError(""); setModal("add"); }
-  function openEdit(u: any) { setForm({ name: u.name, email: u.email, password: "", role: u.role, nisn: u.nisn || "", nip: u.nip || "", classId: u.classId || "", active: u.active }); setError(""); setModal(u); }
+  function openEdit(u: any) {
+    setForm({
+      name: u.name,
+      email: u.email,
+      password: "",
+      role: u.role,
+      nisn: u.nisn || "",
+      nip: u.nip || "",
+      classId: u.classId || "",
+      parentTelegram: u.parentTelegram || "",
+      active: u.active,
+    });
+    setError("");
+    setModal(u);
+  }
 
   async function handleSave() {
     if (!form.name.trim() || !form.email.trim()) { setError("Nama dan email wajib diisi"); return; }
     if (modal === "add" && !form.password) { setError("Password wajib diisi untuk user baru"); return; }
     setLoading(true); setError("");
     try {
-      const body: any = { name: form.name, email: form.email, role: form.role, nisn: form.nisn || null, nip: form.nip || null, classId: form.classId || null, active: form.active };
+      const body: any = {
+        name: form.name,
+        email: form.email,
+        role: form.role,
+        nisn: form.nisn || null,
+        nip: form.nip || null,
+        active: form.active,
+      };
+      if (form.role === "STUDENT" || form.role === "WALI_KELAS") {
+        body.classId = form.classId || null;
+      } else {
+        body.classId = null;
+      }
+      if (form.role === "STUDENT") {
+        body.parentTelegram = form.parentTelegram.trim() || null;
+      }
       if (form.password) body.password = form.password;
       const url = modal === "add" ? "/api/users" : `/api/users/${modal.id}`;
       const method = modal === "add" ? "POST" : "PATCH";
@@ -119,9 +164,9 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
 
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px]">
+          <table className="w-full min-w-[720px]">
             <thead><tr style={{ background: "var(--bg-primary)" }}>
-              {["Nama","Email","Role","Kelas / Jabatan","Status","Aksi"].map(h => (
+              {["Nama","Email","Role","Kelas / Jabatan","Telegram ortu","Status","Aksi"].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
             </tr></thead>
@@ -136,7 +181,14 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
                   </td>
                   <td className="px-4 py-3 text-[11px]" style={{ color: "var(--text-muted)" }}>{u.email}</td>
                   <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
-                  <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>{u.class?.name || u.nip || u.nisn || "—"}</td>
+                  <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>{kelasAtauJabatan(u)}</td>
+                  <td
+                    className="px-4 py-3 max-w-[10rem] truncate font-mono text-[11px]"
+                    style={{ color: "var(--text-muted)" }}
+                    title={u.role === "STUDENT" && u.parentTelegram ? u.parentTelegram : undefined}
+                  >
+                    {u.role === "STUDENT" ? u.parentTelegram || "—" : "—"}
+                  </td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)", color: u.active ? "var(--success)" : "var(--text-muted)" }}>{u.active ? "Aktif" : "Nonaktif"}</span>
                   </td>
@@ -198,10 +250,26 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
                   </select>
                 </div>
                 {form.role === "STUDENT" && (
+                  <>
                   <div>
                     <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>NISN</label>
                     <input value={form.nisn} onChange={e => setForm({ ...form, nisn: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
                   </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Telegram orang tua</label>
+                    <input
+                      value={form.parentTelegram}
+                      onChange={e => setForm({ ...form, parentTelegram: e.target.value })}
+                      placeholder="Chat ID angka atau @username — ortu harus /start bot sekolah"
+                      className="w-full px-3 py-2 rounded-lg border font-mono text-sm"
+                      style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                    />
+                    <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                      Kalau pesan tidak masuk: pastikan akun itu sudah buka bot dan ketik /start. Uji dengan chat ID numerik dari{" "}
+                      <code className="text-[9px]">getUpdates</code> bila perlu.
+                    </p>
+                  </div>
+                  </>
                 )}
                 {(form.role === "STUDENT" || form.role === "WALI_KELAS") && (
                   <div>
