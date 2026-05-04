@@ -743,13 +743,13 @@ export default function StudentsClient({
                 type="text"
                 value={parentTelegram}
                 onChange={(e) => setParentTelegram(e.target.value)}
-                placeholder="Chat ID angka atau @username (setelah /start ke bot sekolah)"
+                placeholder="Hanya angka (chat ID), atau kosongkan — pakai tautan ortu"
                 autoComplete="off"
                 className="w-full rounded-xl border px-3 py-2.5 font-mono text-sm"
                 style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
               />
               <p className="mt-1 text-[10px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Dipakai untuk notifikasi pelanggaran. Orang tua harus pernah membuka bot Telegram sekolah dan menekan Start.
+                @username tidak dipakai sistem (Telegram menolak DM dari server). Kosongkan lalu pakai link ortu setelah siswa dibuat, atau isi chat ID angka dari bot ini saja.
               </p>
             </div>
           </div>

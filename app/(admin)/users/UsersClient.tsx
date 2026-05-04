@@ -291,7 +291,7 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
                     <input
                       value={form.parentTelegram}
                       onChange={e => setForm({ ...form, parentTelegram: e.target.value })}
-                      placeholder="Chat ID angka atau @username — ortu harus /start bot sekolah"
+                      placeholder="Hanya chat ID angka, atau kosong — pakai tautan ortu"
                       className="w-full px-3 py-2 rounded-lg border font-mono text-sm"
                       style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
                     />

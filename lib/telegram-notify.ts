@@ -43,30 +43,37 @@ export function normalizeTelegramRecipient(raw: string): string {
 }
 
 /**
- * Ubah @username / id ke chat id numerik bisa dikirim bot (setelah user pernah /start).
- * Untuk DM, Telegram lebih andal pakai angka hasil getChat daripada @username mentah.
+ * Untuk DM bot → pengguna, API Telegram hanya andalkan chat ID numerik (bukan @username).
+ * Isi manual di database harus angka saja; username → pakai tautan ortu (webhook).
  */
-async function resolveChatIdForSend(token: string, raw: string): Promise<string> {
-  const t = normalizeTelegramRecipient(raw);
-  if (!t) return t;
-  if (/^-?\d+$/.test(t)) return t;
-
-  const url = `${TG_API}/bot${encodeURIComponent(token)}/getChat?chat_id=${encodeURIComponent(t)}`;
-  const res = await fetch(url);
-  const data = (await res.json().catch(() => ({}))) as {
-    ok?: boolean;
-    result?: { id?: number };
-    description?: string;
-  };
-  if (data.ok && data.result?.id != null) {
-    return String(data.result.id);
+function parseDmChatId(raw: string): { ok: true; chatId: string } | { ok: false; error: string } {
+  const s = raw.trim().replace(/\s/g, "");
+  if (!s) {
+    return { ok: false, error: "Chat Telegram kosong" };
   }
-  return t;
+  if (/^@/.test(s) || /[a-zA-Z_]/.test(s)) {
+    return {
+      ok: false,
+      error:
+        "Jangan simpan @username di data siswa — Telegram tidak mengirim DM ke username dari server. " +
+        'Kosongkan field itu, lalu pakai "Salin tautan Telegram ortu" (Manajemen Pengguna / Data siswa), ' +
+        "atau isi hanya Chat ID angka (tanpa huruf). Ortu wajib Start ke bot yang token-nya sama dengan aplikasi.",
+    };
+  }
+  if (!/^\d{5,}$/.test(s)) {
+    return {
+      ok: false,
+      error:
+        "Chat ID harus berupa angka saja (biasanya 9–12 digit), tanpa spasi. " +
+        "Ambil dari bot yang sama setelah ortu /start, atau pakai tautan ortu resmi sekolah.",
+    };
+  }
+  return { ok: true, chatId: s };
 }
 
 /**
- * Mengirim pesan ke orang tua lewat Bot Telegram. Isi bisa chat ID angka atau @username
- * (user harus sudah menekan /start pada bot sekolah).
+ * Mengirim pesan ke orang tua. Field `parentTelegram` di DB harus **chat ID angka**
+ * (hasil tautan ortu via webhook, atau salin dari getUpdates untuk **bot yang sama**).
  */
 export async function sendParentViolationTelegram(
   chatIdOrUsername: string,
@@ -76,12 +83,12 @@ export async function sendParentViolationTelegram(
   if (!token) {
     return { ok: false, error: "TELEGRAM_BOT_TOKEN tidak diatur" };
   }
-  const chatRaw = chatIdOrUsername.trim();
-  if (!chatRaw) {
-    return { ok: false, error: "Chat Telegram kosong" };
-  }
 
-  const chat_id = await resolveChatIdForSend(token, chatRaw);
+  const parsed = parseDmChatId(chatIdOrUsername);
+  if (!parsed.ok) {
+    return { ok: false, error: parsed.error };
+  }
+  const chat_id = parsed.chatId;
   const text = buildMessage(payload);
   const url = `${TG_API}/bot${encodeURIComponent(token)}/sendMessage`;
   const res = await fetch(url, {
@@ -98,15 +105,22 @@ export async function sendParentViolationTelegram(
   const data = (await res.json().catch(() => ({}))) as { ok?: boolean; description?: string };
   if (!res.ok || data.ok === false) {
     const raw = data.description || res.statusText || "";
-    return { ok: false, error: humanizeTelegramSendError(raw) };
+    return { ok: false, error: humanizeTelegramSendError(raw, true) };
   }
   return { ok: true };
 }
 
 /** Pesan API Telegram → bahasa yang bisa langsung dipahami orang sekolah */
-export function humanizeTelegramSendError(apiDescription: string): string {
+export function humanizeTelegramSendError(apiDescription: string, usedNumericChatId = false): string {
   const d = (apiDescription || "").toLowerCase();
   if (d.includes("chat not found")) {
+    if (usedNumericChatId) {
+      return (
+        "Chat tidak ditemukan (meski pakai angka). Penyebab umum: (1) ortu belum pernah Start ke **bot yang sama** dengan TELEGRAM_BOT_TOKEN di Vercel, " +
+        "(2) Chat ID diambil dari bot lain / dari @userinfobot — harus dari obrolan dengan bot sekolah, " +
+        "(3) salah menyalin angka. Solusi: hapus angka di data siswa, pakai tautan ortu (ortu buka link → Start), atau ambil ID dari getUpdates **token bot ini** setelah ortu Start."
+      );
+    }
     return (
       "Chat tidak ditemukan. Untuk chat pribadi, Telegram sering menolak kirim ke @username — " +
       "pakai tautan resmi sekolah (t.me/bot?start=ortu_...) supaya ortu cukup Start, atau isi chat ID angka. " +
