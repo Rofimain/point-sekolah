@@ -3,6 +3,16 @@ import { prisma } from "@/lib/prisma";
 
 const TG = "https://api.telegram.org";
 
+export const dynamic = "force-dynamic";
+
+/** Health check — Telegram selalu POST JSON ke path ini */
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    hint: "Gunakan POST untuk injakan Telegram. Daftarkan URL ini lewat POST /api/telegram/set-webhook",
+  });
+}
+
 /**
  * Webhook Telegram: saat ortu buka t.me/bot?start=ortu_<token> lalu /start,
  * kita simpan `message.chat.id` ke `parentTelegram` untuk siswa yang token-nya cocok.
@@ -13,6 +23,10 @@ export async function POST(req: NextRequest) {
   if (secret) {
     const hdr = req.headers.get("x-telegram-bot-api-secret-token");
     if (hdr !== secret) {
+      console.warn(
+        "[telegram webhook] 403 — header X-Telegram-Bot-Api-Secret-Token tidak cocok TELEGRAM_WEBHOOK_SECRET. " +
+          "Setelah mengubah secret di Vercel, panggil lagi POST /api/telegram/set-webhook (Super Admin)."
+      );
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
   }
@@ -21,6 +35,7 @@ export async function POST(req: NextRequest) {
   try {
     update = (await req.json()) as typeof update;
   } catch {
+    console.warn("[telegram webhook] body JSON tidak valid");
     return NextResponse.json({ ok: true });
   }
 
@@ -29,13 +44,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  const m = text.trim().match(/^\/start(?:\s+(\S+))?$/);
+  const m = text.trim().match(/^\/start(?:\s+(\S+))?$/i);
   const arg = m?.[1]?.trim();
-  if (!arg?.startsWith("ortu_")) {
+  const tokenFromStart = arg?.match(/^ortu_(.+)$/i);
+  if (!tokenFromStart?.[1]) {
     return NextResponse.json({ ok: true });
   }
 
-  const linkToken = arg.slice(5);
+  const linkToken = tokenFromStart[1];
   const chatId = update.message?.chat?.id;
   if (chatId == null) {
     return NextResponse.json({ ok: true });
@@ -44,6 +60,7 @@ export async function POST(req: NextRequest) {
 
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   if (!token) {
+    console.warn("[telegram webhook] TELEGRAM_BOT_TOKEN kosong");
     return NextResponse.json({ ok: true });
   }
 
@@ -52,6 +69,10 @@ export async function POST(req: NextRequest) {
   });
 
   if (!student) {
+    console.warn(
+      "[telegram webhook] token tidak cocok data siswa (sudah dipakai / link lama / belum klik Salin tautan). prefix:",
+      linkToken.slice(0, 6)
+    );
     await fetch(`${TG}/bot${encodeURIComponent(token)}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -63,13 +84,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  await prisma.user.update({
-    where: { id: student.id },
-    data: {
-      parentTelegram: chatIdStr,
-      parentTelegramLinkToken: null,
-    },
-  });
+  try {
+    await prisma.user.update({
+      where: { id: student.id },
+      data: {
+        parentTelegram: chatIdStr,
+        parentTelegramLinkToken: null,
+      },
+    });
+  } catch (e) {
+    console.error("[telegram webhook] gagal simpan ke database:", e);
+    return NextResponse.json({ ok: true });
+  }
+
+  console.log("[telegram webhook] terhubung:", student.name, "chat", chatIdStr);
 
   await fetch(`${TG}/bot${encodeURIComponent(token)}/sendMessage`, {
     method: "POST",
