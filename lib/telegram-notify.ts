@@ -105,19 +105,3 @@ export async function sendParentViolationTelegram(
   }
   return { ok: true };
 }
-
-export function scheduleParentViolationTelegram(
-  chatIdOrUsername: string | null | undefined,
-  payload: ParentViolationNotifyPayload
-): void {
-  const chat = chatIdOrUsername?.trim();
-  if (!chat) return;
-  if (!process.env.TELEGRAM_BOT_TOKEN?.trim()) return;
-
-  void sendParentViolationTelegram(chat, payload).then((r) => {
-    if (!r.ok) console.error("[telegram] notify parent failed:", r.error);
-  }).catch((e: unknown) => {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("[telegram] notify parent failed:", msg);
-  });
-}

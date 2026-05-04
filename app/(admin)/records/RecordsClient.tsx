@@ -145,10 +145,23 @@ export default function RecordsClient({
       }),
     });
     setLoading(false);
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
-      toast.error(d.error || "Gagal menyimpan");
+      toast.error(data.error || "Gagal menyimpan");
       return;
+    }
+    const n = data.parentTelegramNotify as
+      | { status: "sent" }
+      | { status: "skipped_no_recipient" }
+      | { status: "skipped_no_token" }
+      | { status: "failed"; message: string }
+      | undefined;
+    if (n?.status === "failed") {
+      toast.error(`Notifikasi Telegram ortu gagal: ${n.message}`);
+    } else if (n?.status === "skipped_no_token") {
+      toast.warning("Catatan tersimpan; notifikasi ortu tidak dikirim — atur TELEGRAM_BOT_TOKEN di server.");
+    } else if (n?.status === "skipped_no_recipient") {
+      toast.info("Catatan tersimpan; siswa ini belum punya Telegram orang tua di data.");
     }
     const st = studentsForPicker.find((s) => s.id === addStudentId);
     const when = new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });

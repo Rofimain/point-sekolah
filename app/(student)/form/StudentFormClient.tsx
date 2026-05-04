@@ -136,9 +136,22 @@ export default function StudentFormClient({
           studentSignatureData: signatureText.trim() || undefined,
         }),
       });
+      const data = await res.json();
       if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error || "Gagal mengirim");
+        throw new Error(data.error || "Gagal mengirim");
+      }
+      const n = data.parentTelegramNotify as
+        | { status: "sent" }
+        | { status: "skipped_no_recipient" }
+        | { status: "skipped_no_token" }
+        | { status: "failed"; message: string }
+        | undefined;
+      if (n?.status === "failed") {
+        toast.error(`Notifikasi Telegram ortu gagal: ${n.message}`);
+      } else if (n?.status === "skipped_no_token") {
+        toast.warning("Laporan tersimpan, tapi notifikasi ortu tidak dikirim: isi TELEGRAM_BOT_TOKEN di .env lalu restart server.");
+      } else if (n?.status === "skipped_no_recipient") {
+        toast.info("Laporan tersimpan. Isi Telegram orang tua di data siswa dulu bila ingin notifikasi.");
       }
       const vtLabel = selectedVt?.name ?? "Pelanggaran";
       const pts = resolvedPoints;

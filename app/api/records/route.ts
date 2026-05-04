@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isStaffRole } from "@/lib/staff-roles";
 import { validateHeavyViolationEvidence } from "@/lib/heavy-violation";
-import { scheduleParentViolationTelegram } from "@/lib/telegram-notify";
+import { sendParentViolationTelegram } from "@/lib/telegram-notify";
 
 const studentRecordSelect = {
   id: true,
@@ -63,20 +63,42 @@ export async function POST(req: NextRequest) {
       evidenceImageData: evidence && evidence.trim() ? evidence.trim() : null,
       studentSignatureData: signature && signature.trim() ? signature.trim() : null,
     },
-    include: { student: true, violationType: true },
+    include: {
+      student: { select: { id: true, name: true, parentTelegram: true } },
+      violationType: true,
+    },
   });
 
   const staffName = session.user.role === "STUDENT" ? null : session.user.name ?? null;
-  scheduleParentViolationTelegram(record.student.parentTelegram, {
+  const payload = {
     studentName: record.student.name,
     violationName: record.violationType.name,
     points: resolvedPoints,
     sessionSlot: sessionSlot || null,
     notes: notes || null,
     recordedByStaffName: staffName,
-  });
+  };
 
-  return NextResponse.json(record, { status: 201 });
+  /** Wajib await: di serverless (Vercel) tugas "fire-and-forget" sering dibunuh sebelum fetch ke Telegram selesai. */
+  let parentTelegramNotify:
+    | { status: "sent" }
+    | { status: "skipped_no_recipient" }
+    | { status: "skipped_no_token" }
+    | { status: "failed"; message: string };
+
+  const chat = record.student.parentTelegram?.trim();
+  if (!chat) {
+    parentTelegramNotify = { status: "skipped_no_recipient" };
+  } else if (!process.env.TELEGRAM_BOT_TOKEN?.trim()) {
+    console.warn("[telegram] TELEGRAM_BOT_TOKEN kosong — notifikasi ortu tidak dikirim");
+    parentTelegramNotify = { status: "skipped_no_token" };
+  } else {
+    const r = await sendParentViolationTelegram(chat, payload);
+    parentTelegramNotify = r.ok ? { status: "sent" } : { status: "failed", message: r.error };
+    if (!r.ok) console.error("[telegram] kirim ke ortu gagal:", r.error);
+  }
+
+  return NextResponse.json({ ...record, parentTelegramNotify }, { status: 201 });
 }
 
 export async function GET(req: NextRequest) {
