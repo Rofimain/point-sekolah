@@ -97,11 +97,30 @@ export async function sendParentViolationTelegram(
 
   const data = (await res.json().catch(() => ({}))) as { ok?: boolean; description?: string };
   if (!res.ok || data.ok === false) {
-    const err =
-      data.description ||
-      res.statusText ||
-      "Gagal kirim Telegram (pastikan ortu sudah /start ke bot, atau pakai chat ID angka dari getUpdates)";
-    return { ok: false, error: err };
+    const raw = data.description || res.statusText || "";
+    return { ok: false, error: humanizeTelegramSendError(raw) };
   }
   return { ok: true };
+}
+
+/** Pesan API Telegram → bahasa yang bisa langsung dipahami orang sekolah */
+export function humanizeTelegramSendError(apiDescription: string): string {
+  const d = (apiDescription || "").toLowerCase();
+  if (d.includes("chat not found")) {
+    return (
+      "Chat tidak ditemukan. Biasanya karena penerima belum pernah buka bot sekolah & ketik /start, " +
+      "atau username/ID salah. Minta akun penerima: (1) buka bot persis yang token-nya di .env, (2) tekan Start, " +
+      "(3) isi data siswa dengan chat ID angka dari https://api.telegram.org/bot<TOKEN>/getUpdates kalau perlu."
+    );
+  }
+  if (d.includes("blocked") || d.includes("blocked by user")) {
+    return "Pengguna memblokir bot ini — buka Telegram → unblock bot sekolah → kirim /start lagi.";
+  }
+  if (d.includes("bot can't initiate")) {
+    return "Bot tidak boleh memulai chat. Penerima harus /start dulu ke bot sekolah.";
+  }
+  if (d.includes("forbidden")) {
+    return `Telegram menolak: ${apiDescription || "akses ditolak"}. Pastikan penerima sudah /start ke bot.`;
+  }
+  return apiDescription || "Gagal kirim ke Telegram; cek token bot & tujuan (ortu wajib /start).";
 }
