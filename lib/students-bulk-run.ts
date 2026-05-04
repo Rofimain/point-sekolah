@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { buildStudentCreateInput, DEFAULT_STUDENT_PASSWORD, studentEmailFromNisn } from "@/lib/student-upsert";
+import {
+  buildStudentCreateInput,
+  DEFAULT_STUDENT_PASSWORD,
+  normalizeParentTelegram,
+  studentEmailFromNisn,
+} from "@/lib/student-upsert";
 
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
 
@@ -11,6 +16,8 @@ export type BulkStudentRow = {
   className?: string;
   email?: string;
   password?: string;
+  /** Chat ID atau @username Telegram orang tua */
+  parentTelegram?: string;
 };
 
 export type BulkImportResult = {
@@ -108,6 +115,7 @@ export async function runBulkStudentImport(
           classId,
           email,
           hashedPassword: hashed,
+          parentTelegram: normalizeParentTelegram(r.parentTelegram),
         }),
       });
       created++;

@@ -77,6 +77,7 @@ export default function StudentsClient({
   const [classId, setClassId] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [parentTelegram, setParentTelegram] = useState("");
 
   const [bulkText, setBulkText] = useState("");
   const [bulkDefaultPwd, setBulkDefaultPwd] = useState("");
@@ -147,6 +148,7 @@ export default function StudentsClient({
           classId,
           email: email.trim() || undefined,
           password: password.trim() || undefined,
+          parentTelegram: parentTelegram.trim() || undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -157,6 +159,7 @@ export default function StudentsClient({
       setClassId("");
       setEmail("");
       setPassword("");
+      setParentTelegram("");
       setTabQuery(null);
       router.refresh();
     } catch (err: unknown) {
@@ -723,6 +726,23 @@ export default function StudentsClient({
                 style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
               />
             </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                Telegram orang tua <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opsional)</span>
+              </label>
+              <input
+                type="text"
+                value={parentTelegram}
+                onChange={(e) => setParentTelegram(e.target.value)}
+                placeholder="Chat ID angka atau @username (setelah /start ke bot sekolah)"
+                autoComplete="off"
+                className="w-full rounded-xl border px-3 py-2.5 font-mono text-sm"
+                style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+              />
+              <p className="mt-1 text-[10px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Dipakai untuk notifikasi pelanggaran. Orang tua harus pernah membuka bot Telegram sekolah dan menekan Start.
+              </p>
+            </div>
           </div>
           <button
             type="submit"
@@ -760,7 +780,8 @@ export default function StudentsClient({
                 <code className="text-[10px]">Data siswa</code> atau sheet pertama), atau salin dari Excel / tempel CSV/tab. Baris pertama
                 boleh berisi judul: <code className="text-[10px]">nama</code>, <code className="text-[10px]">nisn</code>,{" "}
                 <code className="text-[10px]">nama_kelas</code>, <code className="text-[10px]">email</code>,{" "}
-                <code className="text-[10px]">password</code> — semua opsional kecuali nama, nisn, kelas.
+                <code className="text-[10px]">password</code>, <code className="text-[10px]">telegram_ortu</code> — opsional
+                kecuali nama, nisn, kelas.
               </p>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">

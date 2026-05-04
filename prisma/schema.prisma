@@ -16,6 +16,8 @@ model User {
   role             Role              @default(STUDENT)
   nisn             String?           @unique
   nip              String?           @unique
+  /// Chat ID angka atau @username Telegram orang tua/wali (untuk notifikasi pelanggaran)
+  parentTelegram   String?
   classId          String?
   class            Class?            @relation(fields: [classId], references: [id])
   records          ViolationRecord[]

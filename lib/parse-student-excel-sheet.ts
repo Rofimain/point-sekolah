@@ -75,6 +75,20 @@ export function worksheetToBulkRows(worksheet: ExcelJS.Worksheet): BulkStudentRo
     const nisn = field(row, map, ["nisn", "nis", "nomor_induk"], 2, useMap);
     const email = field(row, map, ["email", "surel"], 4, useMap);
     const password = field(row, map, ["password", "kata_sandi", "katasandi"], 5, useMap);
+    const parentTelegram = field(
+      row,
+      map,
+      [
+        "telegram_ortu",
+        "telegram",
+        "parent_telegram",
+        "akun_telegram_ortu",
+        "telegram_ortu_wali",
+        "chat_id_telegram",
+      ],
+      6,
+      useMap
+    );
 
     if (!name && !nisn) continue;
 
@@ -104,6 +118,7 @@ export function worksheetToBulkRows(worksheet: ExcelJS.Worksheet): BulkStudentRo
       className,
       email: email || undefined,
       password: password || undefined,
+      parentTelegram: parentTelegram || undefined,
     });
   }
 

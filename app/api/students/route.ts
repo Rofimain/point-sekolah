@@ -3,7 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { buildStudentCreateInput, DEFAULT_STUDENT_PASSWORD, studentEmailFromNisn } from "@/lib/student-upsert";
+import {
+  buildStudentCreateInput,
+  DEFAULT_STUDENT_PASSWORD,
+  normalizeParentTelegram,
+  studentEmailFromNisn,
+} from "@/lib/student-upsert";
 import { isStaffRole } from "@/lib/staff-roles";
 
 function staffOk(role: string | undefined) {
@@ -19,12 +24,13 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, nisn, classId, email, password } = body as {
+  const { name, nisn, classId, email, password, parentTelegram } = body as {
     name?: string;
     nisn?: string;
     classId?: string;
     email?: string | null;
     password?: string | null;
+    parentTelegram?: string | null;
   };
 
   if (!name?.trim() || !nisn?.trim() || !classId) {
@@ -60,6 +66,7 @@ export async function POST(req: NextRequest) {
     classId,
     email: finalEmail,
     hashedPassword: hashed,
+    parentTelegram: normalizeParentTelegram(parentTelegram),
   });
 
   const user = await prisma.user.create({ data, include: { class: true } });

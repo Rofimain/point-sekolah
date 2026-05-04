@@ -8,12 +8,18 @@ export function studentEmailFromNisn(nisn: string, domain: string): string {
   return `${local}@${domain}`;
 }
 
+export function normalizeParentTelegram(raw: string | null | undefined): string | undefined {
+  const t = raw?.trim();
+  return t ? t : undefined;
+}
+
 export function buildStudentCreateInput(input: {
   name: string;
   nisn: string;
   classId: string;
   email: string;
   hashedPassword: string;
+  parentTelegram?: string | null;
 }): Prisma.UserCreateInput {
   return {
     name: input.name.trim(),
@@ -21,6 +27,7 @@ export function buildStudentCreateInput(input: {
     password: input.hashedPassword,
     role: "STUDENT",
     nisn: input.nisn.trim(),
+    parentTelegram: normalizeParentTelegram(input.parentTelegram ?? undefined) ?? null,
     class: { connect: { id: input.classId } },
     active: true,
   };

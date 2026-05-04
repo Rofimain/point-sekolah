@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isStaffRole } from "@/lib/staff-roles";
 import { validateHeavyViolationEvidence } from "@/lib/heavy-violation";
+import { scheduleParentViolationTelegram } from "@/lib/telegram-notify";
 
 const studentRecordSelect = {
   id: true,
@@ -63,6 +64,16 @@ export async function POST(req: NextRequest) {
       studentSignatureData: signature && signature.trim() ? signature.trim() : null,
     },
     include: { student: true, violationType: true },
+  });
+
+  const staffName = session.user.role === "STUDENT" ? null : session.user.name ?? null;
+  scheduleParentViolationTelegram(record.student.parentTelegram, {
+    studentName: record.student.name,
+    violationName: record.violationType.name,
+    points: resolvedPoints,
+    sessionSlot: sessionSlot || null,
+    notes: notes || null,
+    recordedByStaffName: staffName,
   });
 
   return NextResponse.json(record, { status: 201 });
