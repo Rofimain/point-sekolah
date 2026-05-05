@@ -8,6 +8,7 @@ import { formatDate } from "@/lib/utils";
 import type { RecordsRow } from "./records-view";
 import { AddRecordStudentPicker, type PickerStudent } from "./AddRecordStudentPicker";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
+import { calendarTodayYmd, dateToYmdInput } from "@/lib/incident-date";
 
 const SESSION_SLOTS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 
@@ -66,6 +67,8 @@ export default function RecordsClient({
   const [addSignatureText, setAddSignatureText] = useState("");
   const [editEvidenceDataUrl, setEditEvidenceDataUrl] = useState("");
   const [editSignatureText, setEditSignatureText] = useState("");
+  const [addIncidentDate, setAddIncidentDate] = useState(() => calendarTodayYmd());
+  const [editIncidentDate, setEditIncidentDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(searchParams.search || "");
   const [exporting, setExporting] = useState(false);
@@ -90,8 +93,17 @@ export default function RecordsClient({
 
   async function handleEdit() {
     if (!editModal) return;
+    if (!editIncidentDate.trim()) {
+      toast.error("Tanggal kejadian wajib diisi.");
+      return;
+    }
     setLoading(true);
-    const body: Record<string, unknown> = { points: editPoints, notes: editNotes, violationTypeId: editVtId };
+    const body: Record<string, unknown> = {
+      points: editPoints,
+      notes: editNotes,
+      violationTypeId: editVtId,
+      date: editIncidentDate,
+    };
     if (editEvidenceDataUrl.trim()) body.evidenceImageData = editEvidenceDataUrl.trim();
     if (editSignatureText.trim()) body.studentSignatureData = editSignatureText.trim();
     const res = await fetch(`/api/records/${editModal.id}`, {
@@ -125,6 +137,10 @@ export default function RecordsClient({
 
   async function handleAdd() {
     if (!addStudentId || !addVtId) return;
+    if (!addIncidentDate.trim()) {
+      toast.error("Tanggal kejadian wajib diisi.");
+      return;
+    }
     const vt = violationTypes.find((v: any) => v.id === addVtId);
     const pts = vt?.points ?? 0;
     if (violationNeedsEvidence(pts) && !addEvidenceDataUrl.trim() && addSignatureText.trim().length < 12) {
@@ -140,6 +156,7 @@ export default function RecordsClient({
         violationTypeId: addVtId,
         session: addSession,
         notes: addNotes,
+        date: addIncidentDate,
         points: vt?.points,
         evidenceImageData: addEvidenceDataUrl.trim() || undefined,
         studentSignatureData: addSignatureText.trim() || undefined,
@@ -185,6 +202,7 @@ export default function RecordsClient({
     setAddNotes("");
     setAddEvidenceDataUrl("");
     setAddSignatureText("");
+    setAddIncidentDate(calendarTodayYmd());
     router.refresh();
   }
 
@@ -269,6 +287,7 @@ export default function RecordsClient({
               setAddSession("");
               setAddEvidenceDataUrl("");
               setAddSignatureText("");
+              setAddIncidentDate(calendarTodayYmd());
               setAddModal(true);
             }}
             className="w-full touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
@@ -385,6 +404,7 @@ export default function RecordsClient({
                                 setAddSession("");
                                 setAddEvidenceDataUrl("");
                                 setAddSignatureText("");
+                                setAddIncidentDate(calendarTodayYmd());
                                 setAddModal(true);
                               }}
                               className="px-2.5 py-1 rounded border text-[11px]"
@@ -438,6 +458,7 @@ export default function RecordsClient({
                               setEditPoints(r.points);
                               setEditNotes(r.notes || "");
                               setEditVtId(r.violationTypeId);
+                              setEditIncidentDate(dateToYmdInput(r.date));
                               setEditEvidenceDataUrl("");
                               setEditSignatureText("");
                             }}
@@ -497,6 +518,19 @@ export default function RecordsClient({
               <div>
                 <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Poin</label>
                 <input type="number" value={editPoints} onChange={(e) => setEditPoints(parseInt(e.target.value))} min={0} max={100} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Tanggal kejadian</label>
+                <input
+                  type="date"
+                  required
+                  value={editIncidentDate}
+                  onChange={(e) => setEditIncidentDate(e.target.value)}
+                  min="2015-01-01"
+                  max={calendarTodayYmd()}
+                  className="w-full px-3 py-2 rounded-lg border text-sm"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Keterangan</label>
@@ -582,6 +616,24 @@ export default function RecordsClient({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  Tanggal kejadian
+                </label>
+                <input
+                  type="date"
+                  value={addIncidentDate}
+                  onChange={(e) => setAddIncidentDate(e.target.value)}
+                  min="2015-01-01"
+                  max={calendarTodayYmd()}
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                />
+                <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                  Sesuai hari kejadian asli; tidak boleh melewati hari ini (zona WIB).
+                </p>
               </div>
 
               <div>

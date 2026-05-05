@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { TopBar } from "@/components/layouts/TopBar";
 import { AdminSidebar, type SidebarClass } from "@/components/layouts/AdminSidebar";
+import { StaffLiveSubmissionNotifier } from "@/components/staff/StaffLiveSubmissionNotifier";
 import { cn } from "@/lib/utils";
 
 function SidebarSkeleton() {
@@ -26,6 +27,7 @@ export default function AdminChrome({
 
   return (
     <div className="flex min-h-screen min-h-[100dvh] flex-col" style={{ background: "var(--bg-primary)" }}>
+      <StaffLiveSubmissionNotifier />
       <TopBar adminNav={{ open: navOpen, onToggle: () => setNavOpen((v) => !v) }} />
       <div className="flex min-h-0 flex-1 overflow-hidden" style={{ height: "calc(100dvh - 3.5rem)", maxHeight: "calc(100vh - 3.5rem)" }}>
         {navOpen ? (

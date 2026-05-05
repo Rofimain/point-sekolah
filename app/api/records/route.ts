@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isStaffRole } from "@/lib/staff-roles";
 import { validateHeavyViolationEvidence } from "@/lib/heavy-violation";
 import { sendParentViolationTelegram } from "@/lib/telegram-notify";
+import { parseOptionalIncidentDate } from "@/lib/incident-date";
 
 const studentRecordSelect = {
   id: true,
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { violationTypeId, session: sessionSlot, notes, studentId, points, evidenceImageData, studentSignatureData } = body;
+  const { violationTypeId, session: sessionSlot, notes, studentId, points, evidenceImageData, studentSignatureData, date: dateInput } = body;
 
   let targetStudentId = session.user.id;
   if (session.user.role !== "STUDENT") {
@@ -52,6 +53,9 @@ export async function POST(req: NextRequest) {
   const check = validateHeavyViolationEvidence(resolvedPoints, evidence, signature);
   if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
 
+  const incident = parseOptionalIncidentDate(dateInput);
+  if (!incident.ok) return NextResponse.json({ error: incident.error }, { status: 400 });
+
   const record = await prisma.violationRecord.create({
     data: {
       studentId: targetStudentId,
@@ -59,6 +63,8 @@ export async function POST(req: NextRequest) {
       session: sessionSlot || null,
       notes: notes || null,
       points: resolvedPoints,
+      date: incident.date,
+      submittedByStudent: session.user.role === "STUDENT",
       createdByName: session.user.name ?? undefined,
       evidenceImageData: evidence && evidence.trim() ? evidence.trim() : null,
       studentSignatureData: signature && signature.trim() ? signature.trim() : null,

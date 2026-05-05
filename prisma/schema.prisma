@@ -80,8 +80,12 @@ model ViolationRecord {
   evidenceImageData     String?       @db.Text
   /// Tanda tangan digital murid (data URL gambar atau teks pengakuan)
   studentSignatureData  String?       @db.Text
+  /// true jika laporan dikirim dari portal siswa (bukan input staf)
+  submittedByStudent    Boolean       @default(false)
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
+
+  @@index([submittedByStudent, createdAt])
 }
 
 /// Pengaturan key–value (koordinator cetak, redaksi, jadwal review).

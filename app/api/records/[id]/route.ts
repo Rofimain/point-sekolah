@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isStaffRole } from "@/lib/staff-roles";
 import { validateHeavyViolationEvidence } from "@/lib/heavy-violation";
+import { parseIncidentDateYmd } from "@/lib/incident-date";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -15,7 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = await req.json();
-  const { points, notes, violationTypeId, evidenceImageData, studentSignatureData } = body;
+  const { points, notes, violationTypeId, evidenceImageData, studentSignatureData, date: dateInput } = body;
 
   const nextVtId = typeof violationTypeId === "string" && violationTypeId ? violationTypeId : existing.violationTypeId;
   const vt = await prisma.violationType.findUnique({ where: { id: nextVtId } });
@@ -45,6 +46,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const check = validateHeavyViolationEvidence(nextPoints, nextEvidence, nextSig);
   if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
 
+  let nextDate: Date | undefined;
+  if (dateInput !== undefined && dateInput !== null && String(dateInput).trim() !== "") {
+    const p = parseIncidentDateYmd(String(dateInput));
+    if (!p.ok) return NextResponse.json({ error: p.error }, { status: 400 });
+    nextDate = p.date;
+  }
+
   const updated = await prisma.violationRecord.update({
     where: { id: params.id },
     data: {
@@ -53,6 +61,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ...(notes !== undefined && { notes }),
       evidenceImageData: nextEvidence,
       studentSignatureData: nextSig,
+      ...(nextDate && { date: nextDate }),
     },
   });
   return NextResponse.json(updated);

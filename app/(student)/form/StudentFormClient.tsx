@@ -8,6 +8,7 @@ import { TopBar } from "@/components/layouts/TopBar";
 import { formatDate, getInitials, getCategoryLabel } from "@/lib/utils";
 import type { Session } from "next-auth";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
+import { calendarTodayYmd } from "@/lib/incident-date";
 
 const SESSIONS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 const CRITICAL = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
@@ -66,6 +67,7 @@ export default function StudentFormClient({
   const [notes, setNotes] = useState("");
   const [evidenceDataUrl, setEvidenceDataUrl] = useState("");
   const [signatureText, setSignatureText] = useState("");
+  const [incidentDate, setIncidentDate] = useState(() => calendarTodayYmd());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successSheet, setSuccessSheet] = useState<{
@@ -131,6 +133,7 @@ export default function StudentFormClient({
           violationTypeId: vtId,
           session: sessionSlot,
           notes,
+          date: incidentDate,
           evidenceImageData: evidenceDataUrl || undefined,
           studentSignatureData: signatureText.trim() || undefined,
         }),
@@ -171,6 +174,7 @@ export default function StudentFormClient({
       setNotes("");
       setEvidenceDataUrl("");
       setSignatureText("");
+      setIncidentDate(calendarTodayYmd());
       router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal mengirim";
@@ -374,6 +378,25 @@ export default function StudentFormClient({
 
                 <div>
                   <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                    Tanggal kejadian *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={incidentDate}
+                    onChange={(e) => setIncidentDate(e.target.value)}
+                    min="2015-01-01"
+                    max={calendarTodayYmd()}
+                    className="w-full px-3 py-2.5 rounded-lg border text-sm"
+                    style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                  />
+                  <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                    Isi sesuai hari kejadian sebenarnya bila melapor belum di hari yang sama (maks. hari ini).
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
                     Sesi / jam pelajaran
                   </label>
                   <select
@@ -460,6 +483,7 @@ export default function StudentFormClient({
                       setNotes("");
                       setEvidenceDataUrl("");
                       setSignatureText("");
+                      setIncidentDate(calendarTodayYmd());
                     }}
                     className="px-4 py-2 rounded-lg border text-sm"
                     style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
