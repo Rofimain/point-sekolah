@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { cn, getRoleLabel } from "@/lib/utils";
+import { isSuperAdmin } from "@/lib/staff-roles";
 
 export type SidebarClass = { id: string; name: string; grade: string };
 
@@ -59,18 +60,15 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function SubmenuLink({
   href,
   active,
-  onPick,
   children,
 }: {
   href: string;
   active: boolean;
-  onPick: () => void;
   children: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
-      onClick={onPick}
       className={cn(
         "block touch-manipulation rounded-lg px-2.5 py-2.5 font-serif text-[11px] leading-snug outline-none transition-all duration-200 ease-out",
         "hover:bg-white/[0.07] hover:pl-3 motion-safe:hover:translate-x-[1px]",
@@ -189,7 +187,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
+  const superAdmin = isSuperAdmin(session?.user?.role);
 
   const [openMenu, setOpenMenu] = useState<null | "records" | "students" | "users">(null);
 
@@ -202,8 +200,6 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
     else if (pathname.startsWith("/users")) setOpenMenu("users");
     else setOpenMenu(null);
   }, [pathname]);
-
-  const closeSub = () => setOpenMenu(null);
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden font-serif">
@@ -235,7 +231,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             }
             label="Catatan Siswa"
           >
-            <SubmenuLink href="/records" active={!classId && pathname.startsWith("/records")} onPick={closeSub}>
+            <SubmenuLink href="/records" active={!classId && pathname.startsWith("/records")}>
               Semua kelas
             </SubmenuLink>
             {classes.map((c) => (
@@ -243,7 +239,6 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
                 key={c.id}
                 href={`/records?classId=${c.id}`}
                 active={classId === c.id && pathname.startsWith("/records")}
-                onPick={closeSub}
               >
                 {c.name.trim() || c.grade || "—"}
               </SubmenuLink>
@@ -265,7 +260,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             }
             label="Data Siswa"
           >
-            <SubmenuLink href="/students" active={!classId && pathname.startsWith("/students")} onPick={closeSub}>
+            <SubmenuLink href="/students" active={!classId && pathname.startsWith("/students")}>
               Semua kelas
             </SubmenuLink>
             {classes.map((c) => (
@@ -273,7 +268,6 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
                 key={c.id}
                 href={`/students?classId=${c.id}`}
                 active={classId === c.id && pathname.startsWith("/students")}
-                onPick={closeSub}
               >
                 {c.name.trim() || c.grade || "—"}
               </SubmenuLink>
@@ -284,7 +278,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
         <div className="px-3 pb-2 pt-2">
           <SectionLabel>Pengaturan</SectionLabel>
 
-          {isSuperAdmin && (
+          {superAdmin && (
             <SimpleNavLink
               href="/settings"
               active={pathname.startsWith("/settings")}
@@ -312,7 +306,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             label="Jenis Pelanggaran"
           />
 
-          {isSuperAdmin && (
+          {superAdmin && (
             <SplitNavRow
               href="/users"
               active={pathname.startsWith("/users")}
@@ -333,7 +327,6 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
                   key={r.href}
                   href={r.href}
                   active={pathname.startsWith("/users") && (r.roleKey === "" ? !roleFilter : roleFilter === r.roleKey)}
-                  onPick={closeSub}
                 >
                   {r.label}
                 </SubmenuLink>

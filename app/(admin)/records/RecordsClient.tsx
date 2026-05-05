@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
@@ -367,22 +368,31 @@ export default function RecordsClient({
                           <StatusBadge points={totalPts} />
                         </td>
                         <td className="px-4 py-3">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAddStudentId(s.id);
-                              setAddVtId("");
-                              setAddNotes("");
-                              setAddSession("");
-                              setAddEvidenceDataUrl("");
-                              setAddSignatureText("");
-                              setAddModal(true);
-                            }}
-                            className="px-2.5 py-1 rounded border text-[11px]"
-                            style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
-                          >
-                            + Catatan
-                          </button>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <Link
+                              href={`/students/${s.id}/cetak`}
+                              className="px-2.5 py-1 rounded border text-[11px] font-medium"
+                              style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                            >
+                              Cetak poin
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAddStudentId(s.id);
+                                setAddVtId("");
+                                setAddNotes("");
+                                setAddSession("");
+                                setAddEvidenceDataUrl("");
+                                setAddSignatureText("");
+                                setAddModal(true);
+                              }}
+                              className="px-2.5 py-1 rounded border text-[11px]"
+                              style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                            >
+                              + Catatan
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -413,7 +423,14 @@ export default function RecordsClient({
                         <StatusBadge points={totalPts} />
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-1.5">
+                        <div className="flex flex-wrap gap-1.5">
+                          <Link
+                            href={`/students/${r.studentId}/cetak`}
+                            className="px-2.5 py-1 rounded border text-[11px] font-medium"
+                            style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                          >
+                            Cetak poin
+                          </Link>
                           <button
                             type="button"
                             onClick={() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials } from "@/lib/utils";
@@ -446,7 +447,7 @@ export default function StudentsClient({
           <table className="w-full min-w-[520px]">
             <thead>
               <tr style={{ background: "var(--bg-primary)" }}>
-                {["Siswa", "NISN", "Email", "Kelas", "Status"].map((h) => (
+                {["Siswa", "NISN", "Email", "Kelas", "Status", "Cetak"].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
@@ -460,7 +461,7 @@ export default function StudentsClient({
             <tbody>
               {students.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
                     Belum ada siswa di halaman ini.
                   </td>
                 </tr>
@@ -499,6 +500,15 @@ export default function StudentsClient({
                       >
                         {u.active ? "Aktif" : "Nonaktif"}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <Link
+                        href={`/students/${u.id}/cetak`}
+                        className="text-[11px] font-semibold hover:underline"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        Info poin
+                      </Link>
                     </td>
                   </tr>
                 ))

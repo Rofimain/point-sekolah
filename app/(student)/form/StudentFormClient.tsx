@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
@@ -221,7 +220,7 @@ export default function StudentFormClient({
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => setTab("lapor")}
@@ -246,13 +245,6 @@ export default function StudentFormClient({
           >
             Tata tertib
           </button>
-          <Link
-            href="/form/cetak"
-            className="inline-flex w-full touch-manipulation items-center justify-center rounded-lg border py-2.5 text-center text-xs font-semibold"
-            style={{ background: "var(--bg-secondary)", color: "var(--text-secondary)", borderColor: "var(--border)" }}
-          >
-            Cetak info poin
-          </Link>
         </div>
 
         {adjustmentSum < 0 && (

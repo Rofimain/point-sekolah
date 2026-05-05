@@ -50,9 +50,12 @@ export default function AdminLoginPage() {
           {error && <div className="p-3 rounded-lg text-xs" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>⚠ {error}</div>}
           <button type="submit" disabled={loading} className="w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-60" style={{ background: "#1A2340" }}>{loading ? "Memproses..." : "Masuk sebagai Admin"}</button>
         </form>
-        <div className="flex justify-center mt-4">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 border rounded text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
-            <span style={{ color: "var(--success)", fontSize: 10 }}>■</span> Super Admin memiliki akses penuh
+        <div className="flex flex-col items-stretch gap-2 mt-4 text-center">
+          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border rounded text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
+            <span style={{ color: "var(--success)", fontSize: 10 }}>■</span> Guru, piket & wali kelas: peran Admin (hak sama)
+          </span>
+          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border rounded text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
+            <span style={{ color: "var(--danger)", fontSize: 10 }}>■</span> Super Admin: akses penuh di atas Admin
           </span>
         </div>
         <div className="mt-4 pt-4 border-t text-center" style={{ borderColor: "var(--border)" }}>
