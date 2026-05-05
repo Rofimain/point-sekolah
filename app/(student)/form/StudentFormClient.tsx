@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
 import { TopBar } from "@/components/layouts/TopBar";
-import { formatDate, getInitials, getCategoryLabel } from "@/lib/utils";
+import { formatDate, formatIncidentDateOnly, formatInputDateTime, getInitials, getCategoryLabel } from "@/lib/utils";
 import type { Session } from "next-auth";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
 import { calendarTodayYmd } from "@/lib/incident-date";
@@ -157,13 +157,20 @@ export default function StudentFormClient({
       }
       const vtLabel = selectedVt?.name ?? "Pelanggaran";
       const pts = resolvedPoints;
-      const when = new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+      const incidentRaw = data.date ?? incidentDate;
+      const savedRaw = data.createdAt;
       const details: QrisSuccessDetail[] = [
         { label: "Jenis", value: vtLabel },
         { label: "Poin", value: `${pts} poin` },
-        { label: "Waktu", value: when },
       ];
-      if (sessionSlot.trim()) details.splice(2, 0, { label: "Sesi", value: sessionSlot.trim() });
+      if (sessionSlot.trim()) details.push({ label: "Sesi", value: sessionSlot.trim() });
+      details.push(
+        { label: "Tanggal pelanggaran", value: formatIncidentDateOnly(incidentRaw) },
+        {
+          label: "Waktu penginputan",
+          value: savedRaw ? formatInputDateTime(savedRaw) : formatInputDateTime(new Date()),
+        }
+      );
       setSuccessSheet({
         title: "Berhasil",
         subtitle: "Laporan pelanggaran Anda sudah masuk dan tercatat di sistem sekolah.",

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
 import type { RecordsRow } from "./records-view";
 import { AddRecordStudentPicker, type PickerStudent } from "./AddRecordStudentPicker";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
@@ -117,8 +117,8 @@ export default function RecordsClient({
       toast.error(d.error || "Gagal menyimpan");
       return;
     }
+    const updated = await res.json();
     const vt = violationTypes.find((v: any) => v.id === editVtId);
-    const when = new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
     setSuccessSheet({
       title: "Berhasil",
       subtitle: "Perubahan catatan pelanggaran telah disimpan.",
@@ -126,7 +126,8 @@ export default function RecordsClient({
         { label: "Siswa", value: editModal.student?.name ?? "—" },
         { label: "Pelanggaran", value: vt?.name ?? "—" },
         { label: "Poin", value: `${editPoints} poin` },
-        { label: "Waktu", value: when },
+        { label: "Tanggal pelanggaran", value: formatIncidentDateOnly(updated.date) },
+        { label: "Waktu penginputan", value: formatInputDateTime(updated.updatedAt) },
       ],
     });
     setEditModal(null);
@@ -182,14 +183,16 @@ export default function RecordsClient({
       toast.info("Catatan tersimpan; siswa ini belum punya Telegram orang tua di data.");
     }
     const st = studentsForPicker.find((s) => s.id === addStudentId);
-    const when = new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
     const detailRows: QrisSuccessDetail[] = [
       { label: "Siswa", value: st?.name ?? "—" },
       { label: "Pelanggaran", value: vt?.name ?? "—" },
       { label: "Poin", value: `${pts} poin` },
     ];
     if (addSession.trim()) detailRows.push({ label: "Sesi", value: addSession.trim() });
-    detailRows.push({ label: "Waktu", value: when });
+    detailRows.push(
+      { label: "Tanggal pelanggaran", value: formatIncidentDateOnly(data.date) },
+      { label: "Waktu penginputan", value: formatInputDateTime(data.createdAt) }
+    );
     setSuccessSheet({
       title: "Berhasil",
       subtitle: "Catatan pelanggaran sudah masuk ke sistem.",

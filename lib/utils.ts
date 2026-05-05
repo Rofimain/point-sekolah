@@ -15,6 +15,20 @@ export function formatDateTime(date: Date | string) {
   return format(new Date(date), "dd MMM yyyy, HH:mm", { locale: localeId });
 }
 
+/** Tanggal kejadian pelanggaran saja (tanpa jam), untuk rincian bukti / sheet sukses. */
+export function formatIncidentDateOnly(date: Date | string) {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+}
+
+/** Tanggal + jam saat catatan disimpan di sistem (native id-ID, konsisten dengan sheet sukses). */
+export function formatInputDateTime(date: Date | string) {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+}
+
 export function getInitials(name: string) {
   return name
     .split(" ")
