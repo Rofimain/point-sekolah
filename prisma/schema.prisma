@@ -78,6 +78,8 @@ model ViolationRecord {
   createdByName         String?
   /// Bukti foto (data URL base64), wajib untuk poin > ambang bila tidak ada tanda tangan
   evidenceImageData     String?       @db.Text
+  /// Ringkas untuk UI daftar — ada foto bukti (tanpa load kolom besar)
+  evidenceImagePresent  Boolean       @default(false)
   /// Tanda tangan digital murid (data URL gambar atau teks pengakuan)
   studentSignatureData  String?       @db.Text
   /// true jika laporan dikirim dari portal siswa (bukan input staf)

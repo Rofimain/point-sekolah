@@ -60,11 +60,32 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       points: nextPoints,
       ...(notes !== undefined && { notes }),
       evidenceImageData: nextEvidence,
+      evidenceImagePresent: Boolean(nextEvidence?.trim()),
       studentSignatureData: nextSig,
       ...(nextDate && { date: nextDate }),
     },
   });
   return NextResponse.json(updated);
+}
+
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session || !isStaffRole(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const record = await prisma.violationRecord.findUnique({
+    where: { id: params.id },
+    select: {
+      id: true,
+      evidenceImageData: true,
+      studentSignatureData: true,
+      points: true,
+      student: { select: { name: true } },
+      violationType: { select: { name: true } },
+    },
+  });
+
+  if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(record);
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {

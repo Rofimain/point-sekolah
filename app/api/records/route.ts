@@ -56,6 +56,8 @@ export async function POST(req: NextRequest) {
   const incident = parseOptionalIncidentDate(dateInput);
   if (!incident.ok) return NextResponse.json({ error: incident.error }, { status: 400 });
 
+  const evidenceStored = evidence && evidence.trim() ? evidence.trim() : null;
+
   const record = await prisma.violationRecord.create({
     data: {
       studentId: targetStudentId,
@@ -66,7 +68,8 @@ export async function POST(req: NextRequest) {
       date: incident.date,
       submittedByStudent: session.user.role === "STUDENT",
       createdByName: session.user.name ?? undefined,
-      evidenceImageData: evidence && evidence.trim() ? evidence.trim() : null,
+      evidenceImageData: evidenceStored,
+      evidenceImagePresent: Boolean(evidenceStored),
       studentSignatureData: signature && signature.trim() ? signature.trim() : null,
     },
     include: {

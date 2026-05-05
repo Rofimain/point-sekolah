@@ -12,6 +12,7 @@ export const RECORD_LIST_SELECT = {
   createdByName: true,
   createdAt: true,
   updatedAt: true,
+  evidenceImagePresent: true,
   student: { include: { class: true } },
   violationType: true,
 } as const satisfies Prisma.ViolationRecordSelect;

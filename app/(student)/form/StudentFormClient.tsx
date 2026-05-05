@@ -9,6 +9,11 @@ import { formatDate, formatIncidentDateOnly, formatInputDateTime, getInitials, g
 import type { Session } from "next-auth";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
 import { calendarTodayYmd } from "@/lib/incident-date";
+import {
+  compressImageToDataUrl,
+  COMPRESS_TARGET_BYTES_STUDENT,
+  isProbablyImageFile,
+} from "@/lib/compress-image-client";
 
 const SESSIONS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 const CRITICAL = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
@@ -97,20 +102,21 @@ export default function StudentFormClient({
   async function onPickEvidenceFile(file: File | null) {
     setEvidenceDataUrl("");
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Gunakan file gambar (JPG/PNG).");
+    if (!isProbablyImageFile(file)) {
+      toast.error("Gunakan file gambar (JPG, PNG, HEIC, WebP, dll.).");
       return;
     }
-    if (file.size > 380 * 1024) {
-      toast.error("Ukuran foto maks. sekitar 380 KB. Silakan kompresi dulu.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const r = String(reader.result || "");
-      setEvidenceDataUrl(r);
-    };
-    reader.readAsDataURL(file);
+    await toast.promise(
+      compressImageToDataUrl(file, { maxBytes: COMPRESS_TARGET_BYTES_STUDENT }).then(({ dataUrl, meta }) => {
+        setEvidenceDataUrl(dataUrl);
+        return meta.outputBytes;
+      }),
+      {
+        loading: "Mengompres foto…",
+        success: (bytes) => `Foto siap (~${Math.max(1, Math.round(bytes / 1024))} KB)`,
+        error: (err: unknown) => (err instanceof Error ? err.message : "Gagal memproses gambar"),
+      }
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -449,10 +455,13 @@ export default function StudentFormClient({
                       </label>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/*,.heic,.heif"
                         className="w-full text-xs"
-                        onChange={(e) => onPickEvidenceFile(e.target.files?.[0] ?? null)}
+                        onChange={(e) => void onPickEvidenceFile(e.target.files?.[0] ?? null)}
                       />
+                      <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                        Foto akan dioptimalkan otomatis (ukuran dan kualitas) agar ringan di server.
+                      </p>
                       {evidenceDataUrl && (
                         <p className="text-[10px] mt-1" style={{ color: "var(--success)" }}>
                           Foto terpasang.
