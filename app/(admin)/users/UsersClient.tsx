@@ -262,6 +262,47 @@ export default function UsersClient({
 
   const canBulkDeleteStudents = selectedCount > 0 && selectedUsers.every((u: any) => u.role === "STUDENT");
 
+  async function bulkCopyParentTelegramLinks() {
+    const ids = Array.from(selectedIds);
+    if (ids.length < 1) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/users/parent-telegram-links-bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal membuat tautan");
+      const links = (data.links || []) as { name: string; nisn: string; className: string; url: string }[];
+      if (links.length < 1) {
+        toast.error("Tidak ada akun siswa di pilihan. Tautan hanya untuk role Siswa.");
+        return;
+      }
+      const header = "nama\tnisn\tkelas\ttautan_telegram_ortu";
+      const lines = links.map(
+        (l) => `${l.name}\t${l.nisn || "—"}\t${l.className || "—"}\t${l.url}`
+      );
+      const text = [header, ...lines].join("\n");
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        toast.error("Tidak bisa mengakses clipboard. Coba browser lain atau HTTPS.");
+        return;
+      }
+      const gen = data.generatedCount ?? links.length;
+      const skip = data.skippedCount ?? 0;
+      let msg = `Disalin ${gen} tautan (tab — tempel ke Excel/Sheets).`;
+      if (skip > 0) msg += ` ${skip} baris bukan siswa / tidak ditemukan.`;
+      toast.success(msg);
+      router.refresh();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Gagal");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function bulkDeleteStudents() {
     if (!canBulkDeleteStudents) {
       toast.error("Bulk delete hanya untuk akun siswa.");
@@ -340,6 +381,16 @@ export default function UsersClient({
                 title={!canBulkDeleteStudents ? "Bulk delete hanya untuk akun siswa" : undefined}
               >
                 Hapus siswa
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void bulkCopyParentTelegramLinks()}
+                className="px-2.5 py-1 rounded border text-[11px] font-medium disabled:opacity-60"
+                style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--accent-light)" }}
+                title="Buat token baru & salin nama + tautan (hanya baris siswa). Tempel ke Excel."
+              >
+                Salin tautan ortu
               </button>
               <button
                 type="button"
