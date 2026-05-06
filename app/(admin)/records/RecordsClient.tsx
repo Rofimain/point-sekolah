@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
 import { formatDate, formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
-import type { RecordsRow } from "./records-view";
+import type { RecordsRow, ViolationRecordListItem } from "./records-view";
 import { AddRecordStudentPicker, type PickerStudent } from "./AddRecordStudentPicker";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
 import { calendarTodayYmd, dateToYmdInput } from "@/lib/incident-date";
@@ -86,6 +86,28 @@ export default function RecordsClient({
     subtitle: string;
     details: QrisSuccessDetail[];
   } | null>(null);
+
+  function openReceiptSheetForRecord(r: ViolationRecordListItem) {
+    const details: QrisSuccessDetail[] = [
+      { label: "Siswa", value: r.student?.name ?? "—" },
+      ...(r.student?.class?.name ? [{ label: "Kelas", value: r.student.class.name }] : []),
+      { label: "Pelanggaran", value: r.violationType?.name ?? "—" },
+      { label: "Poin", value: `${r.points} poin` },
+    ];
+    if (r.session?.trim()) details.push({ label: "Sesi", value: r.session.trim() });
+    details.push(
+      { label: "Tanggal pelanggaran", value: formatIncidentDateOnly(r.date) },
+      { label: "Waktu penginputan", value: formatInputDateTime(r.createdAt) }
+    );
+    if (r.createdByName?.trim()) details.push({ label: "Diinput oleh", value: r.createdByName.trim() });
+    if (r.notes?.trim()) details.push({ label: "Keterangan", value: r.notes.trim() });
+
+    setSuccessSheet({
+      title: "Bukti pelanggaran",
+      subtitle: "Catatan ini sudah tersimpan di sistem dan dapat digunakan sebagai bukti.",
+      details,
+    });
+  }
 
   function navigate(params: Record<string, string>) {
     const sp = new URLSearchParams(searchParams);
@@ -445,13 +467,14 @@ export default function RecordsClient({
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <Link
-                              href={`/students/${s.id}/cetak`}
-                              className="px-2.5 py-1 rounded border text-[11px] font-medium"
-                              style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg-primary)" }}
-                            >
-                              Cetak poin
-                            </Link>
+                          <button
+                            type="button"
+                            disabled
+                            className="px-2.5 py-1 rounded border text-[11px] font-medium opacity-60 cursor-not-allowed"
+                            style={{ borderColor: "var(--border)", color: "var(--text-muted)", background: "var(--bg-primary)" }}
+                          >
+                            Bukti
+                          </button>
                             <button
                               type="button"
                               onClick={() => {
@@ -517,13 +540,14 @@ export default function RecordsClient({
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1.5">
-                          <Link
-                            href={`/students/${r.studentId}/cetak`}
+                          <button
+                            type="button"
+                            onClick={() => openReceiptSheetForRecord(r)}
                             className="px-2.5 py-1 rounded border text-[11px] font-medium"
                             style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg-primary)" }}
                           >
-                            Cetak poin
-                          </Link>
+                            Bukti
+                          </button>
                           <button
                             type="button"
                             onClick={() => {
