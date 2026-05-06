@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { isTelegramWebhookSecretValid, TELEGRAM_WEBHOOK_SECRET_HINT } from "@/lib/telegram-webhook-secret";
 
 const TG = "https://api.telegram.org";
 
@@ -35,6 +36,14 @@ export async function POST(req: NextRequest) {
 
   const webhookUrl = `${base.replace(/\/$/, "")}/api/telegram/webhook`;
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+  if (secret && !isTelegramWebhookSecretValid(secret)) {
+    return NextResponse.json(
+      {
+        error: `TELEGRAM_WEBHOOK_SECRET tidak valid untuk Telegram. ${TELEGRAM_WEBHOOK_SECRET_HINT}`,
+      },
+      { status: 400 }
+    );
+  }
 
   const body: Record<string, unknown> = {
     url: webhookUrl,

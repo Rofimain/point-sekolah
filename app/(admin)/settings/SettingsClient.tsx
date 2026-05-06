@@ -216,7 +216,12 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
         </p>
         <ol className="list-inside list-decimal space-y-1 text-xs" style={{ color: "var(--text-muted)" }}>
           <li>Klik &quot;Daftarkan webhook&quot; di bawah (pastikan <code className="text-[10px]">NEXTAUTH_URL</code> di Vercel = domain production).</li>
-          <li>Setelah mengisi <code className="text-[10px]">TELEGRAM_WEBHOOK_SECRET</code>, daftarkan lagi supaya header cocok.</li>
+          <li>
+            Setelah mengisi <code className="text-[10px]">TELEGRAM_WEBHOOK_SECRET</code>, daftarkan lagi supaya header cocok. Telegram hanya
+            mengizinkan huruf, angka, <code className="text-[10px]">_</code>, dan <code className="text-[10px]">-</code> (contoh:{" "}
+            <code className="text-[10px]">openssl rand -hex 32</code>) — bukan token bot; hindari base64 dengan{" "}
+            <code className="text-[10px]">+</code> / <code className="text-[10px]">/</code> / <code className="text-[10px]">=</code>.
+          </li>
           <li>Di Manajemen Pengguna → siswa → &quot;Salin tautan Telegram ortu&quot; — kirim link itu ke ortu (bukan link lama).</li>
           <li>Jika kolom masih kosong: buka &quot;Cek status webhook&quot; — lihat{" "}
             <code className="text-[10px]">last_error_message</code> (mis. 403 = secret salah; URL kosong = belum register).</li>
