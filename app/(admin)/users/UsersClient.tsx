@@ -83,7 +83,7 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
         role: form.role,
         nisn: form.nisn || null,
         nip: form.nip || null,
-        active: form.active,
+        active: modal !== "add" && modal?.role === "SUPER_ADMIN" ? true : form.active,
       };
       if (form.role === "STUDENT" || form.role === "WALI_KELAS") {
         body.classId = form.classId || null;
@@ -114,7 +114,12 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Hapus user "${name}"? Semua catatan pelanggaran juga akan terhapus.`)) return;
-    await fetch(`/api/users/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error(data.error || "Gagal menghapus");
+      return;
+    }
     router.refresh();
   }
 
@@ -140,7 +145,16 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
   }
 
   async function toggleActive(id: string, active: boolean) {
-    await fetch(`/api/users/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active: !active }) });
+    const res = await fetch(`/api/users/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !active }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error(data.error || "Gagal mengubah status");
+      return;
+    }
     router.refresh();
   }
 
@@ -150,9 +164,11 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
     return Array.from(selectedIds).map((id) => m.get(id)).filter(Boolean);
   }, [selectedIds, users]);
 
+  const selectableOnPage = useMemo(() => users.filter((u: any) => u.role !== "SUPER_ADMIN"), [users]);
   const selectedCount = selectedIds.size;
-  const allOnPageSelected = users.length > 0 && users.every((u: any) => selectedIds.has(u.id));
-  const someOnPageSelected = users.some((u: any) => selectedIds.has(u.id));
+  const allOnPageSelected =
+    selectableOnPage.length > 0 && selectableOnPage.every((u: any) => selectedIds.has(u.id));
+  const someOnPageSelected = selectableOnPage.some((u: any) => selectedIds.has(u.id));
 
   function toggleSelectOne(id: string) {
     setSelectedIds((prev) => {
@@ -169,7 +185,7 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
       if (allOnPageSelected) {
         users.forEach((u: any) => next.delete(u.id));
       } else {
-        users.forEach((u: any) => next.add(u.id));
+        selectableOnPage.forEach((u: any) => next.add(u.id));
       }
       return next;
     });
@@ -261,10 +277,15 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
               </button>
               <button
                 type="button"
-                disabled={loading}
+                disabled={loading || selectedUsers.some((u: any) => u.role === "SUPER_ADMIN")}
                 onClick={() => void bulkSetActive(false)}
                 className="px-2.5 py-1 rounded border text-[11px] font-medium disabled:opacity-60"
                 style={{ borderColor: "var(--warning)", color: "var(--warning)", background: "var(--warning-bg)" }}
+                title={
+                  selectedUsers.some((u: any) => u.role === "SUPER_ADMIN")
+                    ? "Super Admin tidak bisa dinonaktifkan"
+                    : undefined
+                }
               >
                 Nonaktifkan
               </button>
@@ -399,9 +420,11 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
                   <td className="px-4 py-3">
                     <input
                       type="checkbox"
+                      disabled={u.role === "SUPER_ADMIN"}
                       checked={selectedIds.has(u.id)}
                       onChange={() => toggleSelectOne(u.id)}
                       aria-label={`Pilih ${u.name}`}
+                      title={u.role === "SUPER_ADMIN" ? "Super Admin tidak bisa dipilih untuk aksi massal" : undefined}
                     />
                   </td>
                   <td className="px-4 py-3">
@@ -426,8 +449,26 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1.5">
                       <button onClick={() => openEdit(u)} className="px-2.5 py-1 rounded border text-[11px]" style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}>Edit</button>
-                      <button onClick={() => toggleActive(u.id, u.active)} className="px-2.5 py-1 rounded border text-[11px]" style={{ borderColor: "var(--border)", color: u.active ? "var(--warning)" : "var(--success)", background: u.active ? "var(--warning-bg)" : "var(--success-bg)" }}>{u.active ? "Blokir" : "Aktifkan"}</button>
-                      <button onClick={() => handleDelete(u.id, u.name)} className="px-2.5 py-1 rounded border text-[11px]" style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}>Hapus</button>
+                      <button
+                        type="button"
+                        disabled={u.role === "SUPER_ADMIN"}
+                        onClick={() => toggleActive(u.id, u.active)}
+                        className="px-2.5 py-1 rounded border text-[11px] disabled:opacity-50"
+                        style={{ borderColor: "var(--border)", color: u.active ? "var(--warning)" : "var(--success)", background: u.active ? "var(--warning-bg)" : "var(--success-bg)" }}
+                        title={u.role === "SUPER_ADMIN" ? "Super Admin tidak boleh dinonaktifkan" : undefined}
+                      >
+                        {u.active ? "Blokir" : "Aktifkan"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={u.role === "SUPER_ADMIN"}
+                        onClick={() => handleDelete(u.id, u.name)}
+                        className="px-2.5 py-1 rounded border text-[11px] disabled:opacity-50"
+                        style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
+                        title={u.role === "SUPER_ADMIN" ? "Super Admin tidak boleh dihapus" : undefined}
+                      >
+                        Hapus
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -476,7 +517,14 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Role</label>
-                  <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value as any })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}>
+                  <select
+                    value={form.role}
+                    onChange={e => setForm({ ...form, role: e.target.value as any })}
+                    disabled={modal !== "add" && modal?.role === "SUPER_ADMIN"}
+                    className="w-full px-3 py-2 rounded-lg border text-sm disabled:opacity-60"
+                    style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                    title={modal !== "add" && modal?.role === "SUPER_ADMIN" ? "Role Super Admin tidak dapat diubah dari sini" : undefined}
+                  >
                     {ROLES.map(r => <option key={r} value={r}>{getRoleLabel(r)}</option>)}
                   </select>
                 </div>
@@ -533,8 +581,21 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
                   </div>
                 )}
                 <div className="col-span-2 flex items-center gap-2">
-                  <input type="checkbox" id="activeCheck" checked={form.active} onChange={e => setForm({ ...form, active: e.target.checked })} />
-                  <label htmlFor="activeCheck" className="text-xs" style={{ color: "var(--text-secondary)" }}>Akun aktif</label>
+                  <input
+                    type="checkbox"
+                    id="activeCheck"
+                    checked={modal !== "add" && modal?.role === "SUPER_ADMIN" ? true : form.active}
+                    disabled={modal !== "add" && modal?.role === "SUPER_ADMIN"}
+                    onChange={e => setForm({ ...form, active: e.target.checked })}
+                  />
+                  <label htmlFor="activeCheck" className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                    Akun aktif
+                    {modal !== "add" && modal?.role === "SUPER_ADMIN" ? (
+                      <span className="block text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                        Super Admin selalu aktif (tidak bisa dinonaktifkan).
+                      </span>
+                    ) : null}
+                  </label>
                 </div>
               </div>
               {error && <div className="p-3 rounded-lg text-xs" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>⚠ {error}</div>}

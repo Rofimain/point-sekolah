@@ -16,6 +16,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
 
   const body = await req.json();
+
+  if (existing.role === "SUPER_ADMIN" && body.active === false) {
+    return NextResponse.json({ error: "Akun Super Admin tidak boleh dinonaktifkan." }, { status: 400 });
+  }
+  if (
+    existing.role === "SUPER_ADMIN" &&
+    body.role !== undefined &&
+    String(body.role) !== "SUPER_ADMIN"
+  ) {
+    return NextResponse.json({ error: "Role Super Admin tidak dapat diubah." }, { status: 400 });
+  }
   const updateData: Record<string, unknown> = {};
   if (body.name) updateData.name = body.name;
   if (body.email) updateData.email = body.email;
@@ -58,6 +69,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const existing = await prisma.user.findUnique({ where: { id: params.id }, select: { role: true } });
+  if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
+  if (existing.role === "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Akun Super Admin tidak boleh dihapus." }, { status: 400 });
+  }
   await prisma.user.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });
 }

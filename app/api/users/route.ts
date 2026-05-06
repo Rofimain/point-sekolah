@@ -56,6 +56,18 @@ export async function PATCH(req: NextRequest) {
   }
   const active = Boolean(body.active);
 
+  if (!active) {
+    const superCount = await prisma.user.count({
+      where: { id: { in: ids }, role: "SUPER_ADMIN" },
+    });
+    if (superCount > 0) {
+      return NextResponse.json(
+        { error: "Tidak bisa menonaktifkan akun Super Admin lewat aksi massal." },
+        { status: 400 }
+      );
+    }
+  }
+
   const res = await prisma.user.updateMany({
     where: { id: { in: ids } },
     data: { active },
