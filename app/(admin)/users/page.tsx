@@ -18,7 +18,7 @@ export default async function UsersPage({
   if (searchParams.search) where.name = { contains: searchParams.search, mode: "insensitive" };
   if (searchParams.classId) where.classId = searchParams.classId;
 
-  const [users, total, classes, superAdminTotal, activeSuperAdminCount] = await Promise.all([
+  const [rawUsers, total, classes, superAdminTotal, activeSuperAdminCount] = await Promise.all([
     prisma.user.findMany({
       where,
       orderBy: [{ role: "asc" }, { name: "asc" }],
@@ -37,6 +37,7 @@ export default async function UsersPage({
         createdAt: true,
         updatedAt: true,
         class: true,
+        parentTelegramLinkToken: true,
       },
     }),
     prisma.user.count({ where }),
@@ -44,6 +45,18 @@ export default async function UsersPage({
     prisma.user.count({ where: { role: "SUPER_ADMIN" } }),
     prisma.user.count({ where: { role: "SUPER_ADMIN", active: true } }),
   ]);
+
+  const users = rawUsers.map(({ parentTelegramLinkToken, ...u }) => ({
+    ...u,
+    ortuTelegramStatus:
+      u.role === "STUDENT"
+        ? u.parentTelegram?.trim()
+          ? ("connected" as const)
+          : parentTelegramLinkToken
+            ? ("pending" as const)
+            : ("none" as const)
+        : null,
+  }));
 
   return (
     <UsersClient

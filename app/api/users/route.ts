@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
-import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
 import { LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 
@@ -14,7 +13,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
-  const { name, email, password, role, nisn, nip, classId, active, parentTelegram } = body;
+  const { name, email, password, role, nisn, nip, classId, active } = body;
   if (!name || !email || !password) return NextResponse.json({ error: "Nama, email, password wajib" }, { status: 400 });
   if (!role || !VALID_ROLES.has(String(role))) {
     return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
@@ -23,12 +22,6 @@ export async function POST(req: NextRequest) {
   if (existing) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
   const hashed = await bcrypt.hash(password, 12);
   const r = role as Role;
-  let parentTg: string | null = null;
-  if (r === "STUDENT") {
-    const pt = parseParentTelegramForDb(parentTelegram);
-    if (!pt.ok) return NextResponse.json({ error: pt.error }, { status: 400 });
-    parentTg = pt.value;
-  }
   const user = await prisma.user.create({
     data: {
       name,
@@ -38,7 +31,7 @@ export async function POST(req: NextRequest) {
       nisn: nisn || null,
       nip: nip || null,
       classId: r === "STUDENT" || r === "WALI_KELAS" ? classId || null : null,
-      parentTelegram: parentTg,
+      parentTelegram: null,
       parentTelegramLinkToken: r === "STUDENT" ? newParentLinkToken() : null,
       active: active ?? true,
     },

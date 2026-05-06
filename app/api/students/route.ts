@@ -24,13 +24,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, nisn, classId, email, password, parentTelegram } = body as {
+  const { name, nisn, classId, email, password } = body as {
     name?: string;
     nisn?: string;
     classId?: string;
     email?: string | null;
     password?: string | null;
-    parentTelegram?: string | null;
   };
 
   if (!name?.trim() || !nisn?.trim() || !classId) {
@@ -68,7 +67,6 @@ export async function POST(req: NextRequest) {
       classId,
       email: finalEmail,
       hashedPassword: hashed,
-      parentTelegram,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Data Telegram ortu tidak valid";

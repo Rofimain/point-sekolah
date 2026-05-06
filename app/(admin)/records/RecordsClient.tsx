@@ -251,10 +251,6 @@ export default function RecordsClient({
       | undefined;
     if (n?.status === "failed") {
       toast.error(`Notifikasi Telegram ortu gagal: ${n.message}`);
-    } else if (n?.status === "skipped_no_token") {
-      toast.warning("Catatan tersimpan; notifikasi ortu tidak dikirim — atur TELEGRAM_BOT_TOKEN di server.");
-    } else if (n?.status === "skipped_no_recipient") {
-      toast.info("Catatan tersimpan; siswa ini belum punya Telegram orang tua di data.");
     }
     const st = studentsForPicker.find((s) => s.id === addStudentId);
     const detailRows: QrisSuccessDetail[] = [

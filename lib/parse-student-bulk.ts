@@ -6,7 +6,6 @@ export type ParsedBulkStudent = {
   className?: string;
   email?: string;
   password?: string;
-  parentTelegram?: string;
 };
 
 function splitLine(line: string): string[] {
@@ -26,7 +25,7 @@ function headerIndex(headerCells: string[], keys: string[]): number {
 
 /**
  * Parse teks dari Excel (tab) atau CSV (koma).
- * Mendukung baris judul: nama, nisn, kelas, email, password, telegram_ortu (nama_kelas / class_name / id_kelas).
+ * Mendukung baris judul: nama, nisn, kelas, email, password (nama_kelas / class_name / id_kelas).
  */
 export function parseStudentBulkPaste(raw: string): ParsedBulkStudent[] {
   const lines = raw
@@ -64,7 +63,6 @@ export function parseStudentBulkPaste(raw: string): ParsedBulkStudent[] {
     let className: string | undefined;
     let email: string | undefined;
     let password: string | undefined;
-    let parentTelegram: string | undefined;
 
     if (looksHeader && header.length) {
       const gi = (...keys: string[]) => {
@@ -80,15 +78,6 @@ export function parseStudentBulkPaste(raw: string): ParsedBulkStudent[] {
       className = cname || undefined;
       email = gi("email", "surel") || undefined;
       password = gi("password", "kata_sandi", "katasandi") || undefined;
-      parentTelegram =
-        gi(
-          "telegram_ortu",
-          "telegram",
-          "parent_telegram",
-          "akun_telegram_ortu",
-          "telegram_ortu_wali",
-          "chat_id_telegram"
-        ) || undefined;
     } else {
       name = cells[0] || "";
       nisn = cells[1] || "";
@@ -100,11 +89,10 @@ export function parseStudentBulkPaste(raw: string): ParsedBulkStudent[] {
       }
       email = cells[3] || undefined;
       password = cells[4] || undefined;
-      parentTelegram = cells[5] || undefined;
     }
 
     if (name && nisn) {
-      out.push({ name, nisn, classId, className, email, password, parentTelegram });
+      out.push({ name, nisn, classId, className, email, password });
     }
   }
 

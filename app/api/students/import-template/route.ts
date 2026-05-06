@@ -25,7 +25,6 @@ export async function GET() {
     { header: "nama_kelas", key: "nama_kelas", width: 20 },
     { header: "email", key: "email", width: 38 },
     { header: "password", key: "password", width: 18 },
-    { header: "telegram_ortu", key: "telegram_ortu", width: 28 },
   ];
   const h = ws.getRow(1);
   h.font = { bold: true };
@@ -37,7 +36,6 @@ export async function GET() {
     nama_kelas: "X MIPA 1",
     email: "",
     password: "",
-    telegram_ortu: "",
   });
 
   const help = wb.addWorksheet("Petunjuk");
@@ -46,11 +44,11 @@ export async function GET() {
     "Cara impor siswa (halaman Data Siswa → tab Impor bulk):",
     "",
     "1. Isi baris data di sheet \"Data siswa\" di bawah baris judul. Hapus baris contoh jika tidak dipakai.",
-    "2. Kolom wajib: nama, nisn, nama_kelas. Kolom email, password, dan telegram_ortu boleh dikosongkan.",
+    "2. Kolom wajib: nama, nisn, nama_kelas. Kolom email dan password boleh dikosongkan.",
     "3. nama_kelas harus sama persis dengan nama kelas di Data Siswa → tab Kelas, contoh: X MIPA 1.",
     "4. Jika email kosong, sistem membuat email otomatis: nisn@domain-siswa sekolah.",
     "5. Jika password kosong, dipakai password default sekolah (lihat dokumentasi admin).",
-    "6. telegram_ortu: hanya Chat ID angka (tanpa @username). Kosongkan saja lalu pakai \"Salin tautan Telegram ortu\" di web — ortu buka link → Start.",
+    "6. Telegram ortu: tidak diisi lewat Excel. Setelah siswa masuk sistem, Super Admin memakai Manajemen Pengguna → Salin tautan Telegram ortu per siswa (token unik + webhook).",
     "7. Simpan file sebagai .xlsx lalu salin blok tabel (termasuk judul) ke area tempel di web, atau tempel dari Excel langsung.",
   ];
   lines.forEach((t, i) => {

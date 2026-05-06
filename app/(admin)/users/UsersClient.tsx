@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials, getRoleLabel } from "@/lib/utils";
-import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
 
 const ROLES = ["STUDENT", "TEACHER", "PIKET", "WALI_KELAS", "SUPER_ADMIN"] as const;
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
@@ -29,9 +28,22 @@ const emptyForm = {
   nisn: "",
   nip: "",
   classId: "",
-  parentTelegram: "",
   active: true,
 };
+
+function telegramOrtuTableCell(u: {
+  role: string;
+  parentTelegram?: string | null;
+  ortuTelegramStatus?: "connected" | "pending" | "none" | null;
+}) {
+  if (u.role !== "STUDENT") return "—";
+  if (u.ortuTelegramStatus === "connected" && u.parentTelegram?.trim()) {
+    const id = u.parentTelegram.trim();
+    return id.length > 8 ? `Terhubung …${id.slice(-6)}` : "Terhubung";
+  }
+  if (u.ortuTelegramStatus === "pending") return "Menunggu ortu";
+  return "—";
+}
 
 function kelasAtauJabatan(u: { role: string; class?: { name: string } | null; nisn?: string | null; nip?: string | null }) {
   if (u.role === "STUDENT") return u.class?.name || u.nisn || "—";
@@ -55,6 +67,7 @@ export default function UsersClient({
   const [modal, setModal] = useState<any>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [loading, setLoading] = useState(false);
+  const [exportingTelLinks, setExportingTelLinks] = useState(false);
   const [search, setSearch] = useState(searchParams.search || "");
   const [error, setError] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -75,7 +88,6 @@ export default function UsersClient({
       nisn: u.nisn || "",
       nip: u.nip || "",
       classId: u.classId || "",
-      parentTelegram: u.parentTelegram || "",
       active: u.active,
     });
     setError("");
@@ -85,13 +97,6 @@ export default function UsersClient({
   async function handleSave() {
     if (!form.name.trim() || !form.email.trim()) { setError("Nama dan email wajib diisi"); return; }
     if (modal === "add" && !form.password) { setError("Password wajib diisi untuk user baru"); return; }
-    if (form.role === "STUDENT" && form.parentTelegram.trim()) {
-      const pt = parseParentTelegramForDb(form.parentTelegram);
-      if (!pt.ok) {
-        setError(pt.error);
-        return;
-      }
-    }
     setLoading(true); setError("");
     try {
       const body: any = {
@@ -106,9 +111,6 @@ export default function UsersClient({
         body.classId = form.classId || null;
       } else {
         body.classId = null;
-      }
-      if (form.role === "STUDENT") {
-        body.parentTelegram = form.parentTelegram.trim() || null;
       }
       if (form.password) body.password = form.password;
       const url = modal === "add" ? "/api/users" : `/api/users/${modal.id}`;
@@ -138,6 +140,36 @@ export default function UsersClient({
       return;
     }
     router.refresh();
+  }
+
+  async function downloadTelegramLinksExcel() {
+    setExportingTelLinks(true);
+    try {
+      const sp = new URLSearchParams();
+      if ((searchParams.search || "").trim()) sp.set("search", searchParams.search!.trim());
+      if ((searchParams.classId || "").trim()) sp.set("classId", searchParams.classId!.trim());
+      if ((searchParams.role || "").trim()) sp.set("role", searchParams.role!.trim());
+      const res = await fetch(`/api/users/export-telegram-links?${sp.toString()}`);
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Gagal mengunduh");
+      }
+      const blob = await res.blob();
+      const cd = res.headers.get("Content-Disposition");
+      const m = cd?.match(/filename="([^"]+)"/);
+      const filename = m?.[1] || "tautan-telegram-ortu.xlsx";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Excel tautan Telegram ortu diunduh.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Gagal mengunduh");
+    } finally {
+      setExportingTelLinks(false);
+    }
   }
 
   async function copyOrtuLink(studentId: string) {
@@ -320,6 +352,17 @@ export default function UsersClient({
               </button>
             </div>
           ) : null}
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <button
+            type="button"
+            disabled={exportingTelLinks}
+            onClick={() => void downloadTelegramLinksExcel()}
+            className="w-full shrink-0 touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-1.5"
+            style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+            title="Semua siswa yang cocok filter pencarian & kelas (bukan hanya halaman ini)"
+          >
+            {exportingTelLinks ? "Mengunduh…" : "Unduh Excel tautan ortu"}
+          </button>
           <button
             type="button"
             onClick={openAdd}
@@ -328,6 +371,7 @@ export default function UsersClient({
           >
             + Tambah Pengguna
           </button>
+        </div>
         </div>
       </div>
 
@@ -420,7 +464,7 @@ export default function UsersClient({
                   aria-label="Pilih semua di halaman"
                 />
               </th>
-              {["Nama","Email","Role","Kelas / Jabatan","Telegram ortu","Status","Aksi"].map(h => (
+              {["Nama","Email","Role","Kelas / Jabatan","Ortu (Telegram)","Status","Aksi"].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
             </tr></thead>
@@ -445,11 +489,17 @@ export default function UsersClient({
                   <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
                   <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>{kelasAtauJabatan(u)}</td>
                   <td
-                    className="px-4 py-3 max-w-[10rem] truncate font-mono text-[11px]"
+                    className="px-4 py-3 max-w-[11rem] truncate text-[11px]"
                     style={{ color: "var(--text-muted)" }}
-                    title={u.role === "STUDENT" && u.parentTelegram ? u.parentTelegram : undefined}
+                    title={
+                      u.role === "STUDENT" && u.parentTelegram?.trim()
+                        ? `Chat ID: ${u.parentTelegram}`
+                        : u.role === "STUDENT" && u.ortuTelegramStatus === "pending"
+                          ? "Belum terhubung — kirim tautan ortu dari tombol Salin tautan"
+                          : undefined
+                    }
                   >
-                    {u.role === "STUDENT" ? u.parentTelegram || "—" : "—"}
+                    {telegramOrtuTableCell(u)}
                   </td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)", color: u.active ? "var(--success)" : "var(--text-muted)" }}>{u.active ? "Aktif" : "Nonaktif"}</span>
@@ -554,32 +604,31 @@ export default function UsersClient({
                     <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>NISN</label>
                     <input value={form.nisn} onChange={e => setForm({ ...form, nisn: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
                   </div>
-                  <div className="col-span-2">
-                    <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Telegram orang tua</label>
-                    <input
-                      value={form.parentTelegram}
-                      onChange={e => setForm({ ...form, parentTelegram: e.target.value })}
-                      placeholder="Hanya chat ID angka, atau kosong — pakai tautan ortu"
-                      className="w-full px-3 py-2 rounded-lg border font-mono text-sm"
-                      style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                    />
-                    <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                      Atau pakai tautan resmi (tanpa isi ID): tombol di bawah. Ortu buka link → Start; webhook menyimpan chat ID otomatis.
+                  <div className="col-span-2 rounded-lg border p-3 text-[11px] leading-relaxed" style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
+                    <strong style={{ color: "var(--text-secondary)" }}>Telegram ortu (webhook)</strong>
+                    <p className="mt-1">
+                      Tidak perlu isi manual. Setiap siswa punya tautan unik ke bot sekolah; ortu buka link lalu ketuk Start — chat ID tersimpan otomatis.
                     </p>
-                    {modal !== "add" && modal?.id && (
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => void copyOrtuLink(modal.id)}
-                        className="mt-2 w-full rounded-lg border px-3 py-2 text-left text-xs font-semibold"
-                        style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
-                      >
-                        Salin tautan Telegram ortu (disarankan)
-                      </button>
+                    {modal === "add" ? (
+                      <p className="mt-2" style={{ color: "var(--accent)" }}>
+                        Setelah Anda simpan siswa baru, tautan ortu otomatis disalin untuk dikirim ke orang tua (pastikan env bot & webhook aktif).
+                      </p>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled={loading || !modal?.id}
+                          onClick={() => void copyOrtuLink(modal.id)}
+                          className="mt-3 w-full rounded-lg border px-3 py-2 text-left text-xs font-semibold"
+                          style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-secondary)" }}
+                        >
+                          Salin tautan Telegram ortu
+                        </button>
+                        <p className="mt-2 text-[10px]">
+                          Perlu tautan baru setelah ortu salah akun? Tombol ini membuat token baru (tautan lama tidak dipakai lagi).
+                        </p>
+                      </>
                     )}
-                    <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                      Isi manual chat ID / @username sering gagal untuk DM — tautan + webhook lebih andal (set NEXT_PUBLIC_TELEGRAM_BOT_USERNAME & webhook di Vercel).
-                    </p>
                   </div>
                   </>
                 )}

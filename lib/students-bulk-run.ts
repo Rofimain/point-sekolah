@@ -15,8 +15,6 @@ export type BulkStudentRow = {
   className?: string;
   email?: string;
   password?: string;
-  /** Chat ID angka saja (bukan @username) — atau kosongkan dan pakai tautan ortu */
-  parentTelegram?: string;
 };
 
 export type BulkImportResult = {
@@ -24,14 +22,25 @@ export type BulkImportResult = {
   failed: number;
   errors: { row: number; message: string }[];
   truncatedErrors: boolean;
+  /** Cara ortu dapat Telegram setelah impor bulk (webhook + tautan per siswa) */
+  telegramOrtuNote: string;
 };
+
+const BULK_TELEGRAM_ORTU_NOTE =
+  "Setiap siswa mendapat token tautan Telegram otomatis. Super Admin: Manajemen Pengguna → siswa → Salin tautan Telegram ortu; kirim ke ortu. Ortu buka link lalu Start — webhook menyimpan chat ID.";
 
 export async function runBulkStudentImport(
   rows: BulkStudentRow[],
   opts?: { defaultPassword?: string }
 ): Promise<BulkImportResult> {
   if (rows.length === 0) {
-    return { created: 0, failed: 0, errors: [], truncatedErrors: false };
+    return {
+      created: 0,
+      failed: 0,
+      errors: [],
+      truncatedErrors: false,
+      telegramOrtuNote: BULK_TELEGRAM_ORTU_NOTE,
+    };
   }
   if (rows.length > 500) {
     throw new Error("Maksimal 500 baris per unggahan");
@@ -114,7 +123,6 @@ export async function runBulkStudentImport(
           classId,
           email,
           hashedPassword: hashed,
-          parentTelegram: r.parentTelegram,
         }),
       });
       created++;
@@ -129,5 +137,6 @@ export async function runBulkStudentImport(
     failed: errors.length,
     errors: errors.slice(0, 50),
     truncatedErrors: errors.length > 50,
+    telegramOrtuNote: BULK_TELEGRAM_ORTU_NOTE,
   };
 }
