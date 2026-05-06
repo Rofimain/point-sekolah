@@ -1,3 +1,5 @@
+import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
+
 const TG_API = "https://api.telegram.org";
 
 export type ParentViolationNotifyPayload = {
@@ -42,33 +44,16 @@ export function normalizeTelegramRecipient(raw: string): string {
   return s;
 }
 
-/**
- * Untuk DM bot → pengguna, API Telegram hanya andalkan chat ID numerik (bukan @username).
- * Isi manual di database harus angka saja; username → pakai tautan ortu (webhook).
- */
+/** DM bot → pengguna: harus chat ID numerik (validasi sama dengan penyimpanan di DB). */
 function parseDmChatId(raw: string): { ok: true; chatId: string } | { ok: false; error: string } {
-  const s = raw.trim().replace(/\s/g, "");
+  const s = raw.trim();
   if (!s) {
     return { ok: false, error: "Chat Telegram kosong" };
   }
-  if (/^@/.test(s) || /[a-zA-Z_]/.test(s)) {
-    return {
-      ok: false,
-      error:
-        "Jangan simpan @username di data siswa — Telegram tidak mengirim DM ke username dari server. " +
-        'Kosongkan field itu, lalu pakai "Salin tautan Telegram ortu" (Manajemen Pengguna / Data siswa), ' +
-        "atau isi hanya Chat ID angka (tanpa huruf). Ortu wajib Start ke bot yang token-nya sama dengan aplikasi.",
-    };
-  }
-  if (!/^\d{5,}$/.test(s)) {
-    return {
-      ok: false,
-      error:
-        "Chat ID harus berupa angka saja (biasanya 9–12 digit), tanpa spasi. " +
-        "Ambil dari bot yang sama setelah ortu /start, atau pakai tautan ortu resmi sekolah.",
-    };
-  }
-  return { ok: true, chatId: s };
+  const p = parseParentTelegramForDb(s);
+  if (!p.ok) return p;
+  if (!p.value) return { ok: false, error: "Chat Telegram kosong" };
+  return { ok: true, chatId: p.value };
 }
 
 /**

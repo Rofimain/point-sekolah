@@ -50,7 +50,7 @@ export async function GET() {
     "3. nama_kelas harus sama persis dengan nama kelas di Data Siswa → tab Kelas, contoh: X MIPA 1.",
     "4. Jika email kosong, sistem membuat email otomatis: nisn@domain-siswa sekolah.",
     "5. Jika password kosong, dipakai password default sekolah (lihat dokumentasi admin).",
-    "6. telegram_ortu: Chat ID angka atau @username Telegram wali (setelah /start ke bot sekolah). Untuk notifikasi pelanggaran.",
+    "6. telegram_ortu: hanya Chat ID angka (tanpa @username). Kosongkan saja lalu pakai \"Salin tautan Telegram ortu\" di web — ortu buka link → Start.",
     "7. Simpan file sebagai .xlsx lalu salin blok tabel (termasuk judul) ke area tempel di web, atau tempel dari Excel langsung.",
   ];
   lines.forEach((t, i) => {

@@ -6,7 +6,6 @@ import bcrypt from "bcryptjs";
 import {
   buildStudentCreateInput,
   DEFAULT_STUDENT_PASSWORD,
-  normalizeParentTelegram,
   studentEmailFromNisn,
 } from "@/lib/student-upsert";
 import { isStaffRole } from "@/lib/staff-roles";
@@ -61,14 +60,20 @@ export async function POST(req: NextRequest) {
   if (pwd.length < 6) return NextResponse.json({ error: "Password minimal 6 karakter" }, { status: 400 });
 
   const hashed = await bcrypt.hash(pwd, 12);
-  const data = buildStudentCreateInput({
-    name,
-    nisn: nisnTrim,
-    classId,
-    email: finalEmail,
-    hashedPassword: hashed,
-    parentTelegram: normalizeParentTelegram(parentTelegram),
-  });
+  let data;
+  try {
+    data = buildStudentCreateInput({
+      name,
+      nisn: nisnTrim,
+      classId,
+      email: finalEmail,
+      hashedPassword: hashed,
+      parentTelegram,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Data Telegram ortu tidak valid";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
 
   const user = await prisma.user.create({ data, include: { class: true } });
   const { password: _, parentTelegramLinkToken: linkTok, ...safe } = user;

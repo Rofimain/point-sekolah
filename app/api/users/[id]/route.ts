@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
-import { normalizeParentTelegram } from "@/lib/student-upsert";
+import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { assertCanDeleteSuperAdmin, assertCanDemoteSuperAdmin, LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 
@@ -61,7 +61,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   if (nextRoleResolved === "STUDENT") {
     if (body.parentTelegram !== undefined) {
-      updateData.parentTelegram = normalizeParentTelegram(body.parentTelegram) ?? null;
+      const pt = parseParentTelegramForDb(body.parentTelegram);
+      if (!pt.ok) return NextResponse.json({ error: pt.error }, { status: 400 });
+      updateData.parentTelegram = pt.value;
     }
     if (existing.role !== "STUDENT" && updateData.role === "STUDENT") {
       updateData.parentTelegramLinkToken = newParentLinkToken();

@@ -16,7 +16,7 @@ model User {
   role             Role              @default(STUDENT)
   nisn             String?           @unique
   nip              String?           @unique
-  /// Chat ID angka atau @username Telegram orang tua/wali (untuk notifikasi pelanggaran)
+  /// Chat ID angka Telegram ortu (DM bot); bukan @username — isi via tautan ortu atau angka setelah ortu /start
   parentTelegram         String?
   /// Token sekali pakai untuk tautan t.me/bot?start=ortu_<token> — ortu tap Start, ID tersimpan otomatis
   parentTelegramLinkToken String? @unique

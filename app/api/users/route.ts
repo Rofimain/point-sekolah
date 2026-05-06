@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
-import { normalizeParentTelegram } from "@/lib/student-upsert";
+import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
 import { LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 
@@ -23,6 +23,12 @@ export async function POST(req: NextRequest) {
   if (existing) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
   const hashed = await bcrypt.hash(password, 12);
   const r = role as Role;
+  let parentTg: string | null = null;
+  if (r === "STUDENT") {
+    const pt = parseParentTelegramForDb(parentTelegram);
+    if (!pt.ok) return NextResponse.json({ error: pt.error }, { status: 400 });
+    parentTg = pt.value;
+  }
   const user = await prisma.user.create({
     data: {
       name,
@@ -32,7 +38,7 @@ export async function POST(req: NextRequest) {
       nisn: nisn || null,
       nip: nip || null,
       classId: r === "STUDENT" || r === "WALI_KELAS" ? classId || null : null,
-      parentTelegram: r === "STUDENT" ? normalizeParentTelegram(parentTelegram) ?? null : null,
+      parentTelegram: parentTg,
       parentTelegramLinkToken: r === "STUDENT" ? newParentLinkToken() : null,
       active: active ?? true,
     },

@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs";
 import {
   buildStudentCreateInput,
   DEFAULT_STUDENT_PASSWORD,
-  normalizeParentTelegram,
   studentEmailFromNisn,
 } from "@/lib/student-upsert";
 
@@ -16,7 +15,7 @@ export type BulkStudentRow = {
   className?: string;
   email?: string;
   password?: string;
-  /** Chat ID atau @username Telegram orang tua */
+  /** Chat ID angka saja (bukan @username) — atau kosongkan dan pakai tautan ortu */
   parentTelegram?: string;
 };
 
@@ -115,7 +114,7 @@ export async function runBulkStudentImport(
           classId,
           email,
           hashedPassword: hashed,
-          parentTelegram: normalizeParentTelegram(r.parentTelegram),
+          parentTelegram: r.parentTelegram,
         }),
       });
       created++;

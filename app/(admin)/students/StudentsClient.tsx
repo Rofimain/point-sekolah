@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials } from "@/lib/utils";
 import { parseStudentBulkPaste } from "@/lib/parse-student-bulk";
+import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
 
 const GRADES = ["X", "XI", "XII"] as const;
 
@@ -138,6 +139,13 @@ export default function StudentsClient({
     if (!name.trim() || !nisn.trim() || !classId) {
       setMsg({ type: "err", text: "Lengkapi nama, NISN, dan kelas." });
       return;
+    }
+    if (parentTelegram.trim()) {
+      const pt = parseParentTelegramForDb(parentTelegram);
+      if (!pt.ok) {
+        setMsg({ type: "err", text: pt.error });
+        return;
+      }
     }
     setLoading(true);
     try {

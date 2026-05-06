@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials, getRoleLabel } from "@/lib/utils";
+import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
 
 const ROLES = ["STUDENT", "TEACHER", "PIKET", "WALI_KELAS", "SUPER_ADMIN"] as const;
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
@@ -84,6 +85,13 @@ export default function UsersClient({
   async function handleSave() {
     if (!form.name.trim() || !form.email.trim()) { setError("Nama dan email wajib diisi"); return; }
     if (modal === "add" && !form.password) { setError("Password wajib diisi untuk user baru"); return; }
+    if (form.role === "STUDENT" && form.parentTelegram.trim()) {
+      const pt = parseParentTelegramForDb(form.parentTelegram);
+      if (!pt.ok) {
+        setError(pt.error);
+        return;
+      }
+    }
     setLoading(true); setError("");
     try {
       const body: any = {
