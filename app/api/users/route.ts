@@ -42,3 +42,54 @@ export async function POST(req: NextRequest) {
     r === "STUDENT" && bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;
   return NextResponse.json({ ...safe, ortuTelegramLink }, { status: 201 });
 }
+
+export async function PATCH(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const body = await req.json().catch(() => ({}));
+  const ids = Array.isArray(body?.ids) ? body.ids.filter((x: unknown) => typeof x === "string" && x.trim()) : [];
+  if (ids.length < 1) return NextResponse.json({ error: "ids wajib diisi" }, { status: 400 });
+
+  if (body.active === undefined) {
+    return NextResponse.json({ error: "active wajib diisi" }, { status: 400 });
+  }
+  const active = Boolean(body.active);
+
+  const res = await prisma.user.updateMany({
+    where: { id: { in: ids } },
+    data: { active },
+  });
+  return NextResponse.json({ ok: true, count: res.count });
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const body = await req.json().catch(() => ({}));
+  const classId = typeof body?.classId === "string" && body.classId.trim() ? body.classId.trim() : null;
+  const ids = Array.isArray(body?.ids) ? body.ids.filter((x: unknown) => typeof x === "string" && x.trim()) : [];
+  if (!classId && ids.length < 1) return NextResponse.json({ error: "ids atau classId wajib diisi" }, { status: 400 });
+
+  if (classId) {
+    const res = await prisma.user.deleteMany({ where: { role: "STUDENT", classId } });
+    return NextResponse.json({ ok: true, count: res.count });
+  }
+
+  const found = await prisma.user.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, role: true, name: true },
+  });
+
+  const nonStudents = found.filter((u) => u.role !== "STUDENT");
+  if (nonStudents.length > 0) {
+    return NextResponse.json(
+      { error: `Bulk delete hanya untuk siswa. Tidak bisa hapus: ${nonStudents.map((u) => u.name).join(", ")}` },
+      { status: 400 }
+    );
+  }
+
+  const res = await prisma.user.deleteMany({ where: { id: { in: ids } } });
+  return NextResponse.json({ ok: true, count: res.count });
+}

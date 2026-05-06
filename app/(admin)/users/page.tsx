@@ -3,7 +3,11 @@ import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import UsersClient from "./UsersClient";
 
-export default async function UsersPage({ searchParams }: { searchParams: { role?: string; search?: string; page?: string } }) {
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: { role?: string; search?: string; page?: string; classId?: string };
+}) {
   const session = await getSafeServerSession();
   if (session?.user?.role !== "SUPER_ADMIN") redirect("/dashboard");
 
@@ -12,6 +16,7 @@ export default async function UsersPage({ searchParams }: { searchParams: { role
   const where: any = {};
   if (searchParams.role) where.role = searchParams.role;
   if (searchParams.search) where.name = { contains: searchParams.search, mode: "insensitive" };
+  if (searchParams.classId) where.classId = searchParams.classId;
 
   const [users, total, classes] = await Promise.all([
     prisma.user.findMany({

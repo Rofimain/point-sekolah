@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials, getRoleLabel } from "@/lib/utils";
@@ -47,6 +47,7 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(searchParams.search || "");
   const [error, setError] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
   function navigate(params: Record<string, string>) {
     const sp = new URLSearchParams(searchParams);
@@ -143,6 +144,90 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
     router.refresh();
   }
 
+  const selectedUsers = useMemo(() => {
+    const m = new Map<string, any>();
+    users.forEach((u: any) => m.set(u.id, u));
+    return Array.from(selectedIds).map((id) => m.get(id)).filter(Boolean);
+  }, [selectedIds, users]);
+
+  const selectedCount = selectedIds.size;
+  const allOnPageSelected = users.length > 0 && users.every((u: any) => selectedIds.has(u.id));
+  const someOnPageSelected = users.some((u: any) => selectedIds.has(u.id));
+
+  function toggleSelectOne(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAllOnPage() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        users.forEach((u: any) => next.delete(u.id));
+      } else {
+        users.forEach((u: any) => next.add(u.id));
+      }
+      return next;
+    });
+  }
+
+  async function bulkSetActive(active: boolean) {
+    const ids = Array.from(selectedIds);
+    if (ids.length < 1) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, active }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal memperbarui status");
+      toast.success(`Berhasil: ${data.count ?? ids.length} akun ${active ? "diaktifkan" : "dinonaktifkan"}.`);
+      setSelectedIds(new Set());
+      router.refresh();
+    } catch (e: any) {
+      toast.error(e?.message || "Gagal memperbarui status");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const canBulkDeleteStudents = selectedCount > 0 && selectedUsers.every((u: any) => u.role === "STUDENT");
+
+  async function bulkDeleteStudents() {
+    if (!canBulkDeleteStudents) {
+      toast.error("Bulk delete hanya untuk akun siswa.");
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    const confirmText = window.prompt(
+      `Anda akan menghapus ${ids.length} akun siswa.\nSemua catatan pelanggaran juga akan terhapus.\n\nKetik HAPUS untuk lanjut:`
+    );
+    if (confirmText !== "HAPUS") return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus");
+      toast.success(`Berhasil menghapus ${data.count ?? ids.length} akun siswa.`);
+      setSelectedIds(new Set());
+      router.refresh();
+    } catch (e: any) {
+      toast.error(e?.message || "Gagal menghapus");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const roleFilter = [
     { v: "", l: "Semua Role" },
     { v: "STUDENT", l: "Siswa" },
@@ -159,14 +244,60 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
           <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Manajemen Pengguna</h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>CRUD akun siswa, guru, dan super admin</p>
         </div>
-        <button
-          type="button"
-          onClick={openAdd}
-          className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
-          style={{ background: "var(--accent)" }}
-        >
-          + Tambah Pengguna
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          {selectedCount > 0 ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+              <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                {selectedCount} terpilih
+              </span>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void bulkSetActive(true)}
+                className="px-2.5 py-1 rounded border text-[11px] font-medium disabled:opacity-60"
+                style={{ borderColor: "var(--success)", color: "var(--success)", background: "var(--success-bg)" }}
+              >
+                Aktifkan
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void bulkSetActive(false)}
+                className="px-2.5 py-1 rounded border text-[11px] font-medium disabled:opacity-60"
+                style={{ borderColor: "var(--warning)", color: "var(--warning)", background: "var(--warning-bg)" }}
+              >
+                Nonaktifkan
+              </button>
+              <button
+                type="button"
+                disabled={loading || !canBulkDeleteStudents}
+                onClick={() => void bulkDeleteStudents()}
+                className="px-2.5 py-1 rounded border text-[11px] font-medium disabled:opacity-60"
+                style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
+                title={!canBulkDeleteStudents ? "Bulk delete hanya untuk akun siswa" : undefined}
+              >
+                Hapus siswa
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => setSelectedIds(new Set())}
+                className="px-2.5 py-1 rounded border text-[11px] disabled:opacity-60"
+                style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+              >
+                Clear
+              </button>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={openAdd}
+            className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
+            style={{ background: "var(--accent)" }}
+          >
+            + Tambah Pengguna
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -191,12 +322,73 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
         <select value={searchParams.role || ""} onChange={e => navigate({ role: e.target.value })} className="px-3 py-2 rounded-lg border text-xs" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}>
           {roleFilter.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
         </select>
+        <select
+          value={searchParams.classId || ""}
+          onChange={(e) => navigate({ classId: e.target.value })}
+          className="px-3 py-2 rounded-lg border text-xs"
+          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+        >
+          <option value="">Semua Kelas</option>
+          {classes.map((c: any) => (
+            <option key={c.id} value={c.id}>
+              {c.grade} {c.name} {c.major}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          disabled={loading || !(searchParams.classId || "").trim()}
+          onClick={async () => {
+            const classId = (searchParams.classId || "").trim();
+            if (!classId) return;
+            const classObj = classes.find((c: any) => c.id === classId);
+            const label = classObj ? `${classObj.grade} ${classObj.name} ${classObj.major}` : "kelas terpilih";
+            const confirmText = window.prompt(
+              `Anda akan menghapus SEMUA akun siswa di ${label}.\nSemua catatan pelanggaran mereka juga akan terhapus.\n\nKetik HAPUS untuk lanjut:`
+            );
+            if (confirmText !== "HAPUS") return;
+            setLoading(true);
+            try {
+              const res = await fetch("/api/users", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ classId }),
+              });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error(data.error || "Gagal menghapus");
+              toast.success(`Berhasil menghapus ${data.count ?? 0} akun siswa di ${label}.`);
+              setSelectedIds(new Set());
+              router.refresh();
+            } catch (e: any) {
+              toast.error(e?.message || "Gagal menghapus");
+            } finally {
+              setLoading(false);
+            }
+          }}
+          className="px-3 py-2 rounded-lg border text-xs font-semibold disabled:opacity-60"
+          style={{ borderColor: "var(--danger)", background: "var(--danger-bg)", color: "var(--danger)" }}
+          title={!(searchParams.classId || "").trim() ? "Pilih kelas dulu" : undefined}
+        >
+          Hapus siswa per kelas
+        </button>
       </div>
 
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px]">
             <thead><tr style={{ background: "var(--bg-primary)" }}>
+              <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                <input
+                  type="checkbox"
+                  checked={allOnPageSelected}
+                  ref={(el) => {
+                    if (!el) return;
+                    el.indeterminate = !allOnPageSelected && someOnPageSelected;
+                  }}
+                  onChange={toggleSelectAllOnPage}
+                  aria-label="Pilih semua di halaman"
+                />
+              </th>
               {["Nama","Email","Role","Kelas / Jabatan","Telegram ortu","Status","Aksi"].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
@@ -204,6 +396,14 @@ export default function UsersClient({ users, total, page, perPage, classes, sear
             <tbody>
               {users.map((u: any) => (
                 <tr key={u.id} className="border-t" style={{ borderColor: "var(--border)", opacity: u.active ? 1 : 0.6 }}>
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(u.id)}
+                      onChange={() => toggleSelectOne(u.id)}
+                      aria-label={`Pilih ${u.name}`}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>{getInitials(u.name)}</div>
