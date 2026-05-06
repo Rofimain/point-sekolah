@@ -104,6 +104,18 @@ export function QrisStyleSuccessSheet({
           </div>
         )}
 
+        {receiptEvidenceImageDataUrl ? (
+          <div className="mx-5 mt-3 rounded-xl border border-neutral-200/80 bg-white px-4 py-3 text-left">
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Foto bukti</div>
+            <img
+              src={receiptEvidenceImageDataUrl}
+              alt="Foto bukti"
+              className="w-full max-h-[320px] rounded-lg border border-neutral-200 object-contain bg-neutral-50"
+              loading="lazy"
+            />
+          </div>
+        ) : null}
+
         <div className="space-y-2.5 p-5 pt-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-6">
           <button
             type="button"
