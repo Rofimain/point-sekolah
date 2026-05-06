@@ -2,7 +2,7 @@ import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import StudentFormClient from "./StudentFormClient";
-import { getEffectivePointsBreakdown } from "@/lib/student-effective-points";
+import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 
 export default async function StudentFormPage() {
   const session = await getSafeServerSession();
@@ -34,6 +34,30 @@ export default async function StudentFormPage() {
 
   const { gross, adjustmentSum, effective } = await getEffectivePointsBreakdown(session.user.id);
 
+  let pointAdjustments: {
+    id: string;
+    pointsDelta: number;
+    reason: string;
+    grossTotalBefore: number;
+    createdAt: Date;
+  }[] = [];
+  try {
+    pointAdjustments = await prisma.pointAdjustment.findMany({
+      where: { studentId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 40,
+      select: {
+        id: true,
+        pointsDelta: true,
+        reason: true,
+        grossTotalBefore: true,
+        createdAt: true,
+      },
+    });
+  } catch (e) {
+    if (!isPointAdjustmentTableMissing(e)) throw e;
+  }
+
   const student = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: { class: true },
@@ -47,6 +71,7 @@ export default async function StudentFormPage() {
       totalPoints={effective}
       grossPoints={gross}
       adjustmentSum={adjustmentSum}
+      pointAdjustments={pointAdjustments}
       studentClass={student?.class?.name ?? null}
       studentNisn={student?.nisn ?? null}
     />

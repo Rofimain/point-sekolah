@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { downloadViolationReceiptHtml } from "@/lib/download-violation-receipt-html";
 
 export type QrisSuccessDetail = { label: string; value: string };
@@ -17,6 +17,7 @@ export function QrisStyleSuccessSheet({
   subtitle,
   details = [],
   autoCloseMs = 0,
+  afterPrimaryActions,
 }: {
   open: boolean;
   onClose: () => void;
@@ -25,6 +26,8 @@ export function QrisStyleSuccessSheet({
   details?: QrisSuccessDetail[];
   /** Tutup otomatis setelah N ms (0 = tidak auto). */
   autoCloseMs?: number;
+  /** Konten tambahan di bawah tombol Selesai (mis. tautan sekunder). */
+  afterPrimaryActions?: ReactNode;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -112,6 +115,7 @@ export function QrisStyleSuccessSheet({
           >
             Selesai
           </button>
+          {afterPrimaryActions ? <div className="pt-1">{afterPrimaryActions}</div> : null}
           <p className="pt-1 text-center text-[11px] text-neutral-400 leading-relaxed">
             File HTML bisa dibuka di HP/komputer; untuk PDF gunakan buka file → Cetak → Simpan sebagai PDF. Tangkapan layar juga tetap boleh.
           </p>

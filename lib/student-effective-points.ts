@@ -1,8 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-/** Alasan pengurangan 25% setelah ≥N hari tanpa pelanggaran baru */
-export const QUIET_MONTH_REASON = "QUIET_MONTH_REDUCTION";
+export { QUIET_MONTH_REASON } from "@/lib/point-adjustment-reason";
 
 /** DB belum di-migrate (mis. build Vercel sebelum `prisma migrate deploy`) */
 export function isPointAdjustmentTableMissing(e: unknown): boolean {

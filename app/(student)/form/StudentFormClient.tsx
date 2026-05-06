@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
 import { TopBar } from "@/components/layouts/TopBar";
 import { formatDate, formatIncidentDateOnly, formatInputDateTime, getInitials, getCategoryLabel } from "@/lib/utils";
+import { formatPointAdjustmentReason } from "@/lib/point-adjustment-reason";
 import type { Session } from "next-auth";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
 import { calendarTodayYmd } from "@/lib/incident-date";
@@ -26,6 +27,18 @@ function PointBadge({ points }: { points: number }) {
   return (
     <span className="inline-flex items-center justify-center w-9 h-5 rounded-full text-xs font-bold" style={{ background: bg, color }}>
       {points}
+    </span>
+  );
+}
+
+function AdjustmentDelta({ delta }: { delta: number }) {
+  const neg = delta < 0;
+  return (
+    <span
+      className="inline-flex min-w-[2.5rem] justify-end tabular-nums text-xs font-bold"
+      style={{ color: neg ? "var(--success)" : "var(--danger)" }}
+    >
+      {delta > 0 ? `+${delta}` : delta}
     </span>
   );
 }
@@ -53,6 +66,7 @@ export default function StudentFormClient({
   totalPoints,
   grossPoints = 0,
   adjustmentSum = 0,
+  pointAdjustments = [],
   studentClass,
   studentNisn,
 }: {
@@ -62,6 +76,13 @@ export default function StudentFormClient({
   totalPoints: number;
   grossPoints?: number;
   adjustmentSum?: number;
+  pointAdjustments?: {
+    id: string;
+    pointsDelta: number;
+    reason: string;
+    grossTotalBefore: number;
+    createdAt: string | Date;
+  }[];
   studentClass: string | null;
   studentNisn: string | null;
 }) {
@@ -568,6 +589,80 @@ export default function StudentFormClient({
                     ))}
                   </tbody>
                 </table>
+              )}
+            </div>
+
+            <div
+              className="mt-5 rounded-xl border overflow-hidden"
+              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            >
+              <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
+                <h3 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
+                  Riwayat remisi & penyesuaian poin
+                </h3>
+                <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  Daftar pengurangan atau penyesuaian (misalnya remisi 25% setelah periode tenang). Ini terpisah dari tabel
+                  pelanggaran di atas.
+                </p>
+              </div>
+              {pointAdjustments.length === 0 ? (
+                <div className="p-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                  Belum ada remisi atau penyesuaian poin yang tercatat.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[340px]">
+                    <thead>
+                      <tr style={{ background: "var(--bg-primary)" }}>
+                        <th
+                          className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          Tanggal
+                        </th>
+                        <th
+                          className="px-4 py-2.5 text-right text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          Δ Poin
+                        </th>
+                        <th
+                          className="px-4 py-2.5 text-right text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap hidden sm:table-cell"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          Total bruto saat itu
+                        </th>
+                        <th
+                          className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase min-w-[8rem]"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          Keterangan
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pointAdjustments.map((a) => (
+                        <tr key={a.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                            {formatInputDateTime(a.createdAt)}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <AdjustmentDelta delta={a.pointsDelta} />
+                          </td>
+                          <td className="px-4 py-3 text-xs text-right tabular-nums hidden sm:table-cell" style={{ color: "var(--text-muted)" }}>
+                            {a.grossTotalBefore}
+                          </td>
+                          <td className="px-4 py-3 text-xs leading-snug" style={{ color: "var(--text-primary)" }}>
+                            <span className="block">{formatPointAdjustmentReason(a.reason)}</span>
+                            <span className="mt-0.5 block text-[10px] sm:hidden" style={{ color: "var(--text-muted)" }}>
+                              Total bruto saat itu: {a.grossTotalBefore}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </>

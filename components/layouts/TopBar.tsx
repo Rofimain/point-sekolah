@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
 
 const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME || "SMAN 1 Contoh";
@@ -12,7 +12,14 @@ export type AdminNavToggle = {
   onToggle: () => void;
 };
 
-export function TopBar({ adminNav }: { adminNav?: AdminNavToggle }) {
+export function TopBar({
+  adminNav,
+  staffNotifications,
+}: {
+  adminNav?: AdminNavToggle;
+  /** Lonceng laporan siswa (hanya layout admin). */
+  staffNotifications?: ReactNode;
+}) {
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -56,6 +63,7 @@ export function TopBar({ adminNav }: { adminNav?: AdminNavToggle }) {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        {staffNotifications}
         {mounted && (
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
