@@ -12,6 +12,14 @@ export default withAuth(
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
 
+    /** Akun dinonaktifkan setelah JWT dibuat — paksa keluar & hapus cookie sesi. */
+    if (token?.error === "AccountInactive") {
+      const loginPath = pathname.startsWith("/form") ? "/login" : "/admin/login";
+      const signOut = new URL("/api/auth/signout", req.nextUrl.origin);
+      signOut.searchParams.set("callbackUrl", `${req.nextUrl.origin}${loginPath}`);
+      return NextResponse.redirect(signOut);
+    }
+
     // Area staf: guru, piket, walas, super admin (skip /admin/login)
     const needsStaffRole =
       (!isAdminLoginPath(pathname) && pathname.startsWith("/admin")) ||

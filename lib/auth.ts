@@ -104,10 +104,33 @@ export const authOptions: NextAuthOptions = {
         token.nip = (user as any).nip;
         token.className = (user as any).className;
         token.classId = (user as any).classId;
+        delete token.error;
       }
+
+      /**
+       * JWT tidak ikut berubah saat `active` di DB diubah. Pada tiap pembaruan token (tanpa `user` = bukan login baru),
+       * cek ulang agar akun yang dinonaktifkan tidak tetap bisa akses sampai cookie habis.
+       */
+      const userId = (token.id as string | undefined) || (token.sub as string | undefined);
+      if (userId && !user) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { active: true },
+        });
+        if (!dbUser?.active) {
+          token.error = "AccountInactive";
+        } else if (token.error === "AccountInactive") {
+          delete token.error;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
+      if (token?.error === "AccountInactive") {
+        // Jangan teruskan identitas bila nonaktif (API tanpa middleware masih memakai getServerSession).
+        return { ...session, user: { ...session.user, id: "", email: null, role: "INACTIVE" } } as Session;
+      }
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
@@ -168,5 +191,6 @@ declare module "next-auth/jwt" {
     nip?: string;
     className?: string;
     classId?: string;
+    error?: string;
   }
 }
