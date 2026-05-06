@@ -85,9 +85,22 @@ export default function RecordsClient({
     title: string;
     subtitle: string;
     details: QrisSuccessDetail[];
+    receiptEvidenceImageDataUrl?: string;
   } | null>(null);
 
-  function openReceiptSheetForRecord(r: ViolationRecordListItem) {
+  async function openReceiptSheetForRecord(r: ViolationRecordListItem) {
+    let evidenceDataUrl: string | undefined;
+    if (r.evidenceImagePresent) {
+      try {
+        const res = await fetch(`/api/records/${r.id}`, { cache: "no-store", credentials: "same-origin" });
+        const d = await res.json().catch(() => ({}));
+        if (res.ok && typeof d.evidenceImageData === "string" && d.evidenceImageData.trim()) {
+          evidenceDataUrl = d.evidenceImageData.trim();
+        }
+      } catch {
+        // optional; bukti tetap bisa diunduh tanpa foto
+      }
+    }
     const details: QrisSuccessDetail[] = [
       { label: "Siswa", value: r.student?.name ?? "—" },
       ...(r.student?.class?.name ? [{ label: "Kelas", value: r.student.class.name }] : []),
@@ -106,6 +119,7 @@ export default function RecordsClient({
       title: "Bukti pelanggaran",
       subtitle: "Catatan ini sudah tersimpan di sistem dan dapat digunakan sebagai bukti.",
       details,
+      receiptEvidenceImageDataUrl: evidenceDataUrl,
     });
   }
 
@@ -342,6 +356,7 @@ export default function RecordsClient({
           title={successSheet.title}
           subtitle={successSheet.subtitle}
           details={successSheet.details}
+          receiptEvidenceImageDataUrl={successSheet.receiptEvidenceImageDataUrl}
         />
       )}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

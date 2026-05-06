@@ -18,6 +18,7 @@ export function QrisStyleSuccessSheet({
   details = [],
   autoCloseMs = 0,
   afterPrimaryActions,
+  receiptEvidenceImageDataUrl,
 }: {
   open: boolean;
   onClose: () => void;
@@ -28,6 +29,8 @@ export function QrisStyleSuccessSheet({
   autoCloseMs?: number;
   /** Konten tambahan di bawah tombol Selesai (mis. tautan sekunder). */
   afterPrimaryActions?: ReactNode;
+  /** Opsional: lampiran foto bukti untuk unduhan HTML. */
+  receiptEvidenceImageDataUrl?: string;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -52,6 +55,7 @@ export function QrisStyleSuccessSheet({
       title,
       subtitle,
       details,
+      evidenceImageDataUrl: receiptEvidenceImageDataUrl,
     });
   }
 

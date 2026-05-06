@@ -22,10 +22,21 @@ export function downloadViolationReceiptHtml(opts: {
   title: string;
   subtitle: string;
   details: ReceiptDetailRow[];
+  /** Opsional: lampiran foto bukti (data URL). */
+  evidenceImageDataUrl?: string;
+  evidenceImageLabel?: string;
   /** Nama file unduhan (tanpa path). */
   filename?: string;
 }): void {
-  const { schoolName, title, subtitle, details, filename = defaultFilename() } = opts;
+  const {
+    schoolName,
+    title,
+    subtitle,
+    details,
+    evidenceImageDataUrl,
+    evidenceImageLabel = "Foto bukti",
+    filename = defaultFilename(),
+  } = opts;
   const rows = details
     .map(
       (d) => `
@@ -35,6 +46,20 @@ export function downloadViolationReceiptHtml(opts: {
     </tr>`
     )
     .join("");
+
+  const evidenceBlock =
+    typeof evidenceImageDataUrl === "string" && evidenceImageDataUrl.trim()
+      ? `
+    <div style="margin-top:18px">
+      <div style="font-size:12px;color:#6b7280;margin-bottom:8px;font-weight:700;letter-spacing:.02em;text-transform:uppercase">${escapeHtml(
+        evidenceImageLabel
+      )}</div>
+      <img src="${evidenceImageDataUrl}" alt="${escapeHtml(
+        evidenceImageLabel
+      )}" style="width:100%;max-height:520px;object-fit:contain;border:1px solid #e5e7eb;border-radius:12px;background:#f9fafb" />
+      <div style="font-size:11px;color:#9ca3af;margin-top:8px;line-height:1.4">Jika gambar tidak muncul, coba buka file ini di browser lain atau ulangi unduh bukti.</div>
+    </div>`
+      : "";
 
   const html = `<!DOCTYPE html>
 <html lang="id">
@@ -62,6 +87,7 @@ export function downloadViolationReceiptHtml(opts: {
     <h1>${escapeHtml(title)}</h1>
     <p class="sub">${escapeHtml(subtitle)}</p>
     <table><tbody>${rows}</tbody></table>
+    ${evidenceBlock}
     <p class="foot">Dokumen ini dihasilkan dari sistem tata tertib sekolah. Untuk PDF: buka file ini lalu gunakan Cetak → Simpan sebagai PDF.</p>
   </div>
 </body>

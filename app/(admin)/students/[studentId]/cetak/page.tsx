@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSafeServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPrintBlock } from "@/lib/app-settings";
-import { getEffectivePointsBreakdown } from "@/lib/student-effective-points";
+import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 import { isStaffRole } from "@/lib/staff-roles";
 import { PrintButton } from "@/components/PrintButton";
 import { StudentPointsPrintArticle } from "@/components/StudentPointsPrintArticle";
@@ -14,13 +14,38 @@ export default async function StaffStudentPrintPointsPage({ params }: { params: 
 
   const { studentId } = await params;
 
-  const [print, student, breakdown] = await Promise.all([
+  const [print, student, breakdown, records, adjustments] = await Promise.all([
     getPrintBlock(),
     prisma.user.findFirst({
       where: { id: studentId, role: "STUDENT" },
       include: { class: true },
     }),
     getEffectivePointsBreakdown(studentId),
+    prisma.violationRecord.findMany({
+      where: { studentId },
+      orderBy: { date: "desc" },
+      take: 60,
+      select: {
+        id: true,
+        date: true,
+        points: true,
+        notes: true,
+        violationType: { select: { name: true } },
+      },
+    }),
+    (async () => {
+      try {
+        return await prisma.pointAdjustment.findMany({
+          where: { studentId },
+          orderBy: { createdAt: "desc" },
+          take: 40,
+          select: { id: true, createdAt: true, pointsDelta: true, reason: true, grossTotalBefore: true },
+        });
+      } catch (e) {
+        if (isPointAdjustmentTableMissing(e)) return [];
+        throw e;
+      }
+    })(),
   ]);
 
   if (!student) notFound();
@@ -43,6 +68,16 @@ export default async function StaffStudentPrintPointsPage({ params }: { params: 
         issued={issued}
         print={print}
         breakdown={breakdown}
+        history={{
+          records: records.map((r) => ({
+            id: r.id,
+            date: r.date,
+            violationName: r.violationType.name,
+            points: r.points,
+            notes: r.notes,
+          })),
+          adjustments,
+        }}
       />
 
       <style>{`
