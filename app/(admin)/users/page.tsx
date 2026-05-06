@@ -18,7 +18,7 @@ export default async function UsersPage({
   if (searchParams.search) where.name = { contains: searchParams.search, mode: "insensitive" };
   if (searchParams.classId) where.classId = searchParams.classId;
 
-  const [users, total, classes] = await Promise.all([
+  const [users, total, classes, superAdminTotal, activeSuperAdminCount] = await Promise.all([
     prisma.user.findMany({
       where,
       orderBy: [{ role: "asc" }, { name: "asc" }],
@@ -41,7 +41,20 @@ export default async function UsersPage({
     }),
     prisma.user.count({ where }),
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
+    prisma.user.count({ where: { role: "SUPER_ADMIN" } }),
+    prisma.user.count({ where: { role: "SUPER_ADMIN", active: true } }),
   ]);
 
-  return <UsersClient users={users} total={total} page={page} perPage={perPage} classes={classes} searchParams={searchParams} />;
+  return (
+    <UsersClient
+      users={users}
+      total={total}
+      page={page}
+      perPage={perPage}
+      classes={classes}
+      searchParams={searchParams}
+      superAdminTotal={superAdminTotal}
+      activeSuperAdminCount={activeSuperAdminCount}
+    />
+  );
 }

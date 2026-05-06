@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { normalizeParentTelegram } from "@/lib/student-upsert";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
+import { LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 
@@ -57,14 +58,16 @@ export async function PATCH(req: NextRequest) {
   const active = Boolean(body.active);
 
   if (!active) {
-    const superCount = await prisma.user.count({
-      where: { id: { in: ids }, role: "SUPER_ADMIN" },
+    const targets = await prisma.user.findMany({
+      where: { id: { in: ids } },
+      select: { role: true, active: true },
     });
-    if (superCount > 0) {
-      return NextResponse.json(
-        { error: "Tidak bisa menonaktifkan akun Super Admin lewat aksi massal." },
-        { status: 400 }
-      );
+    const saActiveInBatch = targets.filter((t) => t.role === "SUPER_ADMIN" && t.active).length;
+    if (saActiveInBatch > 0) {
+      const totalActiveSa = await prisma.user.count({ where: { role: "SUPER_ADMIN", active: true } });
+      if (totalActiveSa - saActiveInBatch < 1) {
+        return NextResponse.json({ error: LAST_ACTIVE_SA_MSG }, { status: 400 });
+      }
     }
   }
 
