@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import StudentFormClient from "./StudentFormClient";
 import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 
+/** Form siswa query DB per session — skip static generation saat image build. */
+export const dynamic = "force-dynamic";
+
 export default async function StudentFormPage() {
   const session = await getSafeServerSession();
   if (!session || session.user.role !== "STUDENT") redirect("/login");
