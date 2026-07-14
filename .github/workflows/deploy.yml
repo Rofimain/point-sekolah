@@ -77,6 +77,14 @@ jobs:
             echo "$GHCR_TOKEN" | sudo docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
             sudo docker compose pull app
             sudo docker compose up -d
+            # Seed akun dummy hanya jika DB masih kosong (tunggu migrate/start siap)
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              if sudo docker compose exec -T app npx tsx scripts/seed-if-empty.ts; then
+                break
+              fi
+              echo "Menunggu app siap sebelum seed (percobaan $i)…"
+              sleep 5
+            done
             sudo docker image prune -f
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}

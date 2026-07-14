@@ -5,18 +5,27 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 
 const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME || "SMAN 1 Contoh";
-const STAFF_DOMAIN = process.env.NEXT_PUBLIC_STAFF_DOMAIN || "sman1contoh.sch.id";
+
+function toStaffCredential(raw: string): string {
+  const trimmed = raw.trim();
+  return trimmed.includes("@") ? trimmed.toLowerCase() : trimmed;
+}
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(""); setLoading(true);
-    const result = await signIn("admin-login", { email: email.trim().toLowerCase(), password, redirect: false });
+    setError("");
+    setLoading(true);
+    const result = await signIn("admin-login", {
+      email: toStaffCredential(identifier),
+      password,
+      redirect: false,
+    });
     setLoading(false);
     if (result?.error) {
       setError(result.error);
@@ -39,9 +48,18 @@ export default function AdminLoginPage() {
         <div className="h-px mb-6" style={{ background: "var(--border)" }} />
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold mb-1.5 tracking-wide uppercase" style={{ color: "var(--text-secondary)" }}>Email Institusi</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={`nama.guru@${STAFF_DOMAIN}`} required className="w-full px-3 py-2.5 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-            <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>* Domain @{STAFF_DOMAIN} (guru / staff)</p>
+            <label className="block text-xs font-semibold mb-1.5 tracking-wide uppercase" style={{ color: "var(--text-secondary)" }}>Email atau NIP</label>
+            <input
+              type="text"
+              autoComplete="username"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="admin@sman1contoh.sch.id"
+              required
+              className="w-full px-3 py-2.5 rounded-lg border text-sm"
+              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+            />
+            <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>* Guru / piket / wali kelas / super admin</p>
           </div>
           <div>
             <label className="block text-xs font-semibold mb-1.5 tracking-wide uppercase" style={{ color: "var(--text-secondary)" }}>Password</label>

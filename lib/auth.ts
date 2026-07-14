@@ -3,8 +3,10 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
-const STAFF_DOMAIN = process.env.NEXT_PUBLIC_STAFF_DOMAIN || "sman1contoh.sch.id";
+function normalizeIdentifier(raw: string): string {
+  const trimmed = raw.trim();
+  return trimmed.includes("@") ? trimmed.toLowerCase() : trimmed;
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -12,23 +14,23 @@ export const authOptions: NextAuthOptions = {
       id: "student-login",
       name: "Student Login",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: { label: "NISN / Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const email = credentials.email.toLowerCase().trim();
-        const domain = email.split("@")[1];
+        const identifier = normalizeIdentifier(credentials.email);
 
-        if (domain !== STUDENT_DOMAIN) {
-          throw new Error("Email harus menggunakan domain siswa sekolah (@" + STUDENT_DOMAIN + ")");
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { email },
-          include: { class: true },
-        });
+        const user = identifier.includes("@")
+          ? await prisma.user.findUnique({
+              where: { email: identifier },
+              include: { class: true },
+            })
+          : await prisma.user.findFirst({
+              where: { nisn: identifier },
+              include: { class: true },
+            });
 
         if (!user || user.role !== "STUDENT") {
           throw new Error("Akun siswa tidak ditemukan");
@@ -55,23 +57,23 @@ export const authOptions: NextAuthOptions = {
       id: "admin-login",
       name: "Admin Login",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: { label: "Email / NIP", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const email = credentials.email.toLowerCase().trim();
-        const domain = email.split("@")[1];
+        const identifier = normalizeIdentifier(credentials.email);
 
-        if (domain !== STAFF_DOMAIN) {
-          throw new Error("Email harus menggunakan domain staff sekolah (@" + STAFF_DOMAIN + ")");
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { email },
-          include: { class: true },
-        });
+        const user = identifier.includes("@")
+          ? await prisma.user.findUnique({
+              where: { email: identifier },
+              include: { class: true },
+            })
+          : await prisma.user.findFirst({
+              where: { nip: identifier },
+              include: { class: true },
+            });
 
         if (!user || user.role === "STUDENT") {
           throw new Error("Akun admin/guru tidak ditemukan");
