@@ -315,23 +315,49 @@ export default function StudentsClient({
       ? `${nisn.trim().toLowerCase().replace(/[^a-z0-9]/g, "")}@${studentDomain}`
       : null;
 
+  const selectedClass = searchParams.classId
+    ? classes.find((c) => c.id === searchParams.classId) ?? null
+    : null;
+
   return (
     <div>
       <div className="mb-4 flex flex-col gap-4 sm:mb-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>
-            Data siswa
-          </h1>
-          <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            {tab === null
-              ? "Daftar di bawah. Tambah, impor, atau kelola kelas lewat tombol di kanan — tampil sebagai popup agar daftar tidak ikut turun meski data ribuan baris."
-              : tab === "single"
-                ? "Popup: tambah satu siswa. Tutup lewat tombol Tutup atau area gelap di luar kartu."
-                : tab === "bulk"
-                  ? "Popup: impor banyak siswa. Nama kelas di file harus sama persis dengan daftar kelas."
-                  : "Popup: kelola daftar kelas."}
-          </p>
-          {tab === null && (
+          {selectedClass ? (
+            <>
+              <nav className="mb-1.5 flex flex-wrap items-center gap-1.5 text-[11px]" aria-label="Navigasi kelas">
+                <Link href="/students" className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
+                  Semua kelas
+                </Link>
+                <span style={{ color: "var(--text-muted)" }}>/</span>
+                <span style={{ color: "var(--text-secondary)" }}>{selectedClass.name}</span>
+              </nav>
+              <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>
+                {selectedClass.name}
+              </h1>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Daftar siswa di kelas ini
+                {selectedClass.grade ? ` · Tingkat ${selectedClass.grade}` : ""}
+                {selectedClass.year ? ` · ${selectedClass.year}` : ""}.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>
+                Data siswa
+              </h1>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                {tab === null
+                  ? "Semua siswa terdaftar. Pilih kelas di menu samping untuk membuka kategori kelas."
+                  : tab === "single"
+                    ? "Popup: tambah satu siswa. Tutup lewat tombol Tutup atau area gelap di luar kartu."
+                    : tab === "bulk"
+                      ? "Popup: impor banyak siswa. Nama kelas di file harus sama persis dengan daftar kelas."
+                      : "Popup: kelola daftar kelas."}
+              </p>
+            </>
+          )}
+          {tab === null && !selectedClass && (
             <p className="mt-1 hidden max-w-2xl text-[10px] leading-relaxed text-balance sm:block" style={{ color: "var(--text-muted)" }}>
               Nama kelas di impor harus <strong style={{ color: "var(--text-secondary)" }}>sama persis</strong> dengan yang di tab Kelas. Login siswa:{" "}
               <strong style={{ color: "var(--text-secondary)" }}>nisn@{studentDomain}</strong> bila email dikosongkan.
@@ -394,26 +420,15 @@ export default function StudentsClient({
 
       <div id="daftar-siswa" className="mb-6 scroll-mt-4">
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border p-3" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        {searchParams.classId && (
-          <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium shrink-0"
-            style={{ background: "var(--accent-light)", color: "var(--accent)" }}
-          >
-            Kelas: {classes.find((c) => c.id === searchParams.classId)?.name ?? "Terpilih"}
-            <button
-              type="button"
-              className="underline opacity-90 hover:opacity-100"
-              onClick={() => navigate({ classId: "" })}
-            >
-              hapus filter
-            </button>
-          </span>
-        )}
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && navigate({ search })}
-          placeholder="Cari nama, NISN, email… (Enter)"
+          placeholder={
+            selectedClass
+              ? `Cari di ${selectedClass.name} — nama, NISN, email… (Enter)`
+              : "Cari nama, NISN, email… (Enter)"
+          }
           className="min-w-0 flex-1 basis-full rounded-lg border px-3 py-2 text-xs sm:basis-auto sm:min-w-[12rem]"
           style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
         />
@@ -427,7 +442,7 @@ export default function StudentsClient({
             className="px-3 py-2 rounded-lg border text-xs"
             style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
           >
-            Reset
+            Reset pencarian
           </button>
         )}
       </div>
@@ -435,7 +450,9 @@ export default function StudentsClient({
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
         <div className="flex flex-col gap-2 border-b px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {total} siswa terdaftar
+            {selectedClass
+              ? `${total} siswa di kelas ${selectedClass.name}`
+              : `${total} siswa terdaftar`}
           </span>
           {viewerRole === "SUPER_ADMIN" && (
             <a href="/users?role=STUDENT" className="text-xs font-medium hover:underline break-words" style={{ color: "var(--accent)" }}>
@@ -447,7 +464,10 @@ export default function StudentsClient({
           <table className="w-full min-w-[520px]">
             <thead>
               <tr style={{ background: "var(--bg-primary)" }}>
-                {["Siswa", "NISN", "Email", "Kelas", "Status", "Cetak"].map((h) => (
+                {(selectedClass
+                  ? ["Siswa", "NISN", "Email", "Status", "Cetak"]
+                  : ["Siswa", "NISN", "Email", "Kelas", "Status", "Cetak"]
+                ).map((h) => (
                   <th
                     key={h}
                     className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
@@ -461,8 +481,10 @@ export default function StudentsClient({
             <tbody>
               {students.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                    Belum ada siswa di halaman ini.
+                  <td colSpan={selectedClass ? 5 : 6} className="px-4 py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                    {selectedClass
+                      ? `Belum ada siswa di kelas ${selectedClass.name}.`
+                      : "Belum ada siswa di halaman ini."}
                   </td>
                 </tr>
               ) : (
@@ -487,9 +509,11 @@ export default function StudentsClient({
                     <td className="px-4 py-3 text-[11px] break-all max-w-[200px]" style={{ color: "var(--text-muted)" }}>
                       {u.email}
                     </td>
-                    <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
-                      {u.class?.name ?? "—"}
-                    </td>
+                    {!selectedClass && (
+                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                        {u.class?.name ?? "—"}
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <span
                         className="px-2 py-0.5 rounded text-[10px] font-semibold"

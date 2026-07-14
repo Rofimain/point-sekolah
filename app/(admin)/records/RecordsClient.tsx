@@ -88,6 +88,10 @@ export default function RecordsClient({
     receiptEvidenceImageDataUrl?: string;
   } | null>(null);
 
+  const selectedClass = searchParams.classId
+    ? classes.find((c) => c.id === searchParams.classId) ?? null
+    : null;
+
   async function openReceiptSheetForRecord(r: ViolationRecordListItem) {
     let evidenceDataUrl: string | undefined;
     if (r.evidenceImagePresent) {
@@ -360,14 +364,36 @@ export default function RecordsClient({
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--gold)" }}>
             Administrasi
           </p>
-          <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>
-            Catatan Pelanggaran Siswa
-          </h1>
-          <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            {rosterMode
-              ? `${total} siswa sesuai filter — tiap halaman ${perPage} siswa (catatan terbaru, maks. 40 per siswa)`
-              : `${total} catatan ditemukan — urut input terbaru`}
-          </p>
+          {selectedClass ? (
+            <>
+              <nav className="mb-1.5 flex flex-wrap items-center gap-1.5 text-[11px]" aria-label="Navigasi kelas">
+                <Link href="/records" className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
+                  Semua kelas
+                </Link>
+                <span style={{ color: "var(--text-muted)" }}>/</span>
+                <span style={{ color: "var(--text-secondary)" }}>{selectedClass.name}</span>
+              </nav>
+              <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>
+                Catatan · {selectedClass.name}
+              </h1>
+              <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                {rosterMode
+                  ? `${total} siswa di kelas ini — tiap halaman ${perPage} siswa`
+                  : `${total} catatan di kelas ini`}
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>
+                Catatan Pelanggaran Siswa
+              </h1>
+              <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                {rosterMode
+                  ? `${total} siswa sesuai kategori — tiap halaman ${perPage} siswa (catatan terbaru, maks. 40 per siswa)`
+                  : `${total} catatan ditemukan — urut input terbaru. Pilih kelas di menu samping untuk fokus satu kelas.`}
+              </p>
+            </>
+          )}
         </div>
         <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
           <button
