@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     if (hdr !== secret) {
       console.warn(
         "[telegram webhook] 403 — header X-Telegram-Bot-Api-Secret-Token tidak cocok TELEGRAM_WEBHOOK_SECRET. " +
-          "Setelah mengubah secret di Vercel, panggil lagi POST /api/telegram/set-webhook (Super Admin)."
+          "Setelah mengubah secret di environment, panggil lagi POST /api/telegram/set-webhook (Super Admin)."
       );
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

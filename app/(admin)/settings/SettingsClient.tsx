@@ -215,7 +215,7 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
           <strong>URL webhook terdaftar</strong> di Telegram (bukan hanya env).
         </p>
         <ol className="list-inside list-decimal space-y-1 text-xs" style={{ color: "var(--text-muted)" }}>
-          <li>Klik &quot;Daftarkan webhook&quot; di bawah (pastikan <code className="text-[10px]">NEXTAUTH_URL</code> di Vercel = domain production).</li>
+          <li>Klik &quot;Daftarkan webhook&quot; di bawah (pastikan <code className="text-[10px]">NEXTAUTH_URL</code> = domain production HTTPS).</li>
           <li>
             Setelah mengisi <code className="text-[10px]">TELEGRAM_WEBHOOK_SECRET</code>, daftarkan lagi supaya header cocok. Telegram hanya
             mengizinkan huruf, angka, <code className="text-[10px]">_</code>, dan <code className="text-[10px]">-</code> (contoh:{" "}
@@ -271,9 +271,11 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
         <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
           Bila siswa memiliki poin dari pelanggaran dan <strong>tidak ada catatan pelanggaran baru</strong> selama minimal
           jumlah hari di environment <code className="text-[10px]">POINT_REDUCTION_QUIET_DAYS</code> (default 30), sistem
-          dapat mengurangi <strong>25% dari total poin bruto</strong> lewat penyesuaian poin. Untuk produksi, panggil
-          endpoint cron <code className="text-[10px]">POST /api/cron/quiet-month-points</code> dengan header{" "}
+          dapat mengurangi <strong>25% dari total poin bruto</strong> lewat penyesuaian poin. Untuk produksi, jadwalkan
+          cron Linux di server yang memanggil{" "}
+          <code className="text-[10px]">POST /api/cron/quiet-month-points</code> dengan header{" "}
           <code className="text-[10px]">x-cron-secret</code> sesuai <code className="text-[10px]">CRON_SECRET</code>.
+          (Sebelumnya Vercel Cron — tidak lagi relevan di self-hosted.)
         </p>
         <div className="flex flex-wrap gap-2">
           <button

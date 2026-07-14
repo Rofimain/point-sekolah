@@ -8,6 +8,6 @@ function makeClient() {
   });
 }
 
-/** Satu instance per isolat (dev HMR + warm Vercel) mengurangi cold connection ke Neon. */
+/** Satu instance Prisma per proses (dev HMR + container) agar koneksi ke Postgres tidak dilipat-gandakan. */
 export const prisma = globalForPrisma.prisma ?? makeClient();
 globalForPrisma.prisma = prisma;
