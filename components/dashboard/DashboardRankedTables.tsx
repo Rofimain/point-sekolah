@@ -62,7 +62,7 @@ function PointBadge({ points }: { points: number }) {
         ? (["var(--warning-bg)", "var(--warning)"] as const)
         : (["var(--success-bg)", "var(--success)"] as const);
   return (
-    <span className="inline-flex h-5 w-9 items-center justify-center rounded-full text-xs font-bold" style={{ background: c[0], color: c[1] }}>
+    <span className="badge-soft" style={{ background: c[0], color: c[1], borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }}>
       {points}
     </span>
   );
@@ -76,7 +76,7 @@ function StatusBadge({ points, criticalPoints }: { points: number; criticalPoint
         ? (["var(--warning-bg)", "var(--warning)", "Perhatian"] as const)
         : (["var(--success-bg)", "var(--success)", "Normal"] as const);
   return (
-    <span className="rounded px-2 py-0.5 text-[10px] font-semibold" style={{ background: s[0], color: s[1] }}>
+    <span className="badge-soft px-2.5" style={{ background: s[0], color: s[1], borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }}>
       {s[2]}
     </span>
   );

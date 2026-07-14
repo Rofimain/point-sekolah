@@ -135,11 +135,11 @@ async function getDashboardData() {
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div className="rounded-xl border p-3 sm:p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+    <div className="panel p-3 sm:p-4">
       <div className="text-[11px] sm:text-xs mb-1.5 tracking-wide leading-snug" style={{ color: "var(--text-muted)" }}>
         {label}
       </div>
-      <div className="text-2xl font-serif sm:text-3xl" style={{ color: color || "var(--text-primary)" }}>
+      <div className="text-2xl font-serif font-semibold sm:text-3xl" style={{ color: color || "var(--text-primary)" }}>
         {value}
       </div>
       {sub && (
@@ -184,8 +184,8 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="mb-5">
-        <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Dashboard Pelanggaran</h1>
-        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Ringkasan data seluruh siswa · Tahun Ajaran 2025/2026</p>
+        <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>Dashboard Pelanggaran</h1>
+        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Ringkasan data seluruh siswa · Tahun Ajaran 2025/2026</p>
       </div>
 
       {(nextReviewViolations.trim() || nextReviewRoster.trim()) && (

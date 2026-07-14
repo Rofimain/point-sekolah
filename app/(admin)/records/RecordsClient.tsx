@@ -20,12 +20,12 @@ const SESSION_SLOTS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / 
 
 function PointBadge({ points }: { points: number }) {
   const c = points >= 75 ? ["var(--danger-bg)","var(--danger)"] : points >= 50 ? ["var(--warning-bg)","var(--warning)"] : ["var(--success-bg)","var(--success)"];
-  return <span className="inline-flex items-center justify-center w-9 h-5 rounded-full text-xs font-bold" style={{ background: c[0], color: c[1] }}>{points}</span>;
+  return <span className="badge-soft" style={{ background: c[0], color: c[1], borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }}>{points}</span>;
 }
 
 function StatusBadge({ points }: { points: number }) {
   const s = points >= 75 ? ["var(--danger-bg)","var(--danger)","Kritis"] : points >= 50 ? ["var(--warning-bg)","var(--warning)","Perhatian"] : ["var(--success-bg)","var(--success)","Normal"];
-  return <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: s[0], color: s[1] }}>{s[2]}</span>;
+  return <span className="badge-soft px-2.5" style={{ background: s[0], color: s[1], borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }}>{s[2]}</span>;
 }
 
 export default function RecordsClient({
@@ -355,10 +355,15 @@ export default function RecordsClient({
           receiptEvidenceImageDataUrl={successSheet.receiptEvidenceImageDataUrl}
         />
       )}
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Catatan Pelanggaran Siswa</h1>
-          <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--gold)" }}>
+            Administrasi
+          </p>
+          <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>
+            Catatan Pelanggaran Siswa
+          </h1>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
             {rosterMode
               ? `${total} siswa sesuai filter — tiap halaman ${perPage} siswa (catatan terbaru, maks. 40 per siswa)`
               : `${total} catatan ditemukan — urut input terbaru`}
@@ -377,8 +382,7 @@ export default function RecordsClient({
               setAddIncidentDate(calendarTodayYmd());
               setAddModal(true);
             }}
-            className="w-full touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
-            style={{ background: "var(--accent)" }}
+            className="btn-primary w-full touch-manipulation px-4 py-2.5 text-xs sm:w-auto sm:py-2"
           >
             + Tambah Catatan
           </button>
@@ -386,16 +390,16 @@ export default function RecordsClient({
             type="button"
             onClick={handleExport}
             disabled={exporting}
-            className="w-full touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-1.5"
+            className="w-full touch-manipulation rounded-lg border px-4 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-2"
             style={{ background: "var(--success-bg)", color: "var(--success)", borderColor: "var(--success)" }}
           >
-            {exporting ? "Mengekspor..." : "↓ Export Excel"}
+            {exporting ? "Mengekspor..." : "Export Excel"}
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="rounded-xl border p-3 mb-4 flex flex-wrap gap-2" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+      <div className="panel mb-4 flex flex-wrap gap-2 p-3.5">
         <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && navigate({ search })} placeholder="Cari nama siswa... (Enter)" className="px-3 py-2 rounded-lg border text-xs flex-1 min-w-40" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
         <select
           value={searchParams.grade || ""}
@@ -428,12 +432,12 @@ export default function RecordsClient({
         )}
       </div>
 
-      <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+      <div className="panel-flush">
         <div className="overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0">
           <table className="w-full min-w-[800px]">
-            <thead><tr style={{ background: "var(--bg-primary)" }}>
+            <thead><tr style={{ background: "color-mix(in srgb, var(--bg-primary) 75%, var(--accent-light))" }}>
               {["Nama Siswa","Kelas","Pelanggaran","Tanggal","Poin","Total Poin","Status","Bukti","Aksi"].map(h => (
-                <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
+                <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
             </tr></thead>
             <tbody>

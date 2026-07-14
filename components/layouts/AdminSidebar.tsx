@@ -51,8 +51,11 @@ function ChevronToggle({ open, className }: { open: boolean; className?: string 
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-2 px-2 font-serif text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
-      {children}
+    <div className="mb-2.5 flex items-center gap-2 px-2">
+      <span className="font-serif text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+        {children}
+      </span>
+      <span className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" aria-hidden />
     </div>
   );
 }
@@ -74,8 +77,8 @@ function SubmenuLink({
         "hover:bg-white/[0.07] hover:pl-3 motion-safe:hover:translate-x-[1px]",
         "focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-0",
         active
-          ? "bg-white/[0.12] font-medium text-white shadow-[inset_3px_0_0_rgba(255,255,255,0.55)]"
-          : "text-white/80 hover:text-white"
+          ? "bg-white/[0.1] font-medium text-white shadow-[inset_3px_0_0_var(--gold)]"
+          : "text-white/75 hover:text-white"
       )}
     >
       {children}
@@ -352,12 +355,17 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
 
       <div className="border-t p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         <div
-          className="rounded-xl border border-white/[0.06] bg-white/[0.05] px-3 py-2.5 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition-colors duration-200 hover:bg-white/[0.07]"
+          className="rounded-xl border border-white/[0.07] px-3 py-2.5 transition-colors duration-200 hover:border-white/12"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,255,255,0.07), rgba(184,149,108,0.08))",
+          }}
         >
-          <div className="truncate text-[11px] font-semibold text-white/75">
+          <div className="truncate text-[11px] font-semibold tracking-tight text-white/85">
             {session?.user?.name}
           </div>
-          <div className="mt-0.5 text-[10px] text-white/40">{session?.user?.role ? getRoleLabel(session.user.role) : ""}</div>
+          <div className="mt-0.5 text-[10px] font-medium tracking-wide" style={{ color: "var(--gold)" }}>
+            {session?.user?.role ? getRoleLabel(session.user.role) : ""}
+          </div>
         </div>
       </div>
     </div>

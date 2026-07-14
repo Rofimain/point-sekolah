@@ -39,13 +39,13 @@ export default function AdminLoginPage() {
       className="flex min-h-screen min-h-[100dvh] flex-col items-center justify-center px-4 pt-10 pb-safe-bottom"
       style={{ background: "var(--bg-primary)" }}
     >
-      <div className="w-full max-w-sm rounded-2xl border p-5 sm:p-8" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+      <div className="w-full max-w-sm rounded-2xl border p-5 sm:p-8 panel" style={{ borderColor: "var(--border)" }}>
         <div className="text-center mb-6">
           <BrandLogo size={56} priority className="mx-auto mb-3 h-14 w-14" />
-          <h1 className="text-base font-semibold font-serif" style={{ color: "var(--text-primary)" }}>Portal Admin — Guru & Staff</h1>
-          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{SCHOOL_NAME} · Sistem Poin Pelanggaran</p>
+          <h1 className="font-serif text-lg font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Portal Admin — Guru & Staff</h1>
+          <p className="text-xs mt-1.5 tracking-wide" style={{ color: "var(--text-muted)" }}>{SCHOOL_NAME} · Sistem Poin Pelanggaran</p>
         </div>
-        <div className="h-px mb-6" style={{ background: "var(--border)" }} />
+        <div className="h-px mb-6" style={{ background: "linear-gradient(90deg, transparent, var(--gold), transparent)", opacity: 0.45 }} />
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold mb-1.5 tracking-wide uppercase" style={{ color: "var(--text-secondary)" }}>Email atau NIP</label>
@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="w-full px-3 py-2.5 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
           </div>
           {error && <div className="p-3 rounded-lg text-xs" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>⚠ {error}</div>}
-          <button type="submit" disabled={loading} className="w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-60" style={{ background: "#1A2340" }}>{loading ? "Memproses..." : "Masuk sebagai Admin"}</button>
+          <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 text-sm disabled:opacity-60">{loading ? "Memproses..." : "Masuk sebagai Admin"}</button>
         </form>
         <div className="flex flex-col items-stretch gap-2 mt-4 text-center">
           <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border rounded text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>

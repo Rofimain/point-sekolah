@@ -146,7 +146,7 @@ export function StaffSubmissionBell() {
       <div className="relative shrink-0" ref={panelRef}>
         <button
           type="button"
-          className="relative flex h-9 w-9 touch-manipulation items-center justify-center rounded-full border text-sm transition-colors hover:opacity-80 sm:h-8 sm:w-8"
+          className="relative flex h-9 w-9 touch-manipulation items-center justify-center rounded-lg border text-sm transition-colors hover:opacity-80 sm:h-8 sm:w-8"
           style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
           aria-expanded={open}
           aria-haspopup="dialog"

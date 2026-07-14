@@ -28,8 +28,14 @@ export function TopBar({
 
   return (
     <header
-      style={{ background: "var(--bg-secondary)", borderBottom: "1px solid var(--border)" }}
-      className="sticky top-0 z-[60] flex h-14 shrink-0 items-center justify-between gap-2 px-3 sm:px-5"
+      className="sticky top-0 z-[60] flex h-14 shrink-0 items-center justify-between gap-2 border-b px-3 sm:px-5"
+      style={{
+        background: "color-mix(in srgb, var(--bg-secondary) 92%, transparent)",
+        borderColor: "var(--border)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        boxShadow: "0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent)",
+      }}
     >
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         {adminNav ? (
@@ -52,12 +58,19 @@ export function TopBar({
             )}
           </button>
         ) : null}
-        <BrandLogo size={36} priority className="h-9 w-9 shrink-0" />
+        <div className="relative shrink-0">
+          <BrandLogo size={36} priority className="h-9 w-9" />
+          <span
+            className="pointer-events-none absolute -bottom-0.5 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-sm"
+            style={{ background: "var(--gold)" }}
+            aria-hidden
+          />
+        </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold font-serif" style={{ color: "var(--text-primary)" }}>
+          <div className="truncate font-serif text-[15px] font-semibold leading-tight" style={{ color: "var(--text-primary)" }}>
             {SCHOOL_NAME}
           </div>
-          <div className="hidden text-[10px] tracking-wider text-[var(--text-muted)] sm:block uppercase">
+          <div className="hidden text-[10px] font-medium uppercase tracking-[0.16em] sm:block" style={{ color: "var(--text-muted)" }}>
             Sistem Poin Pelanggaran
           </div>
         </div>
@@ -67,23 +80,32 @@ export function TopBar({
         {mounted && (
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="flex h-9 w-9 touch-manipulation items-center justify-center rounded-full border text-sm transition-colors hover:opacity-80 sm:h-8 sm:w-8"
+            className="flex h-9 w-9 touch-manipulation items-center justify-center rounded-lg border text-sm transition-colors hover:opacity-80 sm:h-8 sm:w-8"
             style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
             title="Toggle tema"
             type="button"
           >
-            {theme === "dark" ? "☀" : "☾"}
+            {theme === "dark" ? (
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+                <path d="M21 14.5A8.5 8.5 0 1111.5 3a7 7 0 009.5 11.5z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
           </button>
         )}
         {session && (
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="hidden max-w-[8rem] truncate text-xs sm:inline md:max-w-[12rem]" style={{ color: "var(--text-muted)" }}>
+            <span className="hidden max-w-[8rem] truncate text-xs font-medium sm:inline md:max-w-[12rem]" style={{ color: "var(--text-secondary)" }}>
               {session.user.name}
             </span>
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: session.user.role === "STUDENT" ? "/login" : "/admin/login" })}
-              className="touch-manipulation rounded border px-2.5 py-2 text-[11px] transition-colors hover:opacity-80 sm:px-3 sm:py-1.5 sm:text-xs"
+              className="touch-manipulation rounded-lg border px-2.5 py-2 text-[11px] font-semibold transition-colors hover:opacity-80 sm:px-3 sm:py-1.5 sm:text-xs"
               style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
             >
               Keluar
