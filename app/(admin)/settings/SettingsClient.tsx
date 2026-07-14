@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { APP_KEYS } from "@/lib/app-settings";
+import { addMonthsFromYmd, reviewStatusLabel } from "@/lib/review-dates";
 
 const SETTING_KEYS = [
   APP_KEYS.COORD_NAME,
@@ -16,9 +17,19 @@ const LABELS: Record<(typeof SETTING_KEYS)[number], string> = {
   [APP_KEYS.COORD_NAME]: "Nama koordinator (untuk tanda tangan cetak)",
   [APP_KEYS.COORD_TITLE]: "Jabatan koordinator (mis. Koordinator BP/BK)",
   [APP_KEYS.REDAKSI_PRINT]: "Redaksi resmi pada lembar cetak info poin",
-  [APP_KEYS.NEXT_REVIEW_VIOLATIONS]: "Jadwal review poin / jenis pelanggaran (YYYY-MM-DD, opsional)",
-  [APP_KEYS.NEXT_REVIEW_ROSTER]: "Jadwal review data murid & guru (YYYY-MM-DD, opsional)",
+  [APP_KEYS.NEXT_REVIEW_VIOLATIONS]: "Jadwal review poin / jenis pelanggaran (YYYY-MM-DD)",
+  [APP_KEYS.NEXT_REVIEW_ROSTER]: "Jadwal review data murid & guru (YYYY-MM-DD)",
 };
+
+
+const REVIEW_KEYS = [APP_KEYS.NEXT_REVIEW_VIOLATIONS, APP_KEYS.NEXT_REVIEW_ROSTER] as const;
+
+function statusChip(status: ReturnType<typeof reviewStatusLabel>) {
+  if (status === "overdue") return { label: "Terlewat", bg: "var(--danger-bg)", color: "var(--danger)" };
+  if (status === "soon") return { label: "≤30 hari", bg: "var(--warning-bg)", color: "var(--warning)" };
+  if (status === "ok") return { label: "Terjadwal", bg: "var(--success-bg)", color: "var(--success)" };
+  return { label: "Belum diisi", bg: "var(--bg-tertiary)", color: "var(--text-muted)" };
+}
 
 function emptyForm(): Record<(typeof SETTING_KEYS)[number], string> {
   return {
@@ -38,14 +49,22 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
   const [ok, setOk] = useState(false);
 
   const [qmLoading, setQmLoading] = useState(false);
-  const [qmPreview, setQmPreview] = useState<{ quietDays: number; eligible: { id: string; name: string }[] } | null>(
-    null
-  );
+  const [qmPreview, setQmPreview] = useState<{
+    quietDays: number;
+    eligible: { id: string; name: string; lastIncidentYmd?: string; daysQuiet?: number }[];
+  } | null>(null);
   const [qmMsg, setQmMsg] = useState("");
 
   const [tgLoading, setTgLoading] = useState(false);
   const [tgInfo, setTgInfo] = useState<Record<string, unknown> | null>(null);
   const [tgMsg, setTgMsg] = useState("");
+
+  function bumpReview(key: (typeof REVIEW_KEYS)[number], months: number) {
+    setForm((prev) => ({
+      ...prev,
+      [key]: addMonthsFromYmd(prev[key], months),
+    }));
+  }
 
   async function loadTelegramWebhookInfo() {
     setTgLoading(true);
@@ -146,7 +165,7 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
           Pengaturan sekolah
         </h1>
         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-          Redaksi cetak, koordinator, dan pengingat jadwal pembaharuan (tata tertib & data peserta didik).
+          Redaksi cetak, koordinator, dan jadwal pembaharuan (jenis pelanggaran & data murid/guru) — per 6 bulan atau tahunan.
         </p>
       </div>
 
@@ -155,29 +174,64 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
         className="w-full max-w-2xl space-y-4 rounded-xl border p-4 sm:p-5"
         style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
       >
-        {SETTING_KEYS.map((key) => (
-          <div key={key}>
-            <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-              {LABELS[key]}
-            </label>
-            {key === APP_KEYS.REDAKSI_PRINT ? (
-              <textarea
-                value={form[key]}
-                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                rows={5}
-                className="w-full px-3 py-2.5 rounded-lg border text-sm resize-y"
-                style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-              />
-            ) : (
-              <input
-                value={form[key]}
-                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-lg border text-sm"
-                style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-              />
-            )}
-          </div>
-        ))}
+        {SETTING_KEYS.map((key) => {
+          const isReview = (REVIEW_KEYS as readonly string[]).includes(key);
+          const chip = isReview ? statusChip(reviewStatusLabel(form[key])) : null;
+          return (
+            <div key={key}>
+              <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                <label className="block text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  {LABELS[key]}
+                </label>
+                {chip && (
+                  <span className="badge-soft" style={{ background: chip.bg, color: chip.color }}>
+                    {chip.label}
+                  </span>
+                )}
+              </div>
+              {key === APP_KEYS.REDAKSI_PRINT ? (
+                <textarea
+                  value={form[key]}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  rows={5}
+                  className="w-full px-3 py-2.5 rounded-lg border text-sm resize-y"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                />
+              ) : (
+                <input
+                  value={form[key]}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  placeholder={isReview ? "YYYY-MM-DD" : undefined}
+                  className="w-full px-3 py-2.5 rounded-lg border text-sm"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                />
+              )}
+              {isReview && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => bumpReview(key as (typeof REVIEW_KEYS)[number], 6)}
+                    className="rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold"
+                    style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                  >
+                    +6 bulan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => bumpReview(key as (typeof REVIEW_KEYS)[number], 12)}
+                    className="rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold"
+                    style={{ borderColor: "var(--accent-border)", color: "var(--accent)", background: "var(--accent-light)" }}
+                  >
+                    +1 tahun
+                  </button>
+                  <span className="self-center text-[10px]" style={{ color: "var(--text-muted)" }}>
+                    dari tanggal di atas (atau hari ini jika kosong) — lalu Simpan
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {error && (
           <div className="p-3 rounded-lg text-xs" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
@@ -269,13 +323,12 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
           Remisi otomatis (periode tenang)
         </h2>
         <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Bila siswa memiliki poin dari pelanggaran dan <strong>tidak ada catatan pelanggaran baru</strong> selama minimal
-          jumlah hari di environment <code className="text-[10px]">POINT_REDUCTION_QUIET_DAYS</code> (default 30), sistem
-          dapat mengurangi <strong>25% dari total poin bruto</strong> lewat penyesuaian poin. Untuk produksi, jadwalkan
-          cron Linux di server yang memanggil{" "}
-          <code className="text-[10px]">POST /api/cron/quiet-month-points</code> dengan header{" "}
-          <code className="text-[10px]">x-cron-secret</code> sesuai <code className="text-[10px]">CRON_SECRET</code>.
-          (Sebelumnya Vercel Cron — tidak lagi relevan di self-hosted.)
+          Bila siswa punya poin pelanggaran dan sudah ≥{" "}
+          <code className="text-[10px]">POINT_REDUCTION_QUIET_DAYS</code> hari kalender (default 30) sejak{" "}
+          <strong>tanggal kejadian</strong> pelanggaran terakhir (bukan tanggal input di sistem), sistem dapat mengurangi{" "}
+          <strong>25% dari total poin bruto</strong>. Di Docker, service <code className="text-[10px]">cron</code> memanggil{" "}
+          <code className="text-[10px]">POST /api/cron/quiet-month-points</code> tiap hari (butuh{" "}
+          <code className="text-[10px]">CRON_SECRET</code>). Tombol di bawah untuk cek / terapkan manual.
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -300,18 +353,23 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
         {qmPreview && (
           <div className="rounded-lg border p-3 text-xs" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
             <p className="font-semibold" style={{ color: "var(--text-secondary)" }}>
-              Periode tenang: {qmPreview.quietDays} hari tanpa pelanggaran baru · Layak saat ini: {qmPreview.eligible.length}{" "}
-              siswa
+              Periode tenang: {qmPreview.quietDays} hari sejak tanggal kejadian terakhir · Layak:{" "}
+              {qmPreview.eligible.length} siswa
             </p>
             {qmPreview.eligible.length > 0 ? (
-              <ul className="mt-2 max-h-36 list-inside list-disc space-y-0.5 overflow-y-auto" style={{ color: "var(--text-muted)" }}>
+              <ul className="mt-2 max-h-40 list-inside list-disc space-y-0.5 overflow-y-auto" style={{ color: "var(--text-muted)" }}>
                 {qmPreview.eligible.map((s) => (
-                  <li key={s.id}>{s.name}</li>
+                  <li key={s.id}>
+                    {s.name}
+                    {s.lastIncidentYmd != null && s.daysQuiet != null
+                      ? ` — kejadian ${s.lastIncidentYmd}, ${s.daysQuiet} hari tenang`
+                      : ""}
+                  </li>
                 ))}
               </ul>
             ) : (
               <p className="mt-2" style={{ color: "var(--text-muted)" }}>
-                Tidak ada siswa yang memenuhi syarat (belum cukup hari tenang sejak pelanggaran terakhir, atau remisi
+                Tidak ada siswa yang memenuhi syarat (belum cukup hari tenang sejak tanggal kejadian terakhir, atau remisi
                 untuk periode itu sudah pernah diterapkan).
               </p>
             )}

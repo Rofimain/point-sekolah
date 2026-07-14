@@ -16,6 +16,7 @@ export type StudentPointsPrintArticleProps = {
     adjustmentSum: number;
     effective: number;
   };
+  quietDays?: number;
   history: {
     records: { id: string; date: Date; violationName: string; points: number; notes: string | null }[];
     adjustments: { id: string; createdAt: Date; pointsDelta: number; reason: string; grossTotalBefore: number }[];
@@ -29,6 +30,7 @@ export function StudentPointsPrintArticle({
   issued,
   print,
   breakdown,
+  quietDays = 30,
   history,
 }: StudentPointsPrintArticleProps) {
   return (
@@ -84,7 +86,8 @@ export function StudentPointsPrintArticle({
             </div>
           </div>
           <p className="text-xs text-neutral-600 mt-3">
-            Remisi otomatis 25% dapat diterapkan setelah ≥30 hari tanpa pelanggaran baru, sesuai kebijakan sekolah.
+            Remisi otomatis 25% dapat diterapkan setelah ≥{quietDays} hari sejak tanggal kejadian pelanggaran terakhir
+            (bukan tanggal input catatan), sesuai kebijakan sekolah.
           </p>
         </div>
 

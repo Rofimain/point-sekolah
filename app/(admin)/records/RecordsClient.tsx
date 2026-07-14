@@ -668,6 +668,9 @@ export default function RecordsClient({
                   className="w-full px-3 py-2 rounded-lg border text-sm"
                   style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
                 />
+                <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                  Tanggal kejadian (bukan tanggal input); dipakai hitung remisi.
+                </p>
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Keterangan</label>
@@ -804,7 +807,7 @@ export default function RecordsClient({
                   style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
                 />
                 <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
-                  Sesuai hari kejadian asli; tidak boleh melewati hari ini (zona WIB).
+                  Sesuai hari kejadian asli (bukan hari input). Remisi dihitung dari tanggal ini; maks. hari ini (WIB).
                 </p>
               </div>
 

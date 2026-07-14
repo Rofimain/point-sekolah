@@ -1,21 +1,30 @@
 import { prisma } from "@/lib/prisma";
 import {
+  calendarDaysSinceIncident,
+  dateInTimeZoneYmd,
+  dateToYmdInput,
+} from "@/lib/incident-date";
+import {
   getEffectivePointsBreakdown,
   isPointAdjustmentTableMissing,
   QUIET_MONTH_REASON,
-  quietPeriodMs,
+  quietPeriodDays,
 } from "@/lib/student-effective-points";
 
+/**
+ * Tanggal KEJADIAN pelanggaran terakhir (kolom `date`), bukan `createdAt` / waktu input.
+ * Input terlambat harus mengisi tanggal kejadian yang benar di form.
+ */
 export async function getLastViolationDate(studentId: string): Promise<Date | null> {
   const last = await prisma.violationRecord.findFirst({
     where: { studentId },
-    orderBy: { date: "desc" },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     select: { date: true },
   });
   return last?.date ?? null;
 }
 
-async function getLastQuietMonthAdjustmentDate(studentId: string): Promise<Date | null> {
+async function getLastQuietMonthAdjustmentAt(studentId: string): Promise<Date | null> {
   try {
     const last = await prisma.pointAdjustment.findFirst({
       where: { studentId, reason: QUIET_MONTH_REASON },
@@ -32,8 +41,9 @@ async function getLastQuietMonthAdjustmentDate(studentId: string): Promise<Date 
 /**
  * Layak dipotong 25% bila:
  * - Ada poin pelanggaran (bruto) > 0
- * - Tidak ada catatan baru selama minimal `POINT_REDUCTION_QUIET_DAYS` (default 30) sejak pelanggaran terakhir
- * - Belum ada potongan "bulan tenang" yang diterapkan sejak pelanggaran terakhir itu
+ * - Sudah lewat minimal `POINT_REDUCTION_QUIET_DAYS` (default 30) **hari kalender**
+ *   sejak tanggal KEJADIAN pelanggaran terakhir (`ViolationRecord.date`) — bukan sejak diinput
+ * - Belum ada potongan "bulan tenang" setelah tanggal kejadian terakhir itu
  */
 export async function isEligibleForQuietMonthReduction(
   studentId: string,
@@ -45,10 +55,12 @@ export async function isEligibleForQuietMonthReduction(
   const lastVio = await getLastViolationDate(studentId);
   if (!lastVio) return false;
 
-  if (now.getTime() - lastVio.getTime() < quietPeriodMs()) return false;
+  const daysQuiet = calendarDaysSinceIncident(lastVio, now);
+  if (!Number.isFinite(daysQuiet) || daysQuiet < quietPeriodDays()) return false;
 
-  const lastAdj = await getLastQuietMonthAdjustmentDate(studentId);
-  if (lastAdj && lastAdj.getTime() >= lastVio.getTime()) return false;
+  const lastAdj = await getLastQuietMonthAdjustmentAt(studentId);
+  // Sudah pernah remisi setelah (atau pada hari) tanggal kejadian terakhir → jangan ulang
+  if (lastAdj && dateInTimeZoneYmd(lastAdj) >= dateToYmdInput(lastVio)) return false;
 
   return true;
 }
@@ -123,15 +135,23 @@ export async function applyQuietMonthReductionForAllStudents(
 /** Daftar siswa yang saat ini memenuhi syarat remisi 25% (belum diterapkan). */
 export async function previewEligibleQuietMonthStudents(
   now: Date = new Date()
-): Promise<{ id: string; name: string }[]> {
+): Promise<{ id: string; name: string; lastIncidentYmd: string; daysQuiet: number }[]> {
   const students = await prisma.user.findMany({
     where: { role: "STUDENT", active: true },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
-  const out: { id: string; name: string }[] = [];
+  const out: { id: string; name: string; lastIncidentYmd: string; daysQuiet: number }[] = [];
   for (const s of students) {
-    if (await isEligibleForQuietMonthReduction(s.id, now)) out.push(s);
+    if (!(await isEligibleForQuietMonthReduction(s.id, now))) continue;
+    const last = await getLastViolationDate(s.id);
+    if (!last) continue;
+    out.push({
+      id: s.id,
+      name: s.name,
+      lastIncidentYmd: dateToYmdInput(last),
+      daysQuiet: calendarDaysSinceIncident(last, now),
+    });
   }
   return out;
 }

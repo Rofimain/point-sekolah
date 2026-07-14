@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSafeServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPrintBlock } from "@/lib/app-settings";
-import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
+import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing, quietPeriodDays } from "@/lib/student-effective-points";
 import { isStaffRole } from "@/lib/staff-roles";
 import { PrintButton } from "@/components/PrintButton";
 import { StudentPointsPrintArticle } from "@/components/StudentPointsPrintArticle";
@@ -68,6 +68,7 @@ export default async function StaffStudentPrintPointsPage({ params }: { params: 
         issued={issued}
         print={print}
         breakdown={breakdown}
+        quietDays={quietPeriodDays()}
         history={{
           records: records.map((r) => ({
             id: r.id,

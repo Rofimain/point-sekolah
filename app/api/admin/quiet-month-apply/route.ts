@@ -6,7 +6,7 @@ import { applyQuietMonthReductionForAllStudents } from "@/lib/quiet-month-reduct
 
 /**
  * Super admin: jalankan remisi 25% (sama logika dengan POST /api/cron/quiet-month-points).
- * Hanya memengaruhi siswa yang sudah ≥30 hari (atau POINT_REDUCTION_QUIET_DAYS) tanpa pelanggaran baru.
+ * Layak bila sudah ≥ POINT_REDUCTION_QUIET_DAYS (default 30) hari kalender sejak tanggal kejadian terakhir.
  */
 export async function POST() {
   const session = await getServerSession(authOptions);

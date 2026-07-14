@@ -67,6 +67,7 @@ export default function StudentFormClient({
   grossPoints = 0,
   adjustmentSum = 0,
   pointAdjustments = [],
+  quietDays = 30,
   studentClass,
   studentNisn,
 }: {
@@ -83,6 +84,7 @@ export default function StudentFormClient({
     grossTotalBefore: number;
     createdAt: string | Date;
   }[];
+  quietDays?: number;
   studentClass: string | null;
   studentNisn: string | null;
 }) {
@@ -287,8 +289,8 @@ export default function StudentFormClient({
             style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid var(--accent-border)" }}
           >
             <strong>Pengurangan periode tenang:</strong> total dari catatan pelanggaran {grossPoints} poin, penyesuaian{" "}
-            <strong>{adjustmentSum}</strong> poin (25% dari total saat diterapkan, setelah ≥30 hari tanpa pelanggaran
-            baru). <strong>Poin yang dipakai: {totalPoints}.</strong>
+            <strong>{adjustmentSum}</strong> poin (25% dari total saat diterapkan, setelah ≥{quietDays} hari sejak tanggal
+            kejadian pelanggaran terakhir). <strong>Poin yang dipakai: {totalPoints}.</strong>
           </div>
         )}
 
@@ -421,7 +423,8 @@ export default function StudentFormClient({
                     style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
                   />
                   <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
-                    Isi sesuai hari kejadian sebenarnya bila melapor belum di hari yang sama (maks. hari ini).
+                    Sesuai hari kejadian asli (bukan hari input). Remisi periode tenang dihitung dari tanggal ini. Jika
+                    kejadian hari ini dan langsung dilapor, biarkan tanggal hari ini.
                   </p>
                 </div>
 

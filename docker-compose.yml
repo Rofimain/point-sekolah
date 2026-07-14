@@ -45,6 +45,24 @@ services:
     networks:
       - internal
 
+  cron:
+    image: alpine:3.20
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - app
+    networks:
+      - internal
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        apk add --no-cache curl tzdata
+        # Remisi otomatis tiap hari jam 02:00 (set TZ di .env, mis. Asia/Jakarta)
+        echo "0 2 * * * curl -fsS -X POST -H \"x-cron-secret: $${CRON_SECRET}\" http://app:3000/api/cron/quiet-month-points >> /proc/1/fd/1 2>&1" > /etc/crontabs/root
+        echo "Remisi cron terpasang (daily 02:00). Pastikan CRON_SECRET ada di .env."
+        crond -f -l 8
+
 volumes:
   db_data:
   caddy_data:

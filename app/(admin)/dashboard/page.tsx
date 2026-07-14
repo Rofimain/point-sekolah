@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import { getAppSetting, APP_KEYS } from "@/lib/app-settings";
+import { indonesianAcademicYearLabel } from "@/lib/academic-year";
+import { reviewStatusLabel } from "@/lib/review-dates";
 import DashboardRankedTables from "@/components/dashboard/DashboardRankedTables";
 
 export const dynamic = "force-dynamic";
 
 const CRITICAL_POINTS = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
-const ALERT_POINTS = 25;
+const ALERT_POINTS = parseInt(process.env.NEXT_PUBLIC_WARNING_POINTS || "25", 10);
 
 async function getDashboardData() {
   const now = new Date();
@@ -81,7 +83,7 @@ async function getDashboardData() {
 
   const top5 = ranked.slice(0, 5);
   const criticalRanked = ranked.filter((x) => x.total >= CRITICAL_POINTS).slice(0, 10);
-  const over25Ranked = ranked.filter((x) => x.total > ALERT_POINTS).slice(0, 35);
+  const over25Ranked = ranked.filter((x) => x.total >= ALERT_POINTS);
   const needIdSet = new Set<string>();
   top5.forEach((x) => needIdSet.add(x.studentId));
   criticalRanked.forEach((x) => needIdSet.add(x.studentId));
@@ -185,30 +187,53 @@ export default async function DashboardPage() {
     <div>
       <div className="mb-5">
         <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>Dashboard Pelanggaran</h1>
-        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Ringkasan data seluruh siswa · Tahun Ajaran 2025/2026</p>
+        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+          Ringkasan data seluruh siswa · Tahun Ajaran {indonesianAcademicYearLabel()}
+        </p>
       </div>
 
       {(nextReviewViolations.trim() || nextReviewRoster.trim()) && (
         <div
           className="mb-4 rounded-xl border p-3 text-xs leading-relaxed"
-          style={{ background: "var(--accent-light)", borderColor: "var(--accent-border)", color: "var(--accent)" }}
+          style={{
+            background:
+              reviewStatusLabel(nextReviewViolations) === "overdue" || reviewStatusLabel(nextReviewRoster) === "overdue"
+                ? "var(--danger-bg)"
+                : "var(--accent-light)",
+            borderColor:
+              reviewStatusLabel(nextReviewViolations) === "overdue" || reviewStatusLabel(nextReviewRoster) === "overdue"
+                ? "var(--danger)"
+                : "var(--accent-border)",
+            color:
+              reviewStatusLabel(nextReviewViolations) === "overdue" || reviewStatusLabel(nextReviewRoster) === "overdue"
+                ? "var(--danger)"
+                : "var(--accent)",
+          }}
         >
           <strong>Pengingat pembaharuan:</strong>
           {nextReviewViolations.trim() ? (
-            <span className="block mt-1">Review poin / jenis pelanggaran (target): {nextReviewViolations}</span>
+            <span className="block mt-1">
+              Review poin / jenis pelanggaran: {nextReviewViolations}
+              {reviewStatusLabel(nextReviewViolations) === "overdue" ? " — terlewat, segera perbarui di Pengaturan" : ""}
+              {reviewStatusLabel(nextReviewViolations) === "soon" ? " — kurang dari 30 hari" : ""}
+            </span>
           ) : null}
           {nextReviewRoster.trim() ? (
-            <span className="block mt-1">Review data murid dan guru (target): {nextReviewRoster}</span>
+            <span className="block mt-1">
+              Review data murid dan guru: {nextReviewRoster}
+              {reviewStatusLabel(nextReviewRoster) === "overdue" ? " — terlewat, segera perbarui di Pengaturan" : ""}
+              {reviewStatusLabel(nextReviewRoster) === "soon" ? " — kurang dari 30 hari" : ""}
+            </span>
           ) : null}
-          <span className="block mt-1 opacity-90">Atur tanggal di menu Pengaturan sekolah (super admin).</span>
+          <span className="block mt-1 opacity-90">Atur / perpanjang (+6 bulan / +1 tahun) di Pengaturan sekolah (super admin).</span>
         </div>
       )}
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Siswa Aktif" value={totalStudents} sub={`${totalTeachers} staf (guru / piket / walas / admin)`} />
         <StatCard label="Pelanggaran Bulan Ini" value={thisMonthCount} sub={trend ? `${parseInt(trend) > 0 ? "+" : ""}${trend}% dari bulan lalu` : undefined} color="var(--warning)" />
-        <StatCard label="Siswa poin di atas 25" value={over25Students.length} sub="Perhatian wali kelas / BK" color="var(--warning)" />
-        <StatCard label="Siswa poin kritis (≥75)" value={criticalStudents.length} sub="Tindak lanjut segera" color="var(--danger)" />
+        <StatCard label={`Siswa poin ≥${ALERT_POINTS}`} value={over25Students.length} sub="Perhatian wali kelas / BK" color="var(--warning)" />
+        <StatCard label={`Siswa poin kritis (≥${CRITICAL_POINTS})`} value={criticalStudents.length} sub="Tindak lanjut segera" color="var(--danger)" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">

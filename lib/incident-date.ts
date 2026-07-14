@@ -45,6 +45,18 @@ export function parseOptionalIncidentDate(
   return parseIncidentDateYmd(String(input), timeZone);
 }
 
+/** YYYY-MM-DD dari instant Date pada zona waktu tertentu. */
+export function dateInTimeZoneYmd(d: Date | string, timeZone: string = TZ): string {
+  const x = typeof d === "string" ? new Date(d) : d;
+  if (Number.isNaN(x.getTime())) return calendarTodayYmd(timeZone);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(x);
+}
+
 /** Untuk isian `<input type="date" />` dari nilai record (disimpan UTC noon). */
 export function dateToYmdInput(d: Date | string): string {
   const x = typeof d === "string" ? new Date(d) : d;
@@ -55,4 +67,33 @@ export function dateToYmdInput(d: Date | string): string {
     month: "2-digit",
     day: "2-digit",
   }).format(x);
+}
+
+/** Selisih hari kalender (YYYY-MM-DD) — later − earlier. */
+export function calendarDaysBetweenYmd(earlierYmd: string, laterYmd: string): number {
+  const a = /^(\d{4})-(\d{2})-(\d{2})$/.exec(earlierYmd.trim());
+  const b = /^(\d{4})-(\d{2})-(\d{2})$/.exec(laterYmd.trim());
+  if (!a || !b) return Number.NaN;
+  const t0 = Date.UTC(Number(a[1]), Number(a[2]) - 1, Number(a[3]));
+  const t1 = Date.UTC(Number(b[1]), Number(b[2]) - 1, Number(b[3]));
+  return Math.floor((t1 - t0) / 86_400_000);
+}
+
+/**
+ * Berapa hari kalender sejak tanggal KEJADIAN pelanggaran (field `date`),
+ * sampai "hari ini" di zona sekolah — bukan tanggal input (`createdAt`).
+ */
+export function calendarDaysSinceIncident(
+  incidentDate: Date | string,
+  now: Date = new Date(),
+  timeZone: string = TZ
+): number {
+  const incidentYmd = dateToYmdInput(incidentDate);
+  const todayYmd = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+  return calendarDaysBetweenYmd(incidentYmd, todayYmd);
 }

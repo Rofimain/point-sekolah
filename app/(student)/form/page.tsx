@@ -2,7 +2,7 @@ import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import StudentFormClient from "./StudentFormClient";
-import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
+import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing, quietPeriodDays } from "@/lib/student-effective-points";
 
 /** Form siswa query DB per session — skip static generation saat image build. */
 export const dynamic = "force-dynamic";
@@ -75,6 +75,7 @@ export default async function StudentFormPage() {
       grossPoints={gross}
       adjustmentSum={adjustmentSum}
       pointAdjustments={pointAdjustments}
+      quietDays={quietPeriodDays()}
       studentClass={student?.class?.name ?? null}
       studentNisn={student?.nisn ?? null}
     />

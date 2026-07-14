@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { applyQuietMonthReductionForAllStudents } from "@/lib/quiet-month-reduction";
 
 /**
- * Jalankan penilaian pengurangan 25% (periode tenang tanpa pelanggaran baru).
- * Endpoint ini tetap aktif. Cron Vercel tidak dipakai lagi — jadwalkan lewat
- * cron job Linux biasa di server (curl POST + header x-cron-secret: CRON_SECRET).
- * Jangan mengandalkan platform hosting cloud untuk menjadwalkannya.
+ * Remisi 25% setelah periode tenang dihitung dari tanggal KEJADIAN pelanggaran terakhir
+ * (ViolationRecord.date), bukan waktu input (createdAt). Compose service `cron` atau curl POST
+ * + header x-cron-secret: CRON_SECRET.
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.CRON_SECRET;

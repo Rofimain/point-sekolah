@@ -112,15 +112,27 @@ Edit `Caddyfile` agar host sesuai domain sekolah, pastikan origin cert ada di `c
 
 ## Cron quiet-month (remisi poin)
 
-Endpoint API tetap: `POST /api/cron/quiet-month-points` + header `x-cron-secret`.
+Hitung dari **tanggal kejadian** pelanggaran terakhir (`ViolationRecord.date`), bukan tanggal input (`createdAt`).
 
-Cron Vercel **tidak dipakai**. Jadwalkan di server dengan cron Linux, misalnya:
+Endpoint API: `POST /api/cron/quiet-month-points` + header `x-cron-secret`.
+
+Service Compose **`cron`** memanggil endpoint itu setiap hari pukul 02:00 (zona waktu mengikuti `TZ` di `.env`, contoh `Asia/Jakarta`).
+
+Pastikan di `ENV_FILE_CONTENT` / `.env` server ada:
+
+```env
+CRON_SECRET=isi_random_panjang
+POINT_REDUCTION_QUIET_DAYS=30
+TZ=Asia/Jakarta
+```
+
+Setelah `docker compose up -d`, cek log: `docker compose logs -f cron`.
+
+Alternatif host crontab (jika cron container dimatikan):
 
 ```cron
 0 2 * * * curl -sS -X POST "https://point-sekolah.rofimain.com/api/cron/quiet-month-points" -H "x-cron-secret: $CRON_SECRET"
 ```
-
-(Atur sendiri di crontab server — tidak dilampirkan otomatis di repo.)
 
 ---
 
