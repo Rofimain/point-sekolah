@@ -6,8 +6,8 @@ import { isTelegramWebhookSecretValid, TELEGRAM_WEBHOOK_SECRET_HINT } from "@/li
 const TG = "https://api.telegram.org";
 
 /**
- * Super Admin: mendaftarkan URL webhook ke Telegram (wajib HTTPS, cocok untuk Vercel).
- * Body opsional: { "baseUrl": "https://domain.com" } bila env publik belum benar.
+ * Super Admin: mendaftarkan URL webhook ke Telegram (wajib HTTPS).
+ * Body opsional: { "baseUrl": "https://domain.com" } bila NEXTAUTH_URL belum benar.
  */
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -22,8 +22,7 @@ export async function POST(req: NextRequest) {
 
   let base =
     (await req.json().catch(() => ({})) as { baseUrl?: string }).baseUrl?.trim() ||
-    process.env.NEXTAUTH_URL?.trim() ||
-    process.env.VERCEL_URL?.trim();
+    process.env.NEXTAUTH_URL?.trim();
   if (base && !base.startsWith("http")) {
     base = `https://${base}`;
   }

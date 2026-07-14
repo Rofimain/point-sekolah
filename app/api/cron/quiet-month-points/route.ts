@@ -3,7 +3,9 @@ import { applyQuietMonthReductionForAllStudents } from "@/lib/quiet-month-reduct
 
 /**
  * Jalankan penilaian pengurangan 25% (periode tenang tanpa pelanggaran baru).
- * Panggil dari cron (mis. Vercel Cron) dengan header: x-cron-secret: CRON_SECRET
+ * Endpoint ini tetap aktif. Cron Vercel tidak dipakai lagi — jadwalkan lewat
+ * cron job Linux biasa di server (curl POST + header x-cron-secret: CRON_SECRET).
+ * Jangan mengandalkan platform hosting cloud untuk menjadwalkannya.
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.CRON_SECRET;

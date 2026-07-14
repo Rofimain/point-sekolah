@@ -1,46 +1,36 @@
 # Panduan Deploy — Sistem Poin Pelanggaran Sekolah
 
 ## Stack
-- **Hosting**: Vercel (gratis)
-- **Database**: Neon PostgreSQL (gratis)
+- **Hosting**: Docker Compose di VPS/EC2 (app + Caddy)
+- **Database**: PostgreSQL 16 (container service `db`)
 - **Auth**: NextAuth.js
 - **ORM**: Prisma
+- **CI/CD**: GitHub Actions → GHCR → deploy SSH
 
 ---
 
-## LANGKAH 1 — Setup Database di Neon (Gratis)
+## LANGKAH 1 — Persiapan server
 
-1. Buka https://neon.tech dan daftar (gratis, tidak perlu kartu kredit)
-2. Klik **"New Project"**
-3. Isi nama project (contoh: `school-violation`)
-4. Pilih region terdekat (Singapore untuk Indonesia)
-5. Klik **Create Project**
-6. Di halaman project, klik **"Connection Details"**
-7. Pilih **"Prisma"** di dropdown "Connection string"
-8. Salin dua string koneksi:
-   - `DATABASE_URL` (pooled connection)
-   - `DIRECT_URL` (direct connection)
+1. Siapkan VPS/EC2 dengan akses SSH
+2. Domain mengarah ke IP server (contoh: `point-sekolah.rofimain.com`)
+3. Cert Cloudflare Origin (atau sertifikat TLS lain) di folder `certs/` di server
+4. Siapkan secrets GitHub: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `ENV_FILE_CONTENT`, `CLOUDFLARE_ORIGIN_CERT`, `CLOUDFLARE_ORIGIN_KEY`
 
 ---
 
-## LANGKAH 2 — Setup Project Lokal
+## LANGKAH 2 — Setup Project Lokal (opsional)
 
 ```bash
-# Clone / extract project
-cd school-violation-system
-
-# Install dependencies
+cd point-sekolah
 npm install
-
-# Salin file environment
 cp .env.example .env.local
 ```
 
-Edit file `.env.local` dengan nilai berikut:
+Edit `.env.local` untuk development lokal (hostname Postgres bisa `localhost` jika DB di host, atau `db` jika lewat Compose).
 
 ```env
-DATABASE_URL="postgresql://...?sslmode=require"   # dari Neon (pooled)
-DIRECT_URL="postgresql://...?sslmode=require"      # dari Neon (direct)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/point_sekolah"
+DIRECT_URL="postgresql://postgres:postgres@localhost:5432/point_sekolah"
 NEXTAUTH_SECRET="jalankan: openssl rand -base64 32"
 NEXTAUTH_URL="http://localhost:3000"
 
@@ -50,24 +40,27 @@ NEXT_PUBLIC_STUDENT_DOMAIN="siswa.namaschool.sch.id"
 NEXT_PUBLIC_STAFF_DOMAIN="namaschool.sch.id"
 ```
 
-Untuk generate NEXTAUTH_SECRET, jalankan di terminal:
+Generate secret:
 ```bash
 openssl rand -base64 32
 ```
 
 ---
 
-## LANGKAH 3 — Setup Database & Seed Data
+## LANGKAH 3 — Schema & seed (lokal)
 
 ```bash
-# Push schema ke database
-npm run db:push
+# Terapkan migration
+npx prisma migrate deploy
 
-# Isi data awal (kelas, jenis pelanggaran, akun demo)
+# Atau untuk dev cepat:
+# npm run db:push
+
+# Isi data awal
 npm run db:seed
 ```
 
-Akun yang dibuat oleh seed:
+Akun contoh dari seed:
 | Role | Email | Password |
 |------|-------|----------|
 | Super Admin | admin@sman1contoh.sch.id | Admin@1234 |
@@ -76,7 +69,7 @@ Akun yang dibuat oleh seed:
 
 ---
 
-## LANGKAH 4 — Test Lokal
+## LANGKAH 4 — Test lokal
 
 ```bash
 npm run dev
@@ -86,82 +79,64 @@ Buka http://localhost:3000
 
 ---
 
-## LANGKAH 5 — Deploy ke Vercel (Gratis)
+## LANGKAH 5 — Deploy self-hosted (Docker)
 
-### A. Push ke GitHub
+### A. Environment di server / secret `ENV_FILE_CONTENT`
 
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/USERNAME/REPO.git
-git push -u origin main
+Hostname DB **harus** `db` (nama service di `docker-compose.yml`):
+
+```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=ganti_password_kuat
+POSTGRES_DB=point_sekolah
+DATABASE_URL=postgresql://postgres:ganti_password_kuat@db:5432/point_sekolah
+DIRECT_URL=postgresql://postgres:ganti_password_kuat@db:5432/point_sekolah
+NEXTAUTH_SECRET=...
+NEXTAUTH_URL=https://point-sekolah.rofimain.com
+# ... NEXT_PUBLIC_*, CRON_SECRET, TELEGRAM_*, dll.
 ```
 
-### B. Connect ke Vercel
+### B. Push ke `main`
 
-1. Buka https://vercel.com dan login dengan GitHub
-2. Klik **"Add New Project"**
-3. Import repository dari GitHub
-4. Vercel otomatis mendeteksi Next.js
-5. **JANGAN klik Deploy dulu** — isi Environment Variables terlebih dahulu
+Push ke branch `main` memicu workflow `.github/workflows/deploy.yml`:
+1. Build image → `ghcr.io/<owner>/point-sekolah`
+2. SSH ke server → `git pull` + tulis `.env`/`certs` → `docker compose up -d`
 
-### C. Isi Environment Variables di Vercel
+App startup menjalankan `prisma migrate deploy` lalu `npm run start`.
 
-Di halaman setup, klik **"Environment Variables"** dan tambahkan:
+### C. Caddy / domain
 
-| Key | Value |
-|-----|-------|
-| `DATABASE_URL` | String pooled dari Neon |
-| `DIRECT_URL` | String direct dari Neon |
-| `NEXTAUTH_SECRET` | Random string 32 karakter |
-| `NEXTAUTH_URL` | https://namaproject.vercel.app |
-| `NEXT_PUBLIC_SCHOOL_NAME` | Nama sekolah |
-| `NEXT_PUBLIC_SCHOOL_SHORT` | Singkatan (2 huruf) |
-| `NEXT_PUBLIC_STUDENT_DOMAIN` | Domain email siswa |
-| `NEXT_PUBLIC_STAFF_DOMAIN` | Domain email guru |
-| `NEXT_PUBLIC_CRITICAL_POINTS` | 75 |
-| `NEXT_PUBLIC_WARNING_POINTS` | 50 |
-
-6. Klik **Deploy**
-
-### D. Update NEXTAUTH_URL
-
-Setelah deploy selesai, Vercel akan memberi URL seperti `https://school-violation-abc123.vercel.app`.
-Pergi ke **Settings → Environment Variables** dan update `NEXTAUTH_URL` ke URL tersebut.
-Klik **Redeploy**.
+Edit `Caddyfile` agar host sesuai domain sekolah, pastikan origin cert ada di `certs/`.
 
 ---
 
-## LANGKAH 6 — Jalankan Seed di Production
+## Cron quiet-month (remisi poin)
 
-Di terminal lokal, ubah DATABASE_URL ke Neon (sudah ada di .env.local) lalu:
+Endpoint API tetap: `POST /api/cron/quiet-month-points` + header `x-cron-secret`.
 
-```bash
-npm run db:seed
+Cron Vercel **tidak dipakai**. Jadwalkan di server dengan cron Linux, misalnya:
+
+```cron
+0 2 * * * curl -sS -X POST "https://point-sekolah.rofimain.com/api/cron/quiet-month-points" -H "x-cron-secret: $CRON_SECRET"
 ```
 
-Atau gunakan Neon SQL editor di dashboard Neon.
+(Atur sendiri di crontab server — tidak dilampirkan otomatis di repo.)
 
 ---
 
 ## KUSTOMISASI DOMAIN EMAIL SEKOLAH
 
-Di file `.env.local` dan Vercel, ubah:
+Di `.env` produksi, ubah:
 ```
 NEXT_PUBLIC_STUDENT_DOMAIN=siswa.sma-anda.sch.id
 NEXT_PUBLIC_STAFF_DOMAIN=sma-anda.sch.id
 ```
 
-Pastikan email siswa menggunakan format: `nisn@siswa.sma-anda.sch.id`
-Pastikan email guru menggunakan format: `nama@sma-anda.sch.id`
+Format email: `nisn@siswa.…` (siswa), `nama@…` (staf).
 
 ---
 
 ## RESET PASSWORD SISWA / GURU
-
-Jalankan script ini di terminal (ganti email dan password):
 
 ```bash
 node -e "
@@ -170,7 +145,7 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 bcrypt.hash('PasswordBaru123', 12).then(h =>
   prisma.user.update({ where: { email: 'email@domain.sch.id' }, data: { password: h } })
-).then(u => { console.log('Updated:', u.name); prisma.$disconnect(); });
+).then(u => { console.log('Updated:', u.name); prisma.\$disconnect(); });
 "
 ```
 
@@ -179,24 +154,16 @@ bcrypt.hash('PasswordBaru123', 12).then(h =>
 ## TROUBLESHOOTING
 
 **Error: PrismaClientInitializationError**
-→ Cek DATABASE_URL dan DIRECT_URL di environment variables
+→ Cek `DATABASE_URL` / `DIRECT_URL` (hostname `db` di dalam Compose)
 
 **Error: NEXTAUTH_URL mismatch**
-→ Pastikan NEXTAUTH_URL sama persis dengan URL Vercel Anda
+→ Pastikan `NEXTAUTH_URL` sama dengan URL publik HTTPS
 
 **Login gagal "domain tidak valid"**
-→ Cek NEXT_PUBLIC_STUDENT_DOMAIN dan NEXT_PUBLIC_STAFF_DOMAIN
+→ Cek `NEXT_PUBLIC_STUDENT_DOMAIN` dan `NEXT_PUBLIC_STAFF_DOMAIN`
 
-**Build gagal di Vercel**
-→ Pastikan semua environment variables sudah diisi sebelum deploy
+**Build gagal di GitHub Actions (`npm ci` / Prisma)**
+→ Pastikan Dockerfile memakai `npm ci --ignore-scripts` lalu `npx prisma generate` setelah `COPY . .`
 
----
-
-## LIMIT GRATIS
-
-| Service | Limit Gratis |
-|---------|-------------|
-| Vercel | 100 GB bandwidth/bulan, unlimited deploy |
-| Neon | 512 MB storage, 190 jam compute/bulan |
-
-Untuk sekolah dengan ~1000 siswa, limit ini lebih dari cukup.
+**migrate deploy kosong / gagal**
+→ Pastikan folder `prisma/migrations/` ada di image

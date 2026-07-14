@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export { QUIET_MONTH_REASON } from "@/lib/point-adjustment-reason";
 
-/** DB belum di-migrate (mis. build Vercel sebelum `prisma migrate deploy`) */
+/** DB belum di-migrate (mis. image jalan sebelum `prisma migrate deploy`) */
 export function isPointAdjustmentTableMissing(e: unknown): boolean {
   return (
     e instanceof Prisma.PrismaClientKnownRequestError &&

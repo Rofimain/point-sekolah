@@ -101,7 +101,7 @@ export function humanizeTelegramSendError(apiDescription: string, usedNumericCha
   if (d.includes("chat not found")) {
     if (usedNumericChatId) {
       return (
-        "Chat tidak ditemukan (meski pakai angka). Penyebab umum: (1) ortu belum pernah Start ke **bot yang sama** dengan TELEGRAM_BOT_TOKEN di Vercel, " +
+        "Chat tidak ditemukan (meski pakai angka). Penyebab umum: (1) ortu belum pernah Start ke **bot yang sama** dengan TELEGRAM_BOT_TOKEN di environment, " +
         "(2) Chat ID diambil dari bot lain / dari @userinfobot — harus dari obrolan dengan bot sekolah, " +
         "(3) salah menyalin angka. Solusi: hapus angka di data siswa, pakai tautan ortu (ortu buka link → Start), atau ambil ID dari getUpdates **token bot ini** setelah ortu Start."
       );

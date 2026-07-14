@@ -17,7 +17,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
   if (!bot) {
     return NextResponse.json(
-      { error: "Set NEXT_PUBLIC_TELEGRAM_BOT_USERNAME (username bot tanpa @) di Vercel" },
+      { error: "Set NEXT_PUBLIC_TELEGRAM_BOT_USERNAME (username bot tanpa @) di environment" },
       { status: 400 }
     );
   }

@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     recordedByStaffName: staffName,
   };
 
-  /** Wajib await: di serverless (Vercel) tugas "fire-and-forget" sering dibunuh sebelum fetch ke Telegram selesai. */
+  /** Wajib await: jangan fire-and-forget — request bisa berakhir sebelum fetch ke Telegram selesai. */
   let parentTelegramNotify:
     | { status: "sent" }
     | { status: "skipped_no_recipient" }

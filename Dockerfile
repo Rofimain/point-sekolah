@@ -7,12 +7,12 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY . .
 
 RUN npx prisma generate
-RUN npm run build
+RUN npx next build
 
 RUN npm prune --omit=dev && npm install prisma --no-save
 
