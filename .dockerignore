@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.github
+*.md
+.env
+.env.local
+Dockerfile
+docker-compose.yml
+Caddyfile
+certs
