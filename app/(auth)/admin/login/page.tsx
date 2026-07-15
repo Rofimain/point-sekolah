@@ -67,14 +67,6 @@ export default function AdminLoginPage() {
           {error && <div className="p-3 rounded-lg text-xs" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>⚠ {error}</div>}
           <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 text-sm disabled:opacity-60">{loading ? "Memproses..." : "Masuk sebagai Admin"}</button>
         </form>
-        <div className="flex flex-col items-stretch gap-2 mt-4 text-center">
-          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border rounded text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
-            <span style={{ color: "var(--warning)", fontSize: 10 }}>■</span> Guru / wali kelas: lihat data & tambah pelanggaran
-          </span>
-          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border rounded text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
-            <span style={{ color: "var(--success)", fontSize: 10 }}>■</span> Admin: akses operasional penuh · Super Admin: akses penuh
-          </span>
-        </div>
         <div className="mt-4 pt-4 border-t text-center" style={{ borderColor: "var(--border)" }}>
           <Link href="/login" className="text-xs hover:underline" style={{ color: "var(--accent)" }}>← Login sebagai Siswa</Link>
         </div>
