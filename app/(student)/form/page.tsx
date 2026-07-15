@@ -27,6 +27,7 @@ export default async function StudentFormPage() {
       points: true,
       date: true,
       createdByName: true,
+      evidenceImagePresent: true,
       createdAt: true,
       updatedAt: true,
       violationType: true,

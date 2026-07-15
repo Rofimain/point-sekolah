@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
@@ -100,6 +100,10 @@ export default function StudentsClient({
   const [classMajor, setClassMajor] = useState("");
   const [classYear, setClassYear] = useState(suggestedYear);
   const [deletingClassId, setDeletingClassId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSearch(searchParams.search || "");
+  }, [searchParams.search]);
 
   const previewRows = useMemo(() => {
     try {
@@ -427,15 +431,22 @@ export default function StudentsClient({
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && navigate({ search })}
+          onKeyDown={(e) => e.key === "Enter" && navigate({ search: search.trim() })}
           placeholder={
             selectedClass
-              ? `Cari di ${selectedClass.name} — nama, NISN, email… (Enter)`
-              : "Cari nama, NISN, email… (Enter)"
+              ? `Cari di ${selectedClass.name} — nama, NISN, email…`
+              : "Cari nama, NISN, email…"
           }
           className="min-w-0 flex-1 basis-full rounded-lg border px-3 py-2 text-xs sm:basis-auto sm:min-w-[12rem]"
           style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
         />
+        <button
+          type="button"
+          onClick={() => navigate({ search: search.trim() })}
+          className="btn-primary px-4 py-2 text-xs"
+        >
+          Cari
+        </button>
         {searchParams.search && (
           <button
             type="button"

@@ -107,7 +107,16 @@ export async function POST(req: NextRequest) {
     if (!r.ok) console.error("[telegram] kirim ke ortu gagal:", r.error);
   }
 
-  return NextResponse.json({ ...record, parentTelegramNotify }, { status: 201 });
+  return NextResponse.json(
+    {
+      id: record.id,
+      date: record.date,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      parentTelegramNotify,
+    },
+    { status: 201 }
+  );
 }
 
 export async function GET(req: NextRequest) {

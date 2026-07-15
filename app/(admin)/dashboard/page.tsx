@@ -62,7 +62,9 @@ async function getDashboardData() {
     count: monthCounts[i] ?? 0,
   }));
 
-  const sortedVt = [...vtGroups].sort((a, b) => b._count.id - a._count.id).slice(0, 5);
+  const sortedVt = [...vtGroups]
+    .sort((a, b) => b._count.id - a._count.id || a.violationTypeId.localeCompare(b.violationTypeId))
+    .slice(0, 5);
   const vtIds = sortedVt.map((g) => g.violationTypeId);
   const vtNames =
     vtIds.length === 0
@@ -77,18 +79,8 @@ async function getDashboardData() {
     count: g._count.id,
   }));
 
-  const ranked = Array.from(effectivePointsMap.entries())
-    .map(([studentId, total]) => ({ studentId, total }))
-    .sort((a, b) => b.total - a.total);
-
-  const top5 = ranked.slice(0, 5);
-  const criticalRanked = ranked.filter((x) => x.total >= CRITICAL_POINTS).slice(0, 10);
-  const over25Ranked = ranked.filter((x) => x.total >= ALERT_POINTS);
-  const needIdSet = new Set<string>();
-  top5.forEach((x) => needIdSet.add(x.studentId));
-  criticalRanked.forEach((x) => needIdSet.add(x.studentId));
-  over25Ranked.forEach((x) => needIdSet.add(x.studentId));
-  const needIds = Array.from(needIdSet);
+  const unsortedRanked = Array.from(effectivePointsMap.entries()).map(([studentId, total]) => ({ studentId, total }));
+  const needIds = unsortedRanked.map((entry) => entry.studentId);
 
   const users =
     needIds.length === 0
@@ -98,6 +90,17 @@ async function getDashboardData() {
           include: { class: { select: { name: true } } },
         });
   const userById = new Map(users.map((u) => [u.id, u]));
+  const ranked = unsortedRanked
+    .filter((entry) => userById.has(entry.studentId))
+    .sort((a, b) => {
+      if (a.total !== b.total) return b.total - a.total;
+      const aName = userById.get(a.studentId)?.name ?? "";
+      const bName = userById.get(b.studentId)?.name ?? "";
+      return aName.localeCompare(bName, "id") || a.studentId.localeCompare(b.studentId);
+    });
+  const top5 = ranked.slice(0, 5);
+  const criticalRanked = ranked.filter((entry) => entry.total >= CRITICAL_POINTS).slice(0, 10);
+  const over25Ranked = ranked.filter((entry) => entry.total >= ALERT_POINTS);
 
   const topStudents = top5
     .map((x) => {

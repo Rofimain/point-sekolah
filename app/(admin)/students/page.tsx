@@ -42,7 +42,7 @@ export default async function StudentsPage({
         active: true,
         class: { select: { name: true, grade: true } },
       },
-      orderBy: { name: "asc" },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
       skip: (page - 1) * perPage,
       take: perPage,
     }),

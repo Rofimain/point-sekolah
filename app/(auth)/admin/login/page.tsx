@@ -3,8 +3,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
-
-const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME || "SMAN 1 Contoh";
+import { SCHOOL_NAME } from "@/lib/branding";
 
 function toStaffCredential(raw: string): string {
   const trimmed = raw.trim();

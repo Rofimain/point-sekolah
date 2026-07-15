@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManageData, isStaffRole } from "@/lib/staff-roles";
+import { canManageData } from "@/lib/staff-roles";
 import { validateHeavyViolationEvidence } from "@/lib/heavy-violation";
 import { parseIncidentDateYmd } from "@/lib/incident-date";
+import { canReadViolationRecord } from "@/lib/record-access";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -70,22 +71,34 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || !isStaffRole(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const record = await prisma.violationRecord.findUnique({
     where: { id: params.id },
     select: {
       id: true,
+      studentId: true,
       evidenceImageData: true,
       studentSignatureData: true,
       points: true,
-      student: { select: { name: true } },
+      session: true,
+      notes: true,
+      date: true,
+      createdAt: true,
+      createdByName: true,
+      student: { select: { name: true, nisn: true, class: { select: { name: true } } } },
       violationType: { select: { name: true } },
     },
   });
 
   if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(record);
+  if (!canReadViolationRecord(session.user, record.studentId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { studentId: _studentId, ...safeRecord } = record;
+  return NextResponse.json(safeRecord, {
+    headers: { "Cache-Control": "private, no-store, max-age=0", "X-Content-Type-Options": "nosniff" },
+  });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {

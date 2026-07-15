@@ -51,6 +51,7 @@ export const authOptions: NextAuthOptions = {
           nisn: user.nisn ?? undefined,
           className: user.class?.name ?? undefined,
           classId: user.classId ?? undefined,
+          authVersion: user.authVersion,
         };
       },
     }),
@@ -94,6 +95,7 @@ export const authOptions: NextAuthOptions = {
           nip: user.nip ?? undefined,
           className: user.class?.name ?? undefined,
           classId: user.classId ?? undefined,
+          authVersion: user.authVersion,
         };
       },
     }),
@@ -107,6 +109,7 @@ export const authOptions: NextAuthOptions = {
         token.nip = (user as any).nip;
         token.className = (user as any).className;
         token.classId = (user as any).classId;
+        token.authVersion = (user as any).authVersion;
         delete token.error;
       }
 
@@ -121,11 +124,14 @@ export const authOptions: NextAuthOptions = {
             nisn: true,
             nip: true,
             classId: true,
+            authVersion: true,
             class: { select: { name: true } },
           },
         });
         if (!dbUser?.active) {
           token.error = "AccountInactive";
+        } else if (token.authVersion !== dbUser.authVersion) {
+          token.error = "SessionRevoked";
         } else {
           token.role = dbUser.role;
           token.nisn = dbUser.nisn ?? undefined;
@@ -139,7 +145,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (token?.error === "AccountInactive") {
+      if (token?.error === "AccountInactive" || token?.error === "SessionRevoked") {
         // Jangan teruskan identitas bila nonaktif (API tanpa middleware masih memakai getServerSession).
         return { ...session, user: { ...session.user, id: "", email: null, role: "INACTIVE" } } as Session;
       }
@@ -179,6 +185,7 @@ declare module "next-auth" {
     nip?: string;
     className?: string;
     classId?: string;
+    authVersion?: number;
   }
   interface Session {
     user: {
@@ -203,6 +210,7 @@ declare module "next-auth/jwt" {
     nip?: string;
     className?: string;
     classId?: string;
+    authVersion?: number;
     error?: string;
   }
 }

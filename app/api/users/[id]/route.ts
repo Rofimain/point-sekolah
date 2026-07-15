@@ -7,6 +7,7 @@ import { Role } from "@prisma/client";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { assertCanDeleteSuperAdmin, assertCanDemoteSuperAdmin, LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 import { canDeleteUser, canManageData, canModifyUser, isAdminRole } from "@/lib/staff-roles";
+import { validateNewPassword } from "@/lib/password-policy";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 
@@ -54,7 +55,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const updateData: Record<string, unknown> = {};
   if (body.name) updateData.name = body.name;
   if (body.email) updateData.email = body.email;
-  if (body.password) updateData.password = await bcrypt.hash(body.password, 12);
+  if (body.password) {
+    const nextPassword = validateNewPassword(body.password);
+    if (!nextPassword.ok) return NextResponse.json({ error: nextPassword.error }, { status: 400 });
+    updateData.password = await bcrypt.hash(nextPassword.value, 12);
+    updateData.authVersion = { increment: 1 };
+  }
   if (body.role !== undefined) {
     updateData.role = body.role as Role;
   }

@@ -45,7 +45,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
       prisma.user.findMany({
         where: studentWhere,
         select: RECORD_STUDENT_SELECT,
-        orderBy: { name: "asc" },
+        orderBy: [{ name: "asc" }, { id: "asc" }],
         skip: (page - 1) * perPage,
         take: perPage,
       }),
@@ -59,7 +59,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
               prisma.violationRecord.findMany({
                 where: { studentId: id },
                 take: ROSTER_RECORDS_PER_STUDENT,
-                orderBy: { createdAt: "desc" },
+                orderBy: [{ createdAt: "desc" }, { id: "desc" }],
                 select: RECORD_LIST_SELECT,
               })
             )
@@ -103,7 +103,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
       prisma.violationRecord.findMany({
         where: recordWhere,
         select: RECORD_LIST_SELECT,
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         skip: (page - 1) * perPage,
         take: perPage,
       }),

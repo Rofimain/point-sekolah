@@ -4,8 +4,9 @@ import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { useEffect, useState, type ReactNode } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
-
-const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME || "SMAN 1 Contoh";
+import Link from "next/link";
+import { SCHOOL_NAME } from "@/lib/branding";
+import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog";
 
 export type AdminNavToggle = {
   open: boolean;
@@ -23,10 +24,12 @@ export function TopBar({
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
   return (
+    <>
     <header
       className="sticky top-0 z-[60] flex h-14 shrink-0 items-center justify-between gap-2 border-b px-3 sm:px-5"
       style={{
@@ -58,14 +61,18 @@ export function TopBar({
             )}
           </button>
         ) : null}
-        <div className="relative shrink-0">
+        <Link
+          href={session?.user.role === "STUDENT" ? "/form" : "/dashboard"}
+          className="relative shrink-0 rounded-full focus:outline-none focus:ring-2"
+          aria-label={session?.user.role === "STUDENT" ? "Kembali ke portal siswa" : "Kembali ke dashboard"}
+        >
           <BrandLogo size={36} priority className="h-9 w-9" />
           <span
             className="pointer-events-none absolute -bottom-0.5 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-sm"
             style={{ background: "var(--gold)" }}
             aria-hidden
           />
-        </div>
+        </Link>
         <div className="min-w-0 flex-1">
           <div className="truncate font-serif text-[15px] font-semibold leading-tight" style={{ color: "var(--text-primary)" }}>
             {SCHOOL_NAME}
@@ -104,6 +111,16 @@ export function TopBar({
             </span>
             <button
               type="button"
+              onClick={() => setPasswordOpen(true)}
+              className="touch-manipulation rounded-lg border px-2 py-2 text-[11px] font-semibold transition-colors hover:opacity-80 sm:px-3 sm:py-1.5 sm:text-xs"
+              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+              title="Ubah password akun"
+            >
+              <span className="sm:hidden" aria-hidden>🔒</span>
+              <span className="sr-only sm:not-sr-only">Password</span>
+            </button>
+            <button
+              type="button"
               onClick={() => signOut({ callbackUrl: session.user.role === "STUDENT" ? "/login" : "/admin/login" })}
               className="touch-manipulation rounded-lg border px-2.5 py-2 text-[11px] font-semibold transition-colors hover:opacity-80 sm:px-3 sm:py-1.5 sm:text-xs"
               style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
@@ -114,5 +131,9 @@ export function TopBar({
         )}
       </div>
     </header>
+      {session && passwordOpen ? (
+        <ChangePasswordDialog role={session.user.role} onClose={() => setPasswordOpen(false)} />
+      ) : null}
+    </>
   );
 }

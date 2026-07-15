@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Newsreader, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-
-const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME || "SMAN 1 Contoh";
+import { SCHOOL_NAME } from "@/lib/branding";
 
 const fontSans = Source_Sans_3({
   subsets: ["latin"],

@@ -24,7 +24,7 @@ export default async function UsersPage({
   const [rawUsers, total, classes, superAdminTotal, activeSuperAdminCount] = await Promise.all([
     prisma.user.findMany({
       where,
-      orderBy: [{ role: "asc" }, { name: "asc" }],
+      orderBy: [{ role: "asc" }, { name: "asc" }, { id: "asc" }],
       skip: (page - 1) * perPage,
       take: perPage,
       select: {

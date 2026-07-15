@@ -15,6 +15,7 @@ import {
   COMPRESS_TARGET_BYTES_STUDENT,
   isProbablyImageFile,
 } from "@/lib/compress-image-client";
+import { EvidencePreviewModal } from "@/components/records/EvidencePreviewModal";
 
 const SESSIONS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 const CRITICAL = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
@@ -98,10 +99,12 @@ export default function StudentFormClient({
   const [incidentDate, setIncidentDate] = useState(() => calendarTodayYmd());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [previewRecordId, setPreviewRecordId] = useState<string | null>(null);
   const [successSheet, setSuccessSheet] = useState<{
     title: string;
     subtitle: string;
     details: QrisSuccessDetail[];
+    receiptRecordId?: string;
   } | null>(null);
 
   const selectedVt = violationTypes.find((v: any) => v.id === vtId);
@@ -200,6 +203,7 @@ export default function StudentFormClient({
         title: "Berhasil",
         subtitle: "Laporan pelanggaran Anda sudah masuk dan tercatat di sistem sekolah.",
         details,
+        receiptRecordId: data.id,
       });
       setVtId("");
       setSessionSlot("");
@@ -219,6 +223,9 @@ export default function StudentFormClient({
 
   return (
     <div className="min-h-screen min-h-[100dvh]" style={{ background: "var(--bg-primary)" }}>
+      {previewRecordId ? (
+        <EvidencePreviewModal recordId={previewRecordId} onClose={() => setPreviewRecordId(null)} />
+      ) : null}
       {successSheet && (
         <QrisStyleSuccessSheet
           open
@@ -226,6 +233,7 @@ export default function StudentFormClient({
           title={successSheet.title}
           subtitle={successSheet.subtitle}
           details={successSheet.details}
+          receiptRecordId={successSheet.receiptRecordId}
         />
       )}
       <TopBar />
@@ -567,6 +575,9 @@ export default function StudentFormClient({
                       >
                         Ket.
                       </th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
+                        Laporan
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -583,6 +594,25 @@ export default function StudentFormClient({
                         </td>
                         <td className="px-4 py-3 text-xs hidden sm:table-cell" style={{ color: "var(--text-muted)" }}>
                           {r.notes || "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col items-start gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewRecordId(r.id)}
+                              className="text-[11px] font-semibold hover:underline"
+                              style={{ color: "var(--accent)" }}
+                            >
+                              Lihat detail{r.evidenceImagePresent ? " / foto" : ""}
+                            </button>
+                            <a
+                              href={`/api/records/${encodeURIComponent(r.id)}/evidence-pdf`}
+                              className="text-[11px] font-semibold hover:underline"
+                              style={{ color: "var(--success)" }}
+                            >
+                              Unduh PDF
+                            </a>
+                          </div>
                         </td>
                       </tr>
                     ))}

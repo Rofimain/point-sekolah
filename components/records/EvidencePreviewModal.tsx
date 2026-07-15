@@ -10,6 +10,12 @@ type Payload = {
   id: string;
   evidenceImageData: string | null;
   studentSignatureData: string | null;
+  points: number;
+  session: string | null;
+  notes: string | null;
+  date: string;
+  createdAt: string;
+  createdByName: string | null;
   student: { name: string };
   violationType: { name: string };
 };
@@ -88,6 +94,31 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
           <p className="py-6 text-center text-xs text-neutral-500">Tidak ada foto atau teks pengakuan untuk catatan ini.</p>
         )}
 
+        {!loading && data ? (
+          <dl className="mb-4 grid grid-cols-2 gap-3 rounded-lg border bg-neutral-50 p-3 text-xs text-neutral-800">
+            <div>
+              <dt className="text-[10px] uppercase text-neutral-500">Tanggal</dt>
+              <dd>{new Date(data.date).toLocaleDateString("id-ID")}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] uppercase text-neutral-500">Poin</dt>
+              <dd>{data.points} poin</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] uppercase text-neutral-500">Sesi</dt>
+              <dd>{data.session || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] uppercase text-neutral-500">Diinput oleh</dt>
+              <dd>{data.createdByName || "—"}</dd>
+            </div>
+            <div className="col-span-2">
+              <dt className="text-[10px] uppercase text-neutral-500">Keterangan</dt>
+              <dd className="whitespace-pre-wrap">{data.notes || "—"}</dd>
+            </div>
+          </dl>
+        ) : null}
+
         {img && (
           <div className="mb-4">
             <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-500">Foto bukti</p>
@@ -112,6 +143,14 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
             )}
           </div>
         )}
+        {!loading && data ? (
+          <a
+            href={`/api/records/${encodeURIComponent(recordId)}/evidence-pdf`}
+            className="mt-4 block w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-center text-xs font-semibold text-white hover:bg-emerald-700"
+          >
+            Unduh laporan PDF
+          </a>
+        ) : null}
       </div>
     </div>
   );

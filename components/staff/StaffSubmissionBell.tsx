@@ -229,6 +229,7 @@ export function StaffSubmissionBell() {
         title="Laporan diterima"
         subtitle="Pelanggaran dari portal siswa telah masuk ke catatan."
         details={sheetItem ? sheetDetails(sheetItem) : []}
+        receiptRecordId={sheetItem?.id}
         afterPrimaryActions={
           <button
             type="button"

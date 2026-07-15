@@ -34,7 +34,7 @@ DIRECT_URL="postgresql://postgres:postgres@localhost:5432/point_sekolah"
 NEXTAUTH_SECRET="jalankan: openssl rand -base64 32"
 NEXTAUTH_URL="http://localhost:3000"
 
-NEXT_PUBLIC_SCHOOL_NAME="Nama Sekolah Anda"
+NEXT_PUBLIC_SCHOOL_NAME="SMA ISLAM AL AZHAR 1 JAKARTA"
 NEXT_PUBLIC_SCHOOL_SHORT="NS"
 NEXT_PUBLIC_STUDENT_DOMAIN="siswa.namaschool.sch.id"
 NEXT_PUBLIC_STAFF_DOMAIN="namaschool.sch.id"

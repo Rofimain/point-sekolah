@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 export type DashStudentRow = {
   id: string;
@@ -9,133 +9,112 @@ export type DashStudentRow = {
   total: number;
 };
 
-const LS_OVER25 = "dashboard:over25:colOrder";
-const LS_TOP5 = "dashboard:top5:colOrder";
+type SortKey = "name" | "class" | "points" | "status";
+type SortState = { key: SortKey; direction: "asc" | "desc" };
 
-const OVER25_KEYS = ["name", "class", "points"] as const;
-const TOP5_KEYS = ["name", "class", "points", "status"] as const;
+const OVER25_COLUMNS = [
+  { key: "class", label: "Kelas", hiddenOnMobile: true },
+  { key: "name", label: "Nama" },
+  { key: "points", label: "Poin" },
+] as const;
 
-type Over25Key = (typeof OVER25_KEYS)[number];
-type Top5Key = (typeof TOP5_KEYS)[number];
-
-const OVER25_LABELS: Record<Over25Key, string> = {
-  name: "Nama",
-  class: "Kelas",
-  points: "Poin",
-};
-const TOP5_LABELS: Record<Top5Key, string> = {
-  name: "Nama Siswa",
-  class: "Kelas",
-  points: "Total Poin",
-  status: "Status",
-};
-
-function parseOrder<T extends string>(raw: string | null, valid: readonly T[], fallback: T[]): T[] {
-  if (!raw) return [...fallback];
-  const allowed = new Set<string>(valid as unknown as string[]);
-  try {
-    const arr = JSON.parse(raw) as unknown;
-    if (!Array.isArray(arr)) return [...fallback];
-    const seen = new Set<T>();
-    const out: T[] = [];
-    for (const k of arr) {
-      const s = typeof k === "string" ? k : "";
-      if (allowed.has(s) && !seen.has(s as T)) {
-        seen.add(s as T);
-        out.push(s as T);
-      }
-    }
-    for (const k of valid) {
-      if (!seen.has(k)) out.push(k);
-    }
-    return out.length === valid.length ? out : [...fallback];
-  } catch {
-    return [...fallback];
-  }
-}
+const TOP5_COLUMNS = [
+  { key: "name", label: "Nama Siswa" },
+  { key: "class", label: "Kelas", hiddenOnMobile: true },
+  { key: "points", label: "Total Poin" },
+  { key: "status", label: "Status" },
+] as const;
 
 function PointBadge({ points }: { points: number }) {
-  const c =
+  const colors =
     points >= 75
       ? (["var(--danger-bg)", "var(--danger)"] as const)
       : points >= 50
         ? (["var(--warning-bg)", "var(--warning)"] as const)
         : (["var(--success-bg)", "var(--success)"] as const);
   return (
-    <span className="badge-soft" style={{ background: c[0], color: c[1], borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }}>
+    <span
+      className="badge-soft"
+      style={{
+        background: colors[0],
+        color: colors[1],
+        borderColor: "color-mix(in srgb, currentColor 18%, transparent)",
+      }}
+    >
       {points}
     </span>
   );
 }
 
+function statusRank(points: number, criticalPoints: number) {
+  if (points >= criticalPoints) return 2;
+  if (points >= 50) return 1;
+  return 0;
+}
+
 function StatusBadge({ points, criticalPoints }: { points: number; criticalPoints: number }) {
-  const s =
+  const status =
     points >= criticalPoints
       ? (["var(--danger-bg)", "var(--danger)", "Kritis"] as const)
       : points >= 50
         ? (["var(--warning-bg)", "var(--warning)", "Perhatian"] as const)
         : (["var(--success-bg)", "var(--success)", "Normal"] as const);
   return (
-    <span className="badge-soft px-2.5" style={{ background: s[0], color: s[1], borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }}>
-      {s[2]}
+    <span
+      className="badge-soft px-2.5"
+      style={{
+        background: status[0],
+        color: status[1],
+        borderColor: "color-mix(in srgb, currentColor 18%, transparent)",
+      }}
+    >
+      {status[2]}
     </span>
   );
 }
 
-function move<T>(arr: T[], index: number, dir: -1 | 1): T[] {
-  const j = index + dir;
-  if (j < 0 || j >= arr.length) return arr;
-  const next = [...arr];
-  [next[index], next[j]] = [next[j], next[index]];
-  return next;
+export function sortDashboardRows(rows: DashStudentRow[], sort: SortState, criticalPoints: number) {
+  const direction = sort.direction === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    let compared = 0;
+    if (sort.key === "points") compared = a.total - b.total;
+    else if (sort.key === "status") compared = statusRank(a.total, criticalPoints) - statusRank(b.total, criticalPoints);
+    else if (sort.key === "class") compared = (a.className ?? "").localeCompare(b.className ?? "", "id");
+    else compared = a.name.localeCompare(b.name, "id");
+
+    if (compared !== 0) return compared * direction;
+    const byName = a.name.localeCompare(b.name, "id");
+    return byName || a.id.localeCompare(b.id);
+  });
 }
 
-function ColumnOrderControls<T extends string>({
-  order,
-  onChange,
-  labels,
+function SortHeader({
+  column,
+  sort,
+  onSort,
 }: {
-  order: T[];
-  onChange: (next: T[]) => void;
-  labels: Record<string, string>;
+  column: { key: SortKey; label: string; hiddenOnMobile?: boolean };
+  sort: SortState;
+  onSort: (key: SortKey) => void;
 }) {
+  const active = sort.key === column.key;
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 border-t pt-2" style={{ borderColor: "var(--border)" }}>
-      <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-        Urutan kolom
-      </span>
-      <div className="flex flex-wrap gap-1.5">
-        {order.map((key, i) => (
-          <span
-            key={key}
-            className="inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[10px]"
-            style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
-          >
-            <span className="max-w-[5.5rem] truncate">{labels[key]}</span>
-            <button
-              type="button"
-              className="touch-manipulation rounded px-0.5 disabled:opacity-30"
-              style={{ color: "var(--accent)" }}
-              disabled={i === 0}
-              aria-label={`Naikkan ${labels[key]}`}
-              onClick={() => onChange(move(order, i, -1))}
-            >
-              ↑
-            </button>
-            <button
-              type="button"
-              className="touch-manipulation rounded px-0.5 disabled:opacity-30"
-              style={{ color: "var(--accent)" }}
-              disabled={i === order.length - 1}
-              aria-label={`Turunkan ${labels[key]}`}
-              onClick={() => onChange(move(order, i, 1))}
-            >
-              ↓
-            </button>
-          </span>
-        ))}
-      </div>
-    </div>
+    <th
+      className={`px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4 ${
+        column.hiddenOnMobile ? "hidden sm:table-cell" : ""
+      }`}
+      style={{ color: "var(--text-muted)" }}
+      aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column.key)}
+        className="inline-flex touch-manipulation items-center gap-1 rounded text-left hover:opacity-80"
+      >
+        {column.label}
+        <span aria-hidden>{active ? (sort.direction === "asc" ? "↑" : "↓") : "↕"}</span>
+      </button>
+    </th>
   );
 }
 
@@ -150,94 +129,45 @@ export default function DashboardRankedTables({
   alertPoints: number;
   criticalPoints: number;
 }) {
-  const defaultOver25 = useMemo(() => [...OVER25_KEYS] as Over25Key[], []);
-  const defaultTop5 = useMemo(() => [...TOP5_KEYS] as Top5Key[], []);
+  const [over25Sort, setOver25Sort] = useState<SortState>({ key: "points", direction: "desc" });
+  const [top5Sort, setTop5Sort] = useState<SortState>({ key: "points", direction: "desc" });
 
-  const [over25Order, setOver25Order] = useState<Over25Key[]>(defaultOver25);
-  const [top5Order, setTop5Order] = useState<Top5Key[]>(defaultTop5);
-  const [mounted, setMounted] = useState(false);
+  const sortedOver25 = useMemo(
+    () => sortDashboardRows(over25, over25Sort, criticalPoints),
+    [over25, over25Sort, criticalPoints]
+  );
+  const sortedTop5 = useMemo(() => sortDashboardRows(top5, top5Sort, criticalPoints), [top5, top5Sort, criticalPoints]);
 
-  useEffect(() => {
-    setOver25Order(parseOrder(localStorage.getItem(LS_OVER25), OVER25_KEYS, defaultOver25));
-    setTop5Order(parseOrder(localStorage.getItem(LS_TOP5), TOP5_KEYS, defaultTop5));
-    setMounted(true);
-  }, [defaultOver25, defaultTop5]);
-
-  const persistOver25 = useCallback((next: Over25Key[]) => {
-    setOver25Order(next);
-    localStorage.setItem(LS_OVER25, JSON.stringify(next));
-  }, []);
-
-  const persistTop5 = useCallback((next: Top5Key[]) => {
-    setTop5Order(next);
-    localStorage.setItem(LS_TOP5, JSON.stringify(next));
-  }, []);
-
-  function renderOver25Cell(key: Over25Key, row: DashStudentRow) {
-    if (key === "name") {
-      return (
-        <td key={key} className="px-3 py-2.5 text-xs font-medium sm:px-4" style={{ color: "var(--text-primary)" }}>
-          {row.name}
-        </td>
-      );
-    }
-    if (key === "class") {
-      return (
-        <td
-          key={key}
-          className="hidden px-3 py-2.5 text-xs sm:table-cell sm:px-4"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          {row.className || "—"}
-        </td>
-      );
-    }
-    return (
-      <td key={key} className="px-3 py-2.5 sm:px-4">
-        <PointBadge points={row.total} />
-      </td>
-    );
+  function nextSort(setter: (state: SortState) => void, current: SortState, key: SortKey) {
+    setter({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc" });
   }
 
-  function renderTop5Cell(key: Top5Key, row: DashStudentRow) {
+  function renderCell(key: SortKey, row: DashStudentRow, showStatus: boolean) {
     if (key === "name") {
       return (
-        <td key={key} className="px-3 py-3 text-xs sm:px-4" style={{ color: "var(--text-primary)" }}>
+        <td key={key} className="px-3 py-3 text-xs font-medium sm:px-4" style={{ color: "var(--text-primary)" }}>
           {row.name}
         </td>
       );
     }
     if (key === "class") {
       return (
-        <td
-          key={key}
-          className="hidden px-3 py-3 text-xs sm:table-cell sm:px-4"
-          style={{ color: "var(--text-secondary)" }}
-        >
+        <td key={key} className="hidden px-3 py-3 text-xs sm:table-cell sm:px-4" style={{ color: "var(--text-secondary)" }}>
           {row.className || "—"}
         </td>
       );
     }
-    if (key === "points") {
+    if (key === "status" && showStatus) {
       return (
         <td key={key} className="px-3 py-3 sm:px-4">
-          <PointBadge points={row.total} />
+          <StatusBadge points={row.total} criticalPoints={criticalPoints} />
         </td>
       );
     }
     return (
       <td key={key} className="px-3 py-3 sm:px-4">
-        <StatusBadge points={row.total} criticalPoints={criticalPoints} />
+        <PointBadge points={row.total} />
       </td>
-    );
-  }
-
-  if (!mounted) {
-    return (
-      <div className="space-y-5">
-        <div className="h-40 animate-pulse rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }} />
-        <div className="h-40 animate-pulse rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }} />
-      </div>
     );
   }
 
@@ -249,11 +179,10 @@ export default function DashboardRankedTables({
             Siswa dengan poin efektif di atas {alertPoints}
           </h2>
           <p className="mt-0.5 text-[10px]" style={{ color: "var(--text-muted)" }}>
-            Berdasarkan poin setelah remisi periode tenang (jika ada). Urutan kolom tersimpan di perangkat ini.
+            Berdasarkan poin setelah remisi periode tenang. Klik judul kolom untuk mengurutkan baris.
           </p>
-          <ColumnOrderControls order={over25Order} onChange={persistOver25} labels={OVER25_LABELS} />
         </div>
-        {over25.length === 0 ? (
+        {sortedOver25.length === 0 ? (
           <div className="px-4 py-6 text-center text-xs" style={{ color: "var(--text-muted)" }}>
             Tidak ada siswa di atas {alertPoints} poin.
           </div>
@@ -262,23 +191,20 @@ export default function DashboardRankedTables({
             <table className="w-full min-w-[280px]">
               <thead>
                 <tr style={{ background: "var(--bg-primary)" }}>
-                  {over25Order.map((key) => (
-                    <th
-                      key={key}
-                      className={`px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4 ${
-                        key === "class" ? "hidden sm:table-cell" : ""
-                      }`}
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {OVER25_LABELS[key]}
-                    </th>
+                  {OVER25_COLUMNS.map((column) => (
+                    <SortHeader
+                      key={column.key}
+                      column={column}
+                      sort={over25Sort}
+                      onSort={(key) => nextSort(setOver25Sort, over25Sort, key)}
+                    />
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {over25.map((row) => (
+                {sortedOver25.map((row) => (
                   <tr key={row.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                    {over25Order.map((key) => renderOver25Cell(key, row))}
+                    {OVER25_COLUMNS.map(({ key }) => renderCell(key, row, false))}
                   </tr>
                 ))}
               </tbody>
@@ -288,35 +214,32 @@ export default function DashboardRankedTables({
       </div>
 
       <div className="overflow-hidden rounded-xl border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        <div className="flex flex-col gap-1 border-b px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
-          <div>
-            <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
-              Siswa poin tertinggi (top 5)
-            </h2>
-            <ColumnOrderControls order={top5Order} onChange={persistTop5} labels={TOP5_LABELS} />
-          </div>
+        <div className="border-b px-3 py-3 sm:px-4" style={{ borderColor: "var(--border)" }}>
+          <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
+            Siswa poin tertinggi (top 5)
+          </h2>
+          <p className="mt-0.5 text-[10px]" style={{ color: "var(--text-muted)" }}>
+            Klik judul kolom untuk mengurutkan baris.
+          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[300px]">
             <thead>
               <tr style={{ background: "var(--bg-primary)" }}>
-                {top5Order.map((key) => (
-                  <th
-                    key={key}
-                    className={`px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4 ${
-                      key === "class" ? "hidden sm:table-cell" : ""
-                    }`}
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {TOP5_LABELS[key]}
-                  </th>
+                {TOP5_COLUMNS.map((column) => (
+                  <SortHeader
+                    key={column.key}
+                    column={column}
+                    sort={top5Sort}
+                    onSort={(key) => nextSort(setTop5Sort, top5Sort, key)}
+                  />
                 ))}
               </tr>
             </thead>
             <tbody>
-              {top5.map((row) => (
+              {sortedTop5.map((row) => (
                 <tr key={row.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                  {top5Order.map((key) => renderTop5Cell(key, row))}
+                  {TOP5_COLUMNS.map(({ key }) => renderCell(key, row, true))}
                 </tr>
               ))}
             </tbody>

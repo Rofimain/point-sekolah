@@ -87,26 +87,18 @@ export default function RecordsClient({
     title: string;
     subtitle: string;
     details: QrisSuccessDetail[];
-    receiptEvidenceImageDataUrl?: string;
+    receiptRecordId?: string;
   } | null>(null);
+
+  useEffect(() => {
+    setSearch(searchParams.search || "");
+  }, [searchParams.search]);
 
   const selectedClass = searchParams.classId
     ? classes.find((c) => c.id === searchParams.classId) ?? null
     : null;
 
-  async function openReceiptSheetForRecord(r: ViolationRecordListItem) {
-    let evidenceDataUrl: string | undefined;
-    if (r.evidenceImagePresent) {
-      try {
-        const res = await fetch(`/api/records/${r.id}`, { cache: "no-store", credentials: "same-origin" });
-        const d = await res.json().catch(() => ({}));
-        if (res.ok && typeof d.evidenceImageData === "string" && d.evidenceImageData.trim()) {
-          evidenceDataUrl = d.evidenceImageData.trim();
-        }
-      } catch {
-        // optional; bukti tetap bisa diunduh tanpa foto
-      }
-    }
+  function openReceiptSheetForRecord(r: ViolationRecordListItem) {
     const details: QrisSuccessDetail[] = [
       { label: "Siswa", value: r.student?.name ?? "—" },
       ...(r.student?.class?.name ? [{ label: "Kelas", value: r.student.class.name }] : []),
@@ -125,7 +117,7 @@ export default function RecordsClient({
       title: "Bukti pelanggaran",
       subtitle: "Catatan ini sudah tersimpan di sistem dan dapat digunakan sebagai bukti.",
       details,
-      receiptEvidenceImageDataUrl: evidenceDataUrl,
+      receiptRecordId: r.id,
     });
   }
 
@@ -209,6 +201,7 @@ export default function RecordsClient({
         { label: "Tanggal pelanggaran", value: formatIncidentDateOnly(updated.date) },
         { label: "Waktu penginputan", value: formatInputDateTime(updated.updatedAt) },
       ],
+      receiptRecordId: editModal.id,
     });
     setEditModal(null);
     setEditEvidenceDataUrl("");
@@ -272,6 +265,7 @@ export default function RecordsClient({
       title: "Berhasil",
       subtitle: "Catatan pelanggaran sudah masuk ke sistem.",
       details: detailRows,
+      receiptRecordId: data.id,
     });
     setAddModal(false);
     setAddStudentId("");
@@ -357,7 +351,7 @@ export default function RecordsClient({
           title={successSheet.title}
           subtitle={successSheet.subtitle}
           details={successSheet.details}
-          receiptEvidenceImageDataUrl={successSheet.receiptEvidenceImageDataUrl}
+          receiptRecordId={successSheet.receiptRecordId}
         />
       )}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -427,7 +421,30 @@ export default function RecordsClient({
 
       {/* Filters */}
       <div className="panel mb-4 flex flex-wrap gap-2 p-3.5">
-        <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && navigate({ search })} placeholder="Cari nama siswa... (Enter)" className="px-3 py-2 rounded-lg border text-xs flex-1 min-w-40" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && navigate({ search: search.trim() })}
+          placeholder="Cari nama siswa..."
+          list="record-student-suggestions"
+          autoComplete="off"
+          className="px-3 py-2 rounded-lg border text-xs flex-1 min-w-40"
+          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+        />
+        <datalist id="record-student-suggestions">
+          {studentsForPicker.map((student) => (
+            <option key={student.id} value={student.name}>
+              {[student.class?.name, student.nisn].filter(Boolean).join(" · ")}
+            </option>
+          ))}
+        </datalist>
+        <button
+          type="button"
+          onClick={() => navigate({ search: search.trim() })}
+          className="btn-primary px-4 py-2 text-xs"
+        >
+          Cari
+        </button>
         <select
           value={searchParams.grade || ""}
           onChange={(e) => navigate({ grade: e.target.value, classId: "" })}

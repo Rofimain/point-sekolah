@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials, getRoleLabel } from "@/lib/utils";
@@ -73,6 +73,10 @@ export default function UsersClient({
   const [search, setSearch] = useState(searchParams.search || "");
   const [error, setError] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    setSearch(searchParams.search || "");
+  }, [searchParams.search]);
 
   function navigate(params: Record<string, string>) {
     const sp = new URLSearchParams(searchParams);
@@ -446,7 +450,10 @@ export default function UsersClient({
 
       {/* Filters */}
       <div className="rounded-xl border p-3 mb-4 flex flex-wrap gap-2" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && navigate({ search })} placeholder="Cari nama... (Enter)" className="px-3 py-2 rounded-lg border text-xs flex-1 min-w-40" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
+        <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && navigate({ search: search.trim() })} placeholder="Cari nama..." className="px-3 py-2 rounded-lg border text-xs flex-1 min-w-40" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
+        <button type="button" onClick={() => navigate({ search: search.trim() })} className="btn-primary px-4 py-2 text-xs">
+          Cari
+        </button>
         <select value={searchParams.role || ""} onChange={e => navigate({ role: e.target.value })} className="px-3 py-2 rounded-lg border text-xs" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}>
           {roleFilter.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
         </select>

@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import { downloadViolationReceiptHtml } from "@/lib/download-violation-receipt-html";
 
 export type QrisSuccessDetail = { label: string; value: string };
-
-const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME || "Sekolah";
 
 /**
  * Overlay sukses bergaya konfirmasi pembayaran QRIS (kartu, centang hijau, detail, tombol Selesai).
@@ -18,7 +15,7 @@ export function QrisStyleSuccessSheet({
   details = [],
   autoCloseMs = 0,
   afterPrimaryActions,
-  receiptEvidenceImageDataUrl,
+  receiptRecordId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -29,8 +26,8 @@ export function QrisStyleSuccessSheet({
   autoCloseMs?: number;
   /** Konten tambahan di bawah tombol Selesai (mis. tautan sekunder). */
   afterPrimaryActions?: ReactNode;
-  /** Opsional: lampiran foto bukti untuk unduhan HTML. */
-  receiptEvidenceImageDataUrl?: string;
+  /** ID catatan untuk unduhan bukti PDF yang dibuat dan diotorisasi server. */
+  receiptRecordId?: string;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -48,16 +45,6 @@ export function QrisStyleSuccessSheet({
   }, [open, autoCloseMs, onClose]);
 
   if (!open) return null;
-
-  function handleDownload() {
-    downloadViolationReceiptHtml({
-      schoolName: SCHOOL_NAME,
-      title,
-      subtitle,
-      details,
-      evidenceImageDataUrl: receiptEvidenceImageDataUrl,
-    });
-  }
 
   return (
     <div
@@ -104,26 +91,15 @@ export function QrisStyleSuccessSheet({
           </div>
         )}
 
-        {receiptEvidenceImageDataUrl ? (
-          <div className="mx-5 mt-3 rounded-xl border border-neutral-200/80 bg-white px-4 py-3 text-left">
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Foto bukti</div>
-            <img
-              src={receiptEvidenceImageDataUrl}
-              alt="Foto bukti"
-              className="w-full max-h-[320px] rounded-lg border border-neutral-200 object-contain bg-neutral-50"
-              loading="lazy"
-            />
-          </div>
-        ) : null}
-
         <div className="space-y-2.5 p-5 pt-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-6">
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="w-full rounded-xl border-2 border-emerald-600 bg-white py-3 text-[15px] font-semibold text-emerald-700 transition hover:bg-emerald-50 active:scale-[0.99] motion-reduce:transition-none"
-          >
-            Unduh bukti (.html)
-          </button>
+          {receiptRecordId ? (
+            <a
+              href={`/api/records/${encodeURIComponent(receiptRecordId)}/evidence-pdf`}
+              className="block w-full rounded-xl border-2 border-emerald-600 bg-white py-3 text-center text-[15px] font-semibold text-emerald-700 transition hover:bg-emerald-50 active:scale-[0.99] motion-reduce:transition-none"
+            >
+              Unduh bukti (.pdf)
+            </a>
+          ) : null}
           <button
             type="button"
             onClick={onClose}
@@ -132,9 +108,11 @@ export function QrisStyleSuccessSheet({
             Selesai
           </button>
           {afterPrimaryActions ? <div className="pt-1">{afterPrimaryActions}</div> : null}
-          <p className="pt-1 text-center text-[11px] text-neutral-400 leading-relaxed">
-            File HTML bisa dibuka di HP/komputer; untuk PDF gunakan buka file → Cetak → Simpan sebagai PDF. Tangkapan layar juga tetap boleh.
-          </p>
+          {receiptRecordId ? (
+            <p className="pt-1 text-center text-[11px] text-neutral-400 leading-relaxed">
+              PDF dibuat secara aman dari catatan yang tersimpan dan hanya dapat diakses oleh pengguna yang berhak.
+            </p>
+          ) : null}
         </div>
       </div>
     </div>
