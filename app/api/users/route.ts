@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { Role } from "@prisma/client";
+import { Role } from "@/generated/prisma/client";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
 import { LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 import { canManageData, isAdminRole } from "@/lib/staff-roles";

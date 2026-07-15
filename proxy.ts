@@ -2,36 +2,32 @@ import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import { isStaffRole } from "@/lib/staff-roles";
 
-/** Public admin auth page — must not require a session (otherwise guests can never open it). */
 function isAdminLoginPath(pathname: string) {
   return pathname === "/admin/login" || pathname.startsWith("/admin/login/");
 }
 
-/** Cookie sebelum migrasi role harus login ulang agar claim memakai role kanonis. */
 function isLegacyStaffRole(role: unknown) {
   return role === "PIKET" || role === "WALI_KELAS";
 }
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token;
-    const pathname = req.nextUrl.pathname;
+export const proxy = withAuth(
+  function proxy(request) {
+    const token = request.nextauth.token;
+    const pathname = request.nextUrl.pathname;
 
     if (isLegacyStaffRole(token?.role)) {
-      const signOut = new URL("/api/auth/signout", req.nextUrl.origin);
-      signOut.searchParams.set("callbackUrl", `${req.nextUrl.origin}/admin/login`);
+      const signOut = new URL("/api/auth/signout", request.nextUrl.origin);
+      signOut.searchParams.set("callbackUrl", `${request.nextUrl.origin}/admin/login`);
       return NextResponse.redirect(signOut);
     }
 
-    /** Akun dinonaktifkan setelah JWT dibuat — paksa keluar & hapus cookie sesi. */
-    if (token?.error === "AccountInactive") {
+    if (token?.error === "AccountInactive" || token?.error === "SessionRevoked") {
       const loginPath = pathname.startsWith("/form") ? "/login" : "/admin/login";
-      const signOut = new URL("/api/auth/signout", req.nextUrl.origin);
-      signOut.searchParams.set("callbackUrl", `${req.nextUrl.origin}${loginPath}`);
+      const signOut = new URL("/api/auth/signout", request.nextUrl.origin);
+      signOut.searchParams.set("callbackUrl", `${request.nextUrl.origin}${loginPath}`);
       return NextResponse.redirect(signOut);
     }
 
-    // Area staf: guru, admin, dan super admin (skip /admin/login)
     const needsStaffRole =
       (!isAdminLoginPath(pathname) && pathname.startsWith("/admin")) ||
       pathname.startsWith("/dashboard") ||
@@ -41,17 +37,13 @@ export default withAuth(
       pathname.startsWith("/users") ||
       pathname.startsWith("/settings") ||
       pathname.startsWith("/export");
-    if (needsStaffRole) {
-      if (!token || !isStaffRole(token.role as string)) {
-        return NextResponse.redirect(new URL("/admin/login", req.url));
-      }
+
+    if (needsStaffRole && (!token || !isStaffRole(token.role as string))) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
 
-    // Student form route: only STUDENT
-    if (pathname.startsWith("/form")) {
-      if (!token || token.role !== "STUDENT") {
-        return NextResponse.redirect(new URL("/login", req.url));
-      }
+    if (pathname.startsWith("/form") && (!token || token.role !== "STUDENT")) {
+      return NextResponse.redirect(new URL("/login", request.url));
     }
 
     return NextResponse.next();
@@ -72,7 +64,7 @@ export default withAuth(
           pathname.startsWith("/settings") ||
           pathname.startsWith("/export")
         ) {
-          return !!token;
+          return Boolean(token);
         }
         return true;
       },

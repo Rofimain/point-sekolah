@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canManageData } from "@/lib/staff-roles";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import ExcelJS from "exceljs";
 import { buildParentTelegramDeepLink } from "@/lib/parent-telegram-link";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { APP_KEYS } from "@/lib/app-settings";
+import { APP_KEYS } from "@/lib/app-setting-keys";
 import { addMonthsFromYmd, reviewStatusLabel } from "@/lib/review-dates";
 
 const SETTING_KEYS = [

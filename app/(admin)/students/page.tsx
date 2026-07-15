@@ -2,28 +2,29 @@ import { prisma } from "@/lib/prisma";
 import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import StudentsClient from "./StudentsClient";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { indonesianAcademicYearLabel } from "@/lib/academic-year";
 import { isStaffRole } from "@/lib/staff-roles";
 
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: { search?: string; page?: string; tab?: string; classId?: string };
+  searchParams: Promise<{ search?: string; page?: string; tab?: string; classId?: string }>;
 }) {
+  const query = await searchParams;
   const session = await getSafeServerSession();
   if (!session?.user?.role || !isStaffRole(session.user.role)) {
     redirect("/dashboard");
   }
 
-  const page = parseInt(searchParams.page || "1", 10);
+  const page = parseInt(query.page || "1", 10);
   const perPage = 25;
   const where: Prisma.UserWhereInput = { role: "STUDENT" };
-  if (searchParams.classId) {
-    where.classId = searchParams.classId;
+  if (query.classId) {
+    where.classId = query.classId;
   }
-  if (searchParams.search?.trim()) {
-    const q = searchParams.search.trim();
+  if (query.search?.trim()) {
+    const q = query.search.trim();
     where.OR = [
       { name: { contains: q, mode: "insensitive" } },
       { nisn: { contains: q, mode: "insensitive" } },
@@ -64,7 +65,7 @@ export default async function StudentsPage({
       page={page}
       perPage={perPage}
       classes={classes}
-      searchParams={searchParams}
+      searchParams={query}
       studentDomain={studentDomain}
       viewerRole={session.user.role}
       suggestedYear={suggestedYear}

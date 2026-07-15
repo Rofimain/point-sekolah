@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export { QUIET_MONTH_REASON } from "@/lib/point-adjustment-reason";

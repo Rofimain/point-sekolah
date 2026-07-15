@@ -7,12 +7,13 @@ import { canReadViolationRecord } from "@/lib/record-access";
 
 export const runtime = "nodejs";
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const record = await prisma.violationRecord.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       id: true,
       studentId: true,

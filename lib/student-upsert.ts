@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
 

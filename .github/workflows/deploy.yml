@@ -1,72 +1,134 @@
-name: Build and Deploy
+name: Build, Verify, and Deploy
 
 on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
+  DATABASE_URL: postgresql://smoke:smoke-password@localhost:5432/point_sekolah_ci
+  DIRECT_URL: postgresql://smoke:smoke-password@localhost:5432/point_sekolah_ci
+  NEXTAUTH_SECRET: ci-only-secret-that-is-never-used-in-production
+  NEXTAUTH_URL: http://localhost:3000
 
 jobs:
-  build-and-push:
+  quality:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: smoke
+          POSTGRES_PASSWORD: smoke-password
+          POSTGRES_DB: point_sekolah_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U smoke -d point_sekolah_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          cache: npm
+      - run: npm ci
+      - run: npm run quality
+      - run: npx prisma migrate deploy
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
 
+  build-smoke-publish:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Set lowercase image name
-        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push image
+      - name: Build exact commit image
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          load: true
+          push: false
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_SCHOOL_NAME=${{ vars.NEXT_PUBLIC_SCHOOL_NAME || 'SMA ISLAM AL AZHAR 1 JAKARTA' }}
+            NEXT_PUBLIC_STUDENT_DOMAIN=${{ vars.NEXT_PUBLIC_STUDENT_DOMAIN || 'siswa.sman1contoh.sch.id' }}
+            NEXT_PUBLIC_STAFF_DOMAIN=${{ vars.NEXT_PUBLIC_STAFF_DOMAIN || 'sman1contoh.sch.id' }}
+            NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=${{ vars.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Smoke test exact image
+        env:
+          APP_IMAGE: ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          COMPOSE_PROJECT_NAME: point-sekolah-release-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          cleanup() {
+            docker compose --env-file /dev/null -f docker-compose.smoke.yml logs app || true
+            docker compose --env-file /dev/null -f docker-compose.smoke.yml down --volumes --remove-orphans
+          }
+          trap cleanup EXIT
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml up -d db --wait --wait-timeout 120
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml run --rm app npx prisma migrate deploy
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml up -d app --wait --wait-timeout 120
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/health/live
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/health/ready
+          curl --fail --silent --show-error http://127.0.0.1:3000/login >/dev/null
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/dashboard)" = "307"
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml exec -T app npx prisma migrate status
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml exec -T app npm run db:seed
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml exec -T app npm run db:seed
+      - name: Publish verified image
+        run: |
+          docker tag "${REGISTRY}/${IMAGE_NAME}:${GITHUB_SHA}" "${REGISTRY}/${IMAGE_NAME}:latest"
+          docker push "${REGISTRY}/${IMAGE_NAME}:${GITHUB_SHA}"
+          docker push "${REGISTRY}/${IMAGE_NAME}:latest"
 
   deploy:
-    needs: build-and-push
+    needs: build-smoke-publish
     runs-on: ubuntu-latest
+    environment: production
     steps:
-      - name: Deploy to server via SSH (bootstrap + update)
+      - name: Deploy verified SHA to server
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: GHCR_TOKEN,GHCR_ACTOR,REPO_URL,ENV_FILE_CONTENT,ORIGIN_CERT,ORIGIN_KEY
+          envs: GHCR_TOKEN,GHCR_ACTOR,REPO_URL,ENV_FILE_CONTENT,ORIGIN_CERT,ORIGIN_KEY,DEPLOY_SHA,APP_IMAGE
           script: |
-            set -e
-
-            if ! command -v docker &> /dev/null; then
+            set -eu
+            if ! command -v docker >/dev/null 2>&1; then
               curl -fsSL https://get.docker.com | sudo sh
-              sudo usermod -aG docker $USER
+              sudo usermod -aG docker "$USER"
             fi
 
             sudo mkdir -p /opt/point-sekolah
-            sudo chown $USER:$USER /opt/point-sekolah
+            sudo chown "$USER:$USER" /opt/point-sekolah
             if [ ! -d /opt/point-sekolah/.git ]; then
               git clone "$REPO_URL" /opt/point-sekolah
             fi
             cd /opt/point-sekolah
-            git pull
+            git switch main
+            git pull --ff-only origin main
 
             echo "$ENV_FILE_CONTENT" > .env
             mkdir -p certs
@@ -75,16 +137,13 @@ jobs:
             chmod 600 certs/origin-key.pem .env
 
             echo "$GHCR_TOKEN" | sudo docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
-            sudo docker compose pull app
-            sudo docker compose up -d
-            # Seed akun dummy hanya jika DB masih kosong (tunggu migrate/start siap)
-            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
-              if sudo docker compose exec -T app npx tsx scripts/seed-if-empty.ts; then
-                break
-              fi
-              echo "Menunggu app siap sebelum seed (percobaan $i)…"
-              sleep 5
-            done
+            export APP_IMAGE
+            sudo --preserve-env=APP_IMAGE docker compose pull app
+            sudo --preserve-env=APP_IMAGE docker compose up -d db --wait --wait-timeout 120
+            sudo --preserve-env=APP_IMAGE docker compose run --rm app npx prisma migrate deploy
+            sudo --preserve-env=APP_IMAGE docker compose up -d --wait --wait-timeout 180
+            sudo --preserve-env=APP_IMAGE docker compose exec -T app node -e \
+              "fetch('http://127.0.0.1:3000/api/health/ready').then(async r=>{console.log(await r.text());process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"
             sudo docker image prune -f
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -93,3 +152,5 @@ jobs:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE_CONTENT }}
           ORIGIN_CERT: ${{ secrets.CLOUDFLARE_ORIGIN_CERT }}
           ORIGIN_KEY: ${{ secrets.CLOUDFLARE_ORIGIN_KEY }}
+          DEPLOY_SHA: ${{ github.sha }}
+          APP_IMAGE: ghcr.io/rofimain/point-sekolah:${{ github.sha }}

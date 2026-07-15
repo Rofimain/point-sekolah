@@ -8,7 +8,8 @@ import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-te
 /**
  * Staff: buat / perbarui tautan ortu (token baru = tautan lama tidak berlaku).
  */
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -23,7 +24,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   }
 
   const student = await prisma.user.findFirst({
-    where: { id: params.id, role: "STUDENT" },
+    where: { id, role: "STUDENT" },
   });
   if (!student) {
     return NextResponse.json({ error: "Siswa tidak ditemukan" }, { status: 404 });

@@ -1,0 +1,43 @@
+name: point-sekolah-smoke
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: smoke
+      POSTGRES_PASSWORD: smoke-password
+      POSTGRES_DB: point_sekolah_smoke
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smoke -d point_sekolah_smoke"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    image: ${APP_IMAGE:?APP_IMAGE wajib diisi}
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://smoke:smoke-password@db:5432/point_sekolah_smoke
+      DIRECT_URL: postgresql://smoke:smoke-password@db:5432/point_sekolah_smoke
+      NEXTAUTH_SECRET: smoke-only-secret-that-is-never-used-in-production
+      NEXTAUTH_URL: http://localhost:3000
+      CRON_SECRET: smoke-cron-secret
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 10s

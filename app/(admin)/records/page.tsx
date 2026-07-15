@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import RecordsClient from "./RecordsClient";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { RECORD_LIST_SELECT, RECORD_STUDENT_SELECT, type RecordsRow } from "./records-view";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import { getSafeServerSession } from "@/lib/auth";
@@ -8,20 +8,25 @@ import { canManageData } from "@/lib/staff-roles";
 
 export const dynamic = "force-dynamic";
 
-export default async function RecordsPage({ searchParams }: { searchParams: { grade?: string; classId?: string; search?: string; page?: string } }) {
+export default async function RecordsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ grade?: string; classId?: string; search?: string; page?: string }>;
+}) {
+  const query = await searchParams;
   const session = await getSafeServerSession();
-  const page = parseInt(searchParams.page || "1", 10);
+  const page = parseInt(query.page || "1", 10);
   const perPage = 15;
-  const rosterMode = Boolean(searchParams.grade || searchParams.classId);
+  const rosterMode = Boolean(query.grade || query.classId);
 
   const studentWhere: Prisma.UserWhereInput = {
     role: "STUDENT",
     active: true,
   };
-  if (searchParams.classId) studentWhere.classId = searchParams.classId;
-  if (searchParams.grade) studentWhere.class = { grade: searchParams.grade };
-  if (searchParams.search) {
-    studentWhere.name = { contains: searchParams.search, mode: "insensitive" };
+  if (query.classId) studentWhere.classId = query.classId;
+  if (query.grade) studentWhere.class = { grade: query.grade };
+  if (query.search) {
+    studentWhere.name = { contains: query.search, mode: "insensitive" };
   }
 
   const [classes, violationTypes, studentsForPicker, totalPointsMap] = await Promise.all([
@@ -86,14 +91,14 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
   } else {
     const recordWhere: Prisma.ViolationRecordWhereInput = {};
     const studentNested: Prisma.UserWhereInput = {};
-    if (searchParams.search) {
-      studentNested.name = { contains: searchParams.search, mode: "insensitive" };
+    if (query.search) {
+      studentNested.name = { contains: query.search, mode: "insensitive" };
     }
-    if (searchParams.classId) {
-      studentNested.classId = searchParams.classId;
+    if (query.classId) {
+      studentNested.classId = query.classId;
     }
-    if (searchParams.grade) {
-      studentNested.class = { grade: searchParams.grade };
+    if (query.grade) {
+      studentNested.class = { grade: query.grade };
     }
     if (Object.keys(studentNested).length > 0) {
       recordWhere.student = studentNested;
@@ -123,7 +128,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
       violationTypes={violationTypes}
       studentsForPicker={studentsForPicker}
       totalPointsMap={Object.fromEntries(totalPointsMap)}
-      searchParams={searchParams}
+      searchParams={query}
       rosterMode={rosterMode}
       canManage={canManageData(session?.user?.role)}
     />
