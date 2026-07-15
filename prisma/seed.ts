@@ -1,9 +1,10 @@
-import { PrismaClient, Role, Category } from "@prisma/client";
+import { Role, Category } from "../generated/prisma/client";
 import bcrypt from "bcryptjs";
 import { QUIET_MONTH_REASON } from "../lib/student-effective-points";
 import { applyQuietMonthReductionForStudent } from "../lib/quiet-month-reduction";
+import { createPrismaClient } from "../lib/prisma";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 function daysAgo(days: number): Date {
   const d = new Date();
@@ -16,7 +17,7 @@ async function main() {
   console.log("🌱 Seeding database...");
 
   // Create classes
-  const classes = await Promise.all([
+  const _classes = await Promise.all([
     prisma.class.upsert({ where: { id: "cls-x-mipa1" }, update: {}, create: { id: "cls-x-mipa1", name: "X MIPA 1", grade: "X", major: "MIPA", year: "2025/2026" } }),
     prisma.class.upsert({ where: { id: "cls-x-mipa2" }, update: {}, create: { id: "cls-x-mipa2", name: "X MIPA 2", grade: "X", major: "MIPA", year: "2025/2026" } }),
     prisma.class.upsert({ where: { id: "cls-xi-ipa1" }, update: {}, create: { id: "cls-xi-ipa1", name: "XI IPA 1", grade: "XI", major: "IPA", year: "2025/2026" } }),

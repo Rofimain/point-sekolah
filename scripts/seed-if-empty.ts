@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
 import { execSync } from "child_process";
+import { createPrismaClient } from "../lib/prisma";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   const count = await prisma.user.count();

@@ -2,14 +2,24 @@ name: point-sekolah
 
 services:
   app:
-    image: ghcr.io/rofimain/point-sekolah:latest
+    image: ${APP_IMAGE:-ghcr.io/rofimain/point-sekolah:latest}
     restart: unless-stopped
     env_file: .env
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - evidence_uploads:/app/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 15s
     networks:
       - internal
 
@@ -41,7 +51,8 @@ services:
       - ./certs:/etc/caddy/certs:ro
       - caddy_data:/data
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     networks:
       - internal
 
@@ -50,7 +61,8 @@ services:
     restart: unless-stopped
     env_file: .env
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     networks:
       - internal
     entrypoint: ["/bin/sh", "-c"]
@@ -66,7 +78,6 @@ services:
 volumes:
   db_data:
   caddy_data:
-  evidence_uploads:
 
 networks:
   internal:

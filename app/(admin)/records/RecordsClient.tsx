@@ -155,7 +155,7 @@ export default function RecordsClient({
     return () => {
       cancelled = true;
     };
-  }, [editModal?.id]);
+  }, [editModal]);
 
   async function handleDelete(id: string) {
     if (!confirm("Hapus catatan ini?")) return;

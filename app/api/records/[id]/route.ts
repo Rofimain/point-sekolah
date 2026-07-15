@@ -7,12 +7,13 @@ import { validateHeavyViolationEvidence } from "@/lib/heavy-violation";
 import { parseIncidentDateYmd } from "@/lib/incident-date";
 import { canReadViolationRecord } from "@/lib/record-access";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const existing = await prisma.violationRecord.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -55,7 +56,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const updated = await prisma.violationRecord.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       violationTypeId: nextVtId,
       points: nextPoints,
@@ -69,12 +70,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json(updated);
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const record = await prisma.violationRecord.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       id: true,
       studentId: true,
@@ -101,9 +103,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  await prisma.violationRecord.delete({ where: { id: params.id } });
+  await prisma.violationRecord.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

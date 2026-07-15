@@ -5,6 +5,7 @@
 - **Database**: PostgreSQL 16 (container service `db`)
 - **Auth**: NextAuth.js
 - **ORM**: Prisma
+- **Runtime**: Node.js 24 LTS
 - **CI/CD**: GitHub Actions → GHCR → deploy SSH
 
 ---
@@ -99,10 +100,12 @@ NEXTAUTH_URL=https://point-sekolah.rofimain.com
 ### B. Push ke `main`
 
 Push ke branch `main` memicu workflow `.github/workflows/deploy.yml`:
-1. Build image → `ghcr.io/<owner>/point-sekolah`
-2. SSH ke server → `git pull` + tulis `.env`/`certs` → `docker compose up -d`
+1. Lint, test, typecheck, validasi/migration test, build, dan audit dependency.
+2. Build image SHA dan smoke test dengan PostgreSQL sementara.
+3. Push image yang sudah lulus ke GHCR.
+4. SSH ke server, jalankan migration eksplisit, deploy image SHA yang sama, lalu tunggu readiness.
 
-App startup menjalankan `prisma migrate deploy` lalu `npm run start`.
+Production tidak menjalankan seed demo otomatis. `npm run db:seed` hanya untuk development/smoke test.
 
 ### C. Caddy / domain
 
@@ -150,16 +153,8 @@ Format email: `nisn@siswa.…` (siswa), `nama@…` (staf).
 
 ## RESET PASSWORD SISWA / GURU
 
-```bash
-node -e "
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-const prisma = new PrismaClient();
-bcrypt.hash('PasswordBaru123', 12).then(h =>
-  prisma.user.update({ where: { email: 'email@domain.sch.id' }, data: { password: h } })
-).then(u => { console.log('Updated:', u.name); prisma.\$disconnect(); });
-"
-```
+Setiap pengguna dapat memilih **Password** pada top bar dan memasukkan password saat ini.
+Admin tetap dapat mereset password akun yang dikelola melalui halaman Manajemen Pengguna.
 
 ---
 

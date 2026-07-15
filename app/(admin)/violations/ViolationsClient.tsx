@@ -64,7 +64,7 @@ export default function ViolationsClient({ violations, canManage }: { violations
         {CATS.map(cat => {
           const count = violations.filter(v => v.category === cat).length;
           const c: Record<string,string[]> = { RINGAN: ["var(--success-bg)","var(--success)"], SEDANG: ["var(--warning-bg)","var(--warning)"], BERAT: ["var(--danger-bg)","var(--danger)"] };
-          const [bg, color] = c[cat];
+          const [, color] = c[cat];
           return (
             <div key={cat} className="rounded-xl border p-4 cursor-pointer transition-opacity" style={{ background: "var(--bg-secondary)", borderColor: filter === cat ? color : "var(--border)", borderWidth: filter === cat ? 2 : 1 }} onClick={() => setFilter(filter === cat ? "" : cat)}>
               <div className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Pelanggaran {CAT_LABELS[cat]}</div>

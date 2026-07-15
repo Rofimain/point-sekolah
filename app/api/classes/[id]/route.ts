@@ -5,13 +5,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: rawId } = await params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.role || !canManageData(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const id = params.id?.trim();
+  const id = rawId?.trim();
   if (!id) {
     return NextResponse.json({ error: "ID kelas tidak valid" }, { status: 400 });
   }
@@ -26,6 +27,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     prisma.class.delete({ where: { id } }),
   ]);
 
-  revalidateTag("sidebar-classes");
+  revalidateTag("sidebar-classes", { expire: 0 });
   return NextResponse.json({ ok: true, removedClassName: cls.name });
 }

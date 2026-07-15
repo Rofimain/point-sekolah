@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { Role } from "@prisma/client";
+import { Role } from "@/generated/prisma/client";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { assertCanDeleteSuperAdmin, assertCanDemoteSuperAdmin, LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 import { canDeleteUser, canManageData, canModifyUser, isAdminRole } from "@/lib/staff-roles";
@@ -11,10 +11,11 @@ import { validateNewPassword } from "@/lib/password-policy";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const existing = await prisma.user.findUnique({ where: { id: params.id } });
+  const existing = await prisma.user.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
 
   const body = await req.json();
@@ -38,14 +39,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   if (existing.role === "SUPER_ADMIN" && nextRole !== "SUPER_ADMIN") {
-    const err = await assertCanDemoteSuperAdmin(params.id);
+    const err = await assertCanDemoteSuperAdmin(id);
     if (err) return NextResponse.json({ error: err }, { status: 400 });
   }
 
   /** Setelah update: minimal 1 Super Admin aktif (selain baris ini jika ia SA nonaktif). */
   if (nextRole === "SUPER_ADMIN" && nextActive === false) {
     const otherActive = await prisma.user.count({
-      where: { role: "SUPER_ADMIN", active: true, id: { not: params.id } },
+      where: { role: "SUPER_ADMIN", active: true, id: { not: id } },
     });
     if (otherActive < 1) {
       return NextResponse.json({ error: LAST_ACTIVE_SA_MSG }, { status: 400 });
@@ -86,21 +87,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     updateData.parentTelegramLinkToken = null;
   }
 
-  const user = await prisma.user.update({ where: { id: params.id }, data: updateData as any });
+  const user = await prisma.user.update({ where: { id }, data: updateData as any });
   const { password: _, parentTelegramLinkToken: __, ...safe } = user;
   return NextResponse.json(safe);
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const existing = await prisma.user.findUnique({ where: { id: params.id }, select: { id: true, role: true } });
+  const existing = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true } });
   if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
   if (!canDeleteUser(session.user.role, existing.role)) {
     return NextResponse.json({ error: "Admin tidak boleh menghapus akun Admin atau Super Admin." }, { status: 403 });
   }
-  const delErr = await assertCanDeleteSuperAdmin(params.id);
+  const delErr = await assertCanDeleteSuperAdmin(id);
   if (delErr) return NextResponse.json({ error: delErr }, { status: 400 });
-  await prisma.user.delete({ where: { id: params.id } });
+  await prisma.user.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

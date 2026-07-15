@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData, isStaffRole } from "@/lib/staff-roles";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session || !isStaffRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -35,6 +35,6 @@ export async function POST(req: NextRequest) {
   const cls = await prisma.class.create({
     data: { name: n, grade: g, major: (major?.trim() || "") || "", year: y },
   });
-  revalidateTag("sidebar-classes");
+  revalidateTag("sidebar-classes", { expire: 0 });
   return NextResponse.json({ class: cls }, { status: 201 });
 }

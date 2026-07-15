@@ -1,0 +1,88 @@
+name: Quality Gate
+
+on:
+  push:
+    branches: [staging]
+  pull_request:
+    branches: [staging, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: postgresql://smoke:smoke-password@localhost:5432/point_sekolah_ci
+  DIRECT_URL: postgresql://smoke:smoke-password@localhost:5432/point_sekolah_ci
+  NEXTAUTH_SECRET: ci-only-secret-that-is-never-used-in-production
+  NEXTAUTH_URL: http://localhost:3000
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: smoke
+          POSTGRES_PASSWORD: smoke-password
+          POSTGRES_DB: point_sekolah_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U smoke -d point_sekolah_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24.18.0
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run typecheck
+      - run: npx prisma validate
+      - run: npx prisma migrate deploy
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+
+  docker-smoke:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build exact commit image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_SCHOOL_NAME="${{ vars.NEXT_PUBLIC_SCHOOL_NAME || 'SMA ISLAM AL AZHAR 1 JAKARTA' }}" \
+            --build-arg NEXT_PUBLIC_STUDENT_DOMAIN="${{ vars.NEXT_PUBLIC_STUDENT_DOMAIN || 'siswa.sman1contoh.sch.id' }}" \
+            --build-arg NEXT_PUBLIC_STAFF_DOMAIN="${{ vars.NEXT_PUBLIC_STAFF_DOMAIN || 'sman1contoh.sch.id' }}" \
+            --build-arg NEXT_PUBLIC_TELEGRAM_BOT_USERNAME="${{ vars.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME }}" \
+            --tag "point-sekolah:${GITHUB_SHA}" .
+      - name: Run disposable database and application smoke tests
+        env:
+          APP_IMAGE: point-sekolah:${{ github.sha }}
+          COMPOSE_PROJECT_NAME: point-sekolah-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          cleanup() {
+            docker compose --env-file /dev/null -f docker-compose.smoke.yml logs app || true
+            docker compose --env-file /dev/null -f docker-compose.smoke.yml down --volumes --remove-orphans
+          }
+          trap cleanup EXIT
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml up -d db --wait --wait-timeout 120
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml run --rm app npx prisma migrate deploy
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml up -d app --wait --wait-timeout 120
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/health/live
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/health/ready
+          curl --fail --silent --show-error http://127.0.0.1:3000/login >/dev/null
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/dashboard)" = "307"
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml exec -T app npx prisma migrate status
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml exec -T app npm run db:seed
+          docker compose --env-file /dev/null -f docker-compose.smoke.yml exec -T app npm run db:seed
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/health/ready

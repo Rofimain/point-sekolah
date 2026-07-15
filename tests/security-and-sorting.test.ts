@@ -5,6 +5,7 @@ import { validateNewPassword } from "../lib/password-policy";
 import { clearPasswordAttempts, passwordAttemptStatus, recordFailedPasswordAttempt } from "../lib/account-rate-limit";
 import { sortDashboardRows, type DashStudentRow } from "../components/dashboard/DashboardRankedTables";
 import { canReadViolationRecord } from "../lib/record-access";
+import { createViolationEvidencePdf } from "../lib/violation-evidence-pdf";
 
 test("password policy enforces length and bcrypt byte boundary", () => {
   assert.equal(validateNewPassword("terlalupendek").ok, true);
@@ -43,4 +44,21 @@ test("students can only read their own record while staff can read records", () 
   assert.equal(canReadViolationRecord({ id: "student-a", role: "STUDENT" }, "student-a"), true);
   assert.equal(canReadViolationRecord({ id: "student-a", role: "STUDENT" }, "student-b"), false);
   assert.equal(canReadViolationRecord({ id: "teacher", role: "TEACHER" }, "student-b"), true);
+});
+
+test("evidence report generator returns a valid PDF document", async () => {
+  const pdf = await createViolationEvidencePdf({
+    id: "record-smoke-test",
+    student: { name: "Siswa Uji", nisn: "1234567890", class: { name: "X IPA 1" } },
+    violationType: { name: "Pelanggaran Uji" },
+    points: 10,
+    session: "Jam 1-2",
+    notes: "Catatan pengujian",
+    date: new Date("2026-07-15T00:00:00.000Z"),
+    createdAt: new Date("2026-07-15T00:00:00.000Z"),
+    createdByName: "Guru Uji",
+    evidenceImageData: null,
+    studentSignatureData: "Saya mengakui pelanggaran ini.",
+  });
+  assert.equal(new TextDecoder().decode(pdf.slice(0, 5)), "%PDF-");
 });
