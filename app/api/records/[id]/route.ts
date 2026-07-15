@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isStaffRole } from "@/lib/staff-roles";
+import { canManageData, isStaffRole } from "@/lib/staff-roles";
 import { validateHeavyViolationEvidence } from "@/lib/heavy-violation";
 import { parseIncidentDateYmd } from "@/lib/incident-date";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || !isStaffRole(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const existing = await prisma.violationRecord.findUnique({
     where: { id: params.id },
@@ -90,7 +90,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || !isStaffRole(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   await prisma.violationRecord.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });
 }

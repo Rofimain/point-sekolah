@@ -1,12 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import RecordsClient from "./RecordsClient";
 import type { Prisma } from "@prisma/client";
-import { RECORD_LIST_SELECT, type RecordsRow } from "./records-view";
+import { RECORD_LIST_SELECT, RECORD_STUDENT_SELECT, type RecordsRow } from "./records-view";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
+import { getSafeServerSession } from "@/lib/auth";
+import { canManageData } from "@/lib/staff-roles";
 
 export const dynamic = "force-dynamic";
 
 export default async function RecordsPage({ searchParams }: { searchParams: { grade?: string; classId?: string; search?: string; page?: string } }) {
+  const session = await getSafeServerSession();
   const page = parseInt(searchParams.page || "1", 10);
   const perPage = 15;
   const rosterMode = Boolean(searchParams.grade || searchParams.classId);
@@ -41,7 +44,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
       prisma.user.count({ where: studentWhere }),
       prisma.user.findMany({
         where: studentWhere,
-        include: { class: true },
+        select: RECORD_STUDENT_SELECT,
         orderBy: { name: "asc" },
         skip: (page - 1) * perPage,
         take: perPage,
@@ -122,6 +125,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: { gr
       totalPointsMap={Object.fromEntries(totalPointsMap)}
       searchParams={searchParams}
       rosterMode={rosterMode}
+      canManage={canManageData(session?.user?.role)}
     />
   );
 }

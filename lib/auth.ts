@@ -2,6 +2,7 @@ import { getServerSession, type NextAuthOptions, type Session } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { isStaffRole } from "@/lib/staff-roles";
 
 function normalizeIdentifier(raw: string): string {
   const trimmed = raw.trim();
@@ -75,7 +76,7 @@ export const authOptions: NextAuthOptions = {
               include: { class: true },
             });
 
-        if (!user || user.role === "STUDENT") {
+        if (!user || !isStaffRole(user.role)) {
           throw new Error("Akun admin/guru tidak ditemukan");
         }
         if (!user.active) {
@@ -109,19 +110,28 @@ export const authOptions: NextAuthOptions = {
         delete token.error;
       }
 
-      /**
-       * JWT tidak ikut berubah saat `active` di DB diubah. Pada tiap pembaruan token (tanpa `user` = bukan login baru),
-       * cek ulang agar akun yang dinonaktifkan tidak tetap bisa akses sampai cookie habis.
-       */
+      /** Sinkronkan role dan status agar perubahan hak akses langsung berlaku pada sesi lama. */
       const userId = (token.id as string | undefined) || (token.sub as string | undefined);
       if (userId && !user) {
         const dbUser = await prisma.user.findUnique({
           where: { id: userId },
-          select: { active: true },
+          select: {
+            active: true,
+            role: true,
+            nisn: true,
+            nip: true,
+            classId: true,
+            class: { select: { name: true } },
+          },
         });
         if (!dbUser?.active) {
           token.error = "AccountInactive";
-        } else if (token.error === "AccountInactive") {
+        } else {
+          token.role = dbUser.role;
+          token.nisn = dbUser.nisn ?? undefined;
+          token.nip = dbUser.nip ?? undefined;
+          token.classId = dbUser.classId ?? undefined;
+          token.className = dbUser.class?.name ?? undefined;
           delete token.error;
         }
       }

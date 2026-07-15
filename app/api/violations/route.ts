@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isStaffRole } from "@/lib/staff-roles";
+import { canManageData } from "@/lib/staff-roles";
 
 export async function GET() {
   const violations = await prisma.violationType.findMany({ where: { active: true }, orderBy: [{ category: "asc" }, { points: "asc" }] });
@@ -11,7 +11,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || !isStaffRole(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
   const { name, category, points, description } = body;
   if (!name || !category || !points) return NextResponse.json({ error: "Field wajib kurang" }, { status: 400 });

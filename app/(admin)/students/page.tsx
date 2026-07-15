@@ -34,7 +34,14 @@ export default async function StudentsPage({
   const [students, total, classes, latestClass] = await Promise.all([
     prisma.user.findMany({
       where,
-      include: { class: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        nisn: true,
+        active: true,
+        class: { select: { name: true, grade: true } },
+      },
       orderBy: { name: "asc" },
       skip: (page - 1) * perPage,
       take: perPage,

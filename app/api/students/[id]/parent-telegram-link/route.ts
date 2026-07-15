@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isStaffRole } from "@/lib/staff-roles";
+import { canManageData } from "@/lib/staff-roles";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
 
 /**
@@ -10,7 +10,7 @@ import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-te
  */
 export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || !isStaffRole(session.user.role)) {
+  if (!session || !canManageData(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

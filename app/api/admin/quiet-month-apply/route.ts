@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applyQuietMonthReductionForAllStudents } from "@/lib/quiet-month-reduction";
+import { canManageData } from "@/lib/staff-roles";
 
 /**
  * Super admin: jalankan remisi 25% (sama logika dengan POST /api/cron/quiet-month-points).
@@ -10,7 +11,7 @@ import { applyQuietMonthReductionForAllStudents } from "@/lib/quiet-month-reduct
  */
 export async function POST() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "SUPER_ADMIN") {
+  if (!session || !canManageData(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

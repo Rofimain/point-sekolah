@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isStaffRole } from "@/lib/staff-roles";
+import { canManageData, isStaffRole } from "@/lib/staff-roles";
 import { APP_KEYS } from "@/lib/app-settings";
 
 const ALLOWED_KEYS = new Set<string>(Object.values(APP_KEYS));
@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "SUPER_ADMIN") {
+  if (!session || !canManageData(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json();

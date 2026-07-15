@@ -2,10 +2,11 @@ import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { APP_KEYS, getAppSetting } from "@/lib/app-settings";
 import SettingsClient from "./SettingsClient";
+import { canManageData } from "@/lib/staff-roles";
 
 export default async function SettingsPage() {
   const session = await getSafeServerSession();
-  if (session?.user?.role !== "SUPER_ADMIN") redirect("/dashboard");
+  if (!canManageData(session?.user?.role)) redirect("/dashboard");
 
   const initial = {
     [APP_KEYS.COORD_NAME]: await getAppSetting(APP_KEYS.COORD_NAME),

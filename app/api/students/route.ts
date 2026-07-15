@@ -8,11 +8,11 @@ import {
   DEFAULT_STUDENT_PASSWORD,
   studentEmailFromNisn,
 } from "@/lib/student-upsert";
-import { isStaffRole } from "@/lib/staff-roles";
+import { canManageData } from "@/lib/staff-roles";
 import { buildParentTelegramDeepLink } from "@/lib/parent-telegram-link";
 
 function staffOk(role: string | undefined) {
-  return isStaffRole(role);
+  return canManageData(role);
 }
 
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";

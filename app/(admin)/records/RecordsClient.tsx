@@ -39,6 +39,7 @@ export default function RecordsClient({
   totalPointsMap,
   searchParams,
   rosterMode,
+  canManage,
 }: {
   rows: RecordsRow[];
   total: number;
@@ -50,6 +51,7 @@ export default function RecordsClient({
   totalPointsMap: Record<string, number>;
   searchParams: { grade?: string; classId?: string; search?: string; page?: string };
   rosterMode: boolean;
+  canManage: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -236,7 +238,6 @@ export default function RecordsClient({
         session: addSession,
         notes: addNotes,
         date: addIncidentDate,
-        points: vt?.points,
         evidenceImageData: addEvidenceDataUrl.trim() || undefined,
         studentSignatureData: addSignatureText.trim() || undefined,
       }),
@@ -412,7 +413,7 @@ export default function RecordsClient({
           >
             + Tambah Catatan
           </button>
-          <button
+          {canManage && <button
             type="button"
             onClick={handleExport}
             disabled={exporting}
@@ -420,7 +421,7 @@ export default function RecordsClient({
             style={{ background: "var(--success-bg)", color: "var(--success)", borderColor: "var(--success)" }}
           >
             {exporting ? "Mengekspor..." : "Export Excel"}
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -589,7 +590,7 @@ export default function RecordsClient({
                           >
                             Bukti
                           </button>
-                          <button
+                          {canManage && <button
                             type="button"
                             onClick={() => {
                               setEditModal(r);
@@ -603,15 +604,15 @@ export default function RecordsClient({
                             style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
                           >
                             Edit
-                          </button>
-                          <button
+                          </button>}
+                          {canManage && <button
                             type="button"
                             onClick={() => handleDelete(r.id)}
                             className="px-2.5 py-1 rounded border text-[11px]"
                             style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
                           >
                             Hapus
-                          </button>
+                          </button>}
                         </div>
                       </td>
                     </tr>
@@ -634,7 +635,7 @@ export default function RecordsClient({
       </div>
 
       {/* Edit Modal */}
-      {editModal && (
+      {canManage && editModal && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
           onClick={() => setEditModal(null)}

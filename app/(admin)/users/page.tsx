@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import UsersClient from "./UsersClient";
+import { APP_ROLES, canManageData } from "@/lib/staff-roles";
 
 export default async function UsersPage({
   searchParams,
@@ -9,12 +10,14 @@ export default async function UsersPage({
   searchParams: { role?: string; search?: string; page?: string; classId?: string };
 }) {
   const session = await getSafeServerSession();
-  if (session?.user?.role !== "SUPER_ADMIN") redirect("/dashboard");
+  if (!canManageData(session?.user?.role)) redirect("/dashboard");
 
   const page = parseInt(searchParams.page || "1");
   const perPage = 20;
   const where: any = {};
-  if (searchParams.role) where.role = searchParams.role;
+  if (searchParams.role && (APP_ROLES as readonly string[]).includes(searchParams.role)) {
+    where.role = searchParams.role;
+  }
   if (searchParams.search) where.name = { contains: searchParams.search, mode: "insensitive" };
   if (searchParams.classId) where.classId = searchParams.classId;
 
@@ -68,6 +71,8 @@ export default async function UsersPage({
       searchParams={searchParams}
       superAdminTotal={superAdminTotal}
       activeSuperAdminCount={activeSuperAdminCount}
+      viewerRole={session!.user.role}
+      viewerId={session!.user.id}
     />
   );
 }

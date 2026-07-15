@@ -3,8 +3,9 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials, getRoleLabel } from "@/lib/utils";
+import { canDeleteUser, canModifyUser, isSuperAdmin } from "@/lib/staff-roles";
 
-const ROLES = ["STUDENT", "TEACHER", "PIKET", "WALI_KELAS", "SUPER_ADMIN"] as const;
+const ROLES = ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN"] as const;
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
 const STAFF_DOMAIN = process.env.NEXT_PUBLIC_STAFF_DOMAIN || "sman1contoh.sch.id";
 
@@ -12,8 +13,7 @@ function RoleBadge({ role }: { role: string }) {
   const c: Record<string, string[]> = {
     STUDENT: ["var(--accent-light)", "var(--accent)"],
     TEACHER: ["var(--warning-bg)", "var(--warning)"],
-    PIKET: ["var(--success-bg)", "var(--success)"],
-    WALI_KELAS: ["#e0e7ff", "#4338ca"],
+    ADMIN: ["var(--success-bg)", "var(--success)"],
     SUPER_ADMIN: ["var(--danger-bg)", "var(--danger)"],
   };
   const [bg, color] = c[role] || ["var(--bg-tertiary)","var(--text-muted)"];
@@ -47,7 +47,7 @@ function telegramOrtuTableCell(u: {
 
 function kelasAtauJabatan(u: { role: string; class?: { name: string } | null; nisn?: string | null; nip?: string | null }) {
   if (u.role === "STUDENT") return u.class?.name || u.nisn || "—";
-  if (u.role === "WALI_KELAS") return u.class?.name || "—";
+  if (u.role === "TEACHER" && u.class?.name) return u.class.name;
   return u.nip || "—";
 }
 
@@ -60,6 +60,8 @@ export default function UsersClient({
   searchParams,
   superAdminTotal,
   activeSuperAdminCount,
+  viewerRole,
+  viewerId,
 }: any) {
   const router = useRouter();
   const pathname = usePathname();
@@ -107,7 +109,7 @@ export default function UsersClient({
         nip: form.nip || null,
         active: form.active,
       };
-      if (form.role === "STUDENT" || form.role === "WALI_KELAS") {
+      if (form.role === "STUDENT" || form.role === "TEACHER") {
         body.classId = form.classId || null;
       } else {
         body.classId = null;
@@ -214,8 +216,10 @@ export default function UsersClient({
   }, [selectedIds, users]);
 
   const selectedCount = selectedIds.size;
-  const allOnPageSelected = users.length > 0 && users.every((u: any) => selectedIds.has(u.id));
-  const someOnPageSelected = users.some((u: any) => selectedIds.has(u.id));
+  const selectableUsers = users.filter((u: any) => canModifyUser(viewerRole, u.role));
+  const allOnPageSelected =
+    selectableUsers.length > 0 && selectableUsers.every((u: any) => selectedIds.has(u.id));
+  const someOnPageSelected = selectableUsers.some((u: any) => selectedIds.has(u.id));
 
   function toggleSelectOne(id: string) {
     setSelectedIds((prev) => {
@@ -230,9 +234,9 @@ export default function UsersClient({
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (allOnPageSelected) {
-        users.forEach((u: any) => next.delete(u.id));
+        selectableUsers.forEach((u: any) => next.delete(u.id));
       } else {
-        users.forEach((u: any) => next.add(u.id));
+        selectableUsers.forEach((u: any) => next.add(u.id));
       }
       return next;
     });
@@ -336,8 +340,7 @@ export default function UsersClient({
     { v: "", l: "Semua Role" },
     { v: "STUDENT", l: "Siswa" },
     { v: "TEACHER", l: "Guru" },
-    { v: "PIKET", l: "Piket" },
-    { v: "WALI_KELAS", l: "Wali Kelas" },
+    { v: "ADMIN", l: "Admin / Bidang Pertahanan Sekolah" },
     { v: "SUPER_ADMIN", l: "Super Admin" },
   ];
 
@@ -427,12 +430,11 @@ export default function UsersClient({
       </div>
 
       {/* Stats */}
-      <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
+      <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
         {[
           ["Siswa", "STUDENT", "var(--accent)"],
           ["Guru", "TEACHER", "var(--warning)"],
-          ["Piket", "PIKET", "var(--success)"],
-          ["Wali Kelas", "WALI_KELAS", "#4338ca"],
+          ["Admin", "ADMIN", "var(--success)"],
           ["Super Admin", "SUPER_ADMIN", "var(--danger)"],
         ].map(([label, role, color]) => (
           <div key={role} className="rounded-xl border p-3 sm:p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
@@ -526,6 +528,7 @@ export default function UsersClient({
                     <input
                       type="checkbox"
                       checked={selectedIds.has(u.id)}
+                      disabled={!canModifyUser(viewerRole, u.role)}
                       onChange={() => toggleSelectOne(u.id)}
                       aria-label={`Pilih ${u.name}`}
                     />
@@ -557,10 +560,23 @@ export default function UsersClient({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1.5">
-                      <button onClick={() => openEdit(u)} className="px-2.5 py-1 rounded border text-[11px]" style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}>Edit</button>
+                      <button
+                        disabled={
+                          !canModifyUser(viewerRole, u.role) &&
+                          !(viewerRole === "ADMIN" && u.id === viewerId)
+                        }
+                        onClick={() => openEdit(u)}
+                        className="px-2.5 py-1 rounded border text-[11px] disabled:opacity-50"
+                        style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                      >
+                        Edit
+                      </button>
                       <button
                         type="button"
-                        disabled={u.role === "SUPER_ADMIN" && u.active && activeSuperAdminCount <= 1}
+                        disabled={
+                          !canModifyUser(viewerRole, u.role) ||
+                          (u.role === "SUPER_ADMIN" && u.active && activeSuperAdminCount <= 1)
+                        }
                         onClick={() => toggleActive(u.id, u.active)}
                         className="px-2.5 py-1 rounded border text-[11px] disabled:opacity-50"
                         style={{ borderColor: "var(--border)", color: u.active ? "var(--warning)" : "var(--success)", background: u.active ? "var(--warning-bg)" : "var(--success-bg)" }}
@@ -574,12 +590,17 @@ export default function UsersClient({
                       </button>
                       <button
                         type="button"
-                        disabled={u.role === "SUPER_ADMIN" && superAdminTotal <= 1}
+                        disabled={
+                          !canDeleteUser(viewerRole, u.role) ||
+                          (u.role === "SUPER_ADMIN" && superAdminTotal <= 1)
+                        }
                         onClick={() => handleDelete(u.id, u.name)}
                         className="px-2.5 py-1 rounded border text-[11px] disabled:opacity-50"
                         style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
                         title={
-                          u.role === "SUPER_ADMIN" && superAdminTotal <= 1
+                          !canDeleteUser(viewerRole, u.role)
+                            ? "Admin tidak boleh menghapus akun Admin atau Super Admin"
+                            : u.role === "SUPER_ADMIN" && superAdminTotal <= 1
                             ? "Tidak boleh menghapus satu-satunya akun Super Admin"
                             : undefined
                         }
@@ -637,7 +658,11 @@ export default function UsersClient({
                   <select
                     value={form.role}
                     onChange={e => setForm({ ...form, role: e.target.value as any })}
-                    disabled={modal !== "add" && modal?.role === "SUPER_ADMIN" && superAdminTotal <= 1}
+                    disabled={
+                      modal !== "add" &&
+                      ((!isSuperAdmin(viewerRole) && (modal?.role === "ADMIN" || modal?.role === "SUPER_ADMIN")) ||
+                        (modal?.role === "SUPER_ADMIN" && superAdminTotal <= 1))
+                    }
                     className="w-full px-3 py-2 rounded-lg border text-sm disabled:opacity-60"
                     style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
                     title={
@@ -646,7 +671,9 @@ export default function UsersClient({
                         : undefined
                     }
                   >
-                    {ROLES.map(r => <option key={r} value={r}>{getRoleLabel(r)}</option>)}
+                    {ROLES.filter((r) => isSuperAdmin(viewerRole) || r !== "SUPER_ADMIN" || form.role === r).map(r => (
+                      <option key={r} value={r}>{getRoleLabel(r)}</option>
+                    ))}
                   </select>
                 </div>
                 {form.role === "STUDENT" && (
@@ -683,10 +710,10 @@ export default function UsersClient({
                   </div>
                   </>
                 )}
-                {(form.role === "STUDENT" || form.role === "WALI_KELAS") && (
+                {(form.role === "STUDENT" || form.role === "TEACHER") && (
                   <div>
                     <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                      {form.role === "WALI_KELAS" ? "Kelas yang diampu (walas)" : "Kelas"}
+                      {form.role === "TEACHER" ? "Kelas yang diampu (opsional)" : "Kelas"}
                     </label>
                     <select value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}>
                       <option value="">— Pilih kelas —</option>
@@ -706,6 +733,7 @@ export default function UsersClient({
                     id="activeCheck"
                     checked={form.active}
                     disabled={
+                      (!isSuperAdmin(viewerRole) && modal !== "add" && modal?.role === "ADMIN") ||
                       modal !== "add" &&
                       form.role === "SUPER_ADMIN" &&
                       modal?.role === "SUPER_ADMIN" &&

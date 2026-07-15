@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { cn, getRoleLabel } from "@/lib/utils";
-import { isSuperAdmin } from "@/lib/staff-roles";
+import { canManageData } from "@/lib/staff-roles";
 
 export type SidebarClass = { id: string; name: string; grade: string };
 
@@ -13,8 +13,7 @@ const ROLE_LINKS = [
   { href: "/users", label: "Semua", roleKey: "" },
   { href: "/users?role=STUDENT", label: "Siswa", roleKey: "STUDENT" },
   { href: "/users?role=TEACHER", label: "Guru", roleKey: "TEACHER" },
-  { href: "/users?role=PIKET", label: "Piket", roleKey: "PIKET" },
-  { href: "/users?role=WALI_KELAS", label: "Wali Kelas", roleKey: "WALI_KELAS" },
+  { href: "/users?role=ADMIN", label: "Admin", roleKey: "ADMIN" },
   { href: "/users?role=SUPER_ADMIN", label: "Super Admin", roleKey: "SUPER_ADMIN" },
 ];
 
@@ -190,7 +189,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const superAdmin = isSuperAdmin(session?.user?.role);
+  const canManage = canManageData(session?.user?.role);
 
   const [openMenu, setOpenMenu] = useState<null | "records" | "students" | "users">(null);
 
@@ -281,7 +280,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
         <div className="px-3 pb-2 pt-2">
           <SectionLabel>Pengaturan</SectionLabel>
 
-          {superAdmin && (
+          {canManage && (
             <SimpleNavLink
               href="/settings"
               active={pathname.startsWith("/settings")}
@@ -309,7 +308,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             label="Jenis Pelanggaran"
           />
 
-          {superAdmin && (
+          {canManage && (
             <SplitNavRow
               href="/users"
               active={pathname.startsWith("/users")}
@@ -338,7 +337,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
           )}
         </div>
 
-        <div className="px-3 pb-2 pt-2">
+        {canManage && <div className="px-3 pb-2 pt-2">
           <SectionLabel>Laporan</SectionLabel>
           <SimpleNavLink
             href="/export"
@@ -350,7 +349,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             }
             label="Export Excel"
           />
-        </div>
+        </div>}
       </nav>
 
       <div className="border-t p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>

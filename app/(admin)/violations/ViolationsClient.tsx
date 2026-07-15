@@ -13,7 +13,7 @@ function CatBadge({ cat }: { cat: string }) {
 
 const empty = { name: "", category: "RINGAN" as typeof CATS[number], points: 5, description: "" };
 
-export default function ViolationsClient({ violations }: { violations: any[] }) {
+export default function ViolationsClient({ violations, canManage }: { violations: any[]; canManage: boolean }) {
   const router = useRouter();
   const [modal, setModal] = useState<any>(null); // null = closed, "add" | record = open
   const [form, setForm] = useState({ ...empty });
@@ -49,14 +49,14 @@ export default function ViolationsClient({ violations }: { violations: any[] }) 
           <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Manajemen Jenis Pelanggaran</h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Kelola daftar pelanggaran dan poin yang berlaku</p>
         </div>
-        <button
+        {canManage && <button
           type="button"
           onClick={openAdd}
           className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
           style={{ background: "var(--accent)" }}
         >
           + Tambah Pelanggaran
-        </button>
+        </button>}
       </div>
 
       {/* Summary cards */}
@@ -78,7 +78,7 @@ export default function ViolationsClient({ violations }: { violations: any[] }) 
         <div className="overflow-x-auto">
         <table className="w-full min-w-[640px]">
           <thead><tr style={{ background: "var(--bg-primary)" }}>
-            {["Nama Pelanggaran","Kategori","Poin","Keterangan","Status","Aksi"].map(h => (
+            {["Nama Pelanggaran","Kategori","Poin","Keterangan","Status", ...(canManage ? ["Aksi"] : [])].map(h => (
               <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{h}</th>
             ))}
           </tr></thead>
@@ -94,12 +94,12 @@ export default function ViolationsClient({ violations }: { violations: any[] }) 
                 <td className="px-4 py-3">
                   <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: v.active ? "var(--success-bg)" : "var(--bg-tertiary)", color: v.active ? "var(--success)" : "var(--text-muted)" }}>{v.active ? "Aktif" : "Nonaktif"}</span>
                 </td>
-                <td className="px-4 py-3">
+                {canManage && <td className="px-4 py-3">
                   <div className="flex gap-1.5">
                     <button onClick={() => openEdit(v)} className="px-2.5 py-1 rounded border text-[11px]" style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}>Edit</button>
                     <button onClick={() => handleDelete(v.id)} className="px-2.5 py-1 rounded border text-[11px]" style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}>Hapus</button>
                   </div>
-                </td>
+                </td>}
               </tr>
             ))}
           </tbody>
@@ -108,7 +108,7 @@ export default function ViolationsClient({ violations }: { violations: any[] }) 
       </div>
 
       {/* Modal */}
-      {modal && (
+      {canManage && modal && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
           onClick={() => setModal(null)}

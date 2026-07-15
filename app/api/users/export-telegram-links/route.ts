@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { canManageData } from "@/lib/staff-roles";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import ExcelJS from "exceljs";
@@ -14,7 +15,7 @@ const MAX_ROWS = 15_000;
  */
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "SUPER_ADMIN") {
+  if (!session || !canManageData(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

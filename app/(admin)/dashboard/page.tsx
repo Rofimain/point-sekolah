@@ -230,7 +230,7 @@ export default async function DashboardPage() {
       )}
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Siswa Aktif" value={totalStudents} sub={`${totalTeachers} staf (guru / piket / walas / admin)`} />
+        <StatCard label="Total Siswa Aktif" value={totalStudents} sub={`${totalTeachers} staf (guru / admin / super admin)`} />
         <StatCard label="Pelanggaran Bulan Ini" value={thisMonthCount} sub={trend ? `${parseInt(trend) > 0 ? "+" : ""}${trend}% dari bulan lalu` : undefined} color="var(--warning)" />
         <StatCard label={`Siswa poin ≥${ALERT_POINTS}`} value={over25Students.length} sub="Perhatian wali kelas / BK" color="var(--warning)" />
         <StatCard label={`Siswa poin kritis (≥${CRITICAL_POINTS})`} value={criticalStudents.length} sub="Tindak lanjut segera" color="var(--danger)" />

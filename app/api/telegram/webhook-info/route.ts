@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { canManageData } from "@/lib/staff-roles";
 
 const TG = "https://api.telegram.org";
 
@@ -9,7 +10,7 @@ const TG = "https://api.telegram.org";
  */
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "SUPER_ADMIN") {
+  if (!session || !canManageData(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

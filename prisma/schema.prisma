@@ -32,8 +32,7 @@ model User {
 enum Role {
   STUDENT
   TEACHER
-  PIKET
-  WALI_KELAS
+  ADMIN
   SUPER_ADMIN
 }
 

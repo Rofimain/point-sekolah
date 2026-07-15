@@ -268,23 +268,23 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "piket@sman1contoh.sch.id" },
-    update: { role: Role.PIKET, active: true },
+    update: { role: Role.ADMIN, active: true },
     create: {
       email: "piket@sman1contoh.sch.id",
-      name: "Staff Piket",
+      name: "Bidang Pertahanan Sekolah",
       password: teacherPwd,
-      role: Role.PIKET,
+      role: Role.ADMIN,
       nip: "198201011990032001",
     },
   });
   await prisma.user.upsert({
     where: { email: "walas.mipa1@sman1contoh.sch.id" },
-    update: { role: Role.WALI_KELAS, classId: "cls-x-mipa1", active: true },
+    update: { role: Role.TEACHER, classId: "cls-x-mipa1", active: true },
     create: {
       email: "walas.mipa1@sman1contoh.sch.id",
       name: "Wali Kelas X MIPA 1",
       password: teacherPwd,
-      role: Role.WALI_KELAS,
+      role: Role.TEACHER,
       nip: "198303031990033001",
       classId: "cls-x-mipa1",
     },
@@ -294,8 +294,8 @@ async function main() {
   console.log("\nAkun Login:");
   console.log("Super Admin: admin@sman1contoh.sch.id / Admin@1234");
   console.log("Guru:        s.rahayu@sman1contoh.sch.id / Guru@1234");
-  console.log("Piket:       piket@sman1contoh.sch.id / Guru@1234");
-  console.log("Walas:       walas.mipa1@sman1contoh.sch.id / Guru@1234");
+  console.log("Admin:       piket@sman1contoh.sch.id / Guru@1234");
+  console.log("Guru/Walas:  walas.mipa1@sman1contoh.sch.id / Guru@1234");
   console.log("Siswa:       0051234567@siswa.sman1contoh.sch.id / Siswa@1234");
   console.log("\nDemo pengurangan 25% (bulan tenang, password Siswa@1234):");
   console.log("  Ali (otomatis lewat logic): 0051111111@siswa.sman1contoh.sch.id");

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { violationTypeId, session: sessionSlot, notes, studentId, points, evidenceImageData, studentSignatureData, date: dateInput } = body;
+  const { violationTypeId, session: sessionSlot, notes, studentId, evidenceImageData, studentSignatureData, date: dateInput } = body;
 
   let targetStudentId = session.user.id;
   if (session.user.role !== "STUDENT") {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   const vt = await prisma.violationType.findUnique({ where: { id: violationTypeId } });
   if (!vt) return NextResponse.json({ error: "Jenis pelanggaran tidak ditemukan" }, { status: 404 });
 
-  const resolvedPoints = typeof points === "number" && Number.isFinite(points) ? points : vt.points;
+  const resolvedPoints = vt.points;
   const evidence = typeof evidenceImageData === "string" ? evidenceImageData : null;
   const signature = typeof studentSignatureData === "string" ? studentSignatureData : null;
 

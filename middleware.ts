@@ -7,10 +7,21 @@ function isAdminLoginPath(pathname: string) {
   return pathname === "/admin/login" || pathname.startsWith("/admin/login/");
 }
 
+/** Cookie sebelum migrasi role harus login ulang agar claim memakai role kanonis. */
+function isLegacyStaffRole(role: unknown) {
+  return role === "PIKET" || role === "WALI_KELAS";
+}
+
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
+
+    if (isLegacyStaffRole(token?.role)) {
+      const signOut = new URL("/api/auth/signout", req.nextUrl.origin);
+      signOut.searchParams.set("callbackUrl", `${req.nextUrl.origin}/admin/login`);
+      return NextResponse.redirect(signOut);
+    }
 
     /** Akun dinonaktifkan setelah JWT dibuat — paksa keluar & hapus cookie sesi. */
     if (token?.error === "AccountInactive") {
@@ -20,7 +31,7 @@ export default withAuth(
       return NextResponse.redirect(signOut);
     }
 
-    // Area staf: guru, piket, walas, super admin (skip /admin/login)
+    // Area staf: guru, admin, dan super admin (skip /admin/login)
     const needsStaffRole =
       (!isAdminLoginPath(pathname) && pathname.startsWith("/admin")) ||
       pathname.startsWith("/dashboard") ||

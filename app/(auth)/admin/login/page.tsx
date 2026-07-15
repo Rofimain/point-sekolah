@@ -70,10 +70,10 @@ export default function AdminLoginPage() {
         </form>
         <div className="flex flex-col items-stretch gap-2 mt-4 text-center">
           <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border rounded text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
-            <span style={{ color: "var(--success)", fontSize: 10 }}>■</span> Guru, piket & wali kelas: peran Admin (hak sama)
+            <span style={{ color: "var(--warning)", fontSize: 10 }}>■</span> Guru / wali kelas: lihat data & tambah pelanggaran
           </span>
           <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border rounded text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
-            <span style={{ color: "var(--danger)", fontSize: 10 }}>■</span> Super Admin: akses penuh di atas Admin
+            <span style={{ color: "var(--success)", fontSize: 10 }}>■</span> Admin: akses operasional penuh · Super Admin: akses penuh
           </span>
         </div>
         <div className="mt-4 pt-4 border-t text-center" style={{ borderColor: "var(--border)" }}>

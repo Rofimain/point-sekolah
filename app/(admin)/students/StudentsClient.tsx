@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getInitials } from "@/lib/utils";
 import { parseStudentBulkPaste } from "@/lib/parse-student-bulk";
+import { canManageData } from "@/lib/staff-roles";
 
 const GRADES = ["X", "XI", "XII"] as const;
 
@@ -51,9 +52,12 @@ export default function StudentsClient({
   const pathname = usePathname();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const totalPages = Math.ceil(total / perPage);
+  const canManage = canManageData(viewerRole);
   type StudentsPanelTab = "single" | "bulk" | "kelas";
   const tab: StudentsPanelTab | null =
-    searchParams.tab === "kelas"
+    !canManage
+      ? null
+      : searchParams.tab === "kelas"
       ? "kelas"
       : searchParams.tab === "bulk"
         ? "bulk"
@@ -364,7 +368,7 @@ export default function StudentsClient({
             </p>
           )}
         </div>
-        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:min-w-[min(100%,18rem)]">
+        {canManage && <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:min-w-[min(100%,18rem)]">
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -403,7 +407,7 @@ export default function StudentsClient({
               Kelas
             </button>
           </div>
-        </div>
+        </div>}
       </div>
 
       {msg && (
@@ -454,7 +458,7 @@ export default function StudentsClient({
               ? `${total} siswa di kelas ${selectedClass.name}`
               : `${total} siswa terdaftar`}
           </span>
-          {viewerRole === "SUPER_ADMIN" && (
+          {canManage && (
             <a href="/users?role=STUDENT" className="text-xs font-medium hover:underline break-words" style={{ color: "var(--accent)" }}>
               Edit lanjutan / nonaktifkan → Manajemen user
             </a>
@@ -813,7 +817,7 @@ export default function StudentsClient({
                 boleh berisi judul: <code className="text-[10px]">nama</code>, <code className="text-[10px]">nisn</code>,{" "}
                 <code className="text-[10px]">nama_kelas</code>, <code className="text-[10px]">email</code>,{" "}
                 <code className="text-[10px]">password</code> — opsional kecuali nama, nisn, kelas. Telegram ortu{" "}
-                <strong style={{ color: "var(--text-secondary)" }}>tidak</strong> diisi lewat impor: setelah siswa masuk, Super Admin salin tautan per siswa di Manajemen Pengguna.
+                <strong style={{ color: "var(--text-secondary)" }}>tidak</strong> diisi lewat impor: setelah siswa masuk, Admin salin tautan per siswa di Manajemen Pengguna.
               </p>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">

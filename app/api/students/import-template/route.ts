@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import ExcelJS from "exceljs";
-import { isStaffRole } from "@/lib/staff-roles";
+import { canManageData } from "@/lib/staff-roles";
 
 function staffOk(role: string | undefined) {
-  return isStaffRole(role);
+  return canManageData(role);
 }
 
 export async function GET() {
@@ -48,7 +48,7 @@ export async function GET() {
     "3. nama_kelas harus sama persis dengan nama kelas di Data Siswa → tab Kelas, contoh: X MIPA 1.",
     "4. Jika email kosong, sistem membuat email otomatis: nisn@domain-siswa sekolah.",
     "5. Jika password kosong, dipakai password default sekolah (lihat dokumentasi admin).",
-    "6. Telegram ortu: tidak diisi lewat Excel. Setelah siswa masuk sistem, Super Admin memakai Manajemen Pengguna → Salin tautan Telegram ortu per siswa (token unik + webhook).",
+    "6. Telegram ortu: tidak diisi lewat Excel. Setelah siswa masuk sistem, Admin memakai Manajemen Pengguna → Salin tautan Telegram ortu per siswa (token unik + webhook).",
     "7. Simpan file sebagai .xlsx lalu salin blok tabel (termasuk judul) ke area tempel di web, atau tempel dari Excel langsung.",
   ];
   lines.forEach((t, i) => {

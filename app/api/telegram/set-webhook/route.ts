@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { canManageData } from "@/lib/staff-roles";
 import { isTelegramWebhookSecretValid, TELEGRAM_WEBHOOK_SECRET_HINT } from "@/lib/telegram-webhook-secret";
 
 const TG = "https://api.telegram.org";
 
 /**
- * Super Admin: mendaftarkan URL webhook ke Telegram (wajib HTTPS).
- * Body opsional: { "baseUrl": "https://domain.com" } bila NEXTAUTH_URL belum benar.
+ * Admin: mendaftarkan URL webhook Telegram hanya ke domain NEXTAUTH_URL.
  */
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "SUPER_ADMIN") {
+  if (!session || !canManageData(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -20,20 +20,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "TELEGRAM_BOT_TOKEN belum diatur" }, { status: 400 });
   }
 
-  let base =
-    (await req.json().catch(() => ({})) as { baseUrl?: string }).baseUrl?.trim() ||
-    process.env.NEXTAUTH_URL?.trim();
-  if (base && !base.startsWith("http")) {
-    base = `https://${base}`;
-  }
+  const base = process.env.NEXTAUTH_URL?.trim();
   if (!base) {
     return NextResponse.json(
-      { error: "Tidak ada URL publik. Set NEXTAUTH_URL atau kirim { \"baseUrl\": \"https://...\" }." },
+      { error: "NEXTAUTH_URL belum diatur." },
       { status: 400 }
     );
   }
 
-  const webhookUrl = `${base.replace(/\/$/, "")}/api/telegram/webhook`;
+  let configuredUrl: URL;
+  try {
+    configuredUrl = new URL(base);
+  } catch {
+    return NextResponse.json({ error: "NEXTAUTH_URL tidak valid." }, { status: 400 });
+  }
+  if (configuredUrl.protocol !== "https:") {
+    return NextResponse.json({ error: "NEXTAUTH_URL untuk webhook wajib HTTPS." }, { status: 400 });
+  }
+  const webhookUrl = new URL("/api/telegram/webhook", configuredUrl).toString();
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
   if (secret && !isTelegramWebhookSecretValid(secret)) {
     return NextResponse.json(
