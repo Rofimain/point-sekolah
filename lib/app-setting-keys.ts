@@ -8,8 +8,6 @@ export const APP_KEYS = {
   SP2_POINTS: "sp2_points",
   SP3_POINTS: "sp3_points",
   SKORSING_POINTS: "skorsing_points",
-  REMISI_QUIET_DAYS: "remisi_quiet_days",
-  REMISI_PERCENT: "remisi_percent",
 } as const;
 
 export type AppSettingKey = (typeof APP_KEYS)[keyof typeof APP_KEYS];

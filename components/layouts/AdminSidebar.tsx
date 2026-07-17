@@ -174,7 +174,7 @@ function SplitNavRow({
       <div
         className={cn(
           "overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-          open ? "pointer-events-auto mt-1.5 max-h-[15rem] opacity-100" : "pointer-events-none max-h-0 opacity-0"
+          open ? "pointer-events-auto mt-1.5 max-h-[18rem] opacity-100" : "pointer-events-none max-h-0 opacity-0"
         )}
       >
         <div className="ml-1.5 max-h-[14rem] space-y-0.5 overflow-y-auto overflow-x-hidden border-l border-white/[0.07] py-0.5 pl-2.5 pr-1">
@@ -313,6 +313,9 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             >
               <SubmenuLink href="/settings" active={pathname === "/settings"}>
                 Umum
+              </SubmenuLink>
+              <SubmenuLink href="/settings/remisi" active={pathname.startsWith("/settings/remisi")}>
+                Poin Remisi &amp; Reward
               </SubmenuLink>
               <SubmenuLink href="/settings/redaksi" active={pathname.startsWith("/settings/redaksi")}>
                 Redaksi cetak

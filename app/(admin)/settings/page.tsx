@@ -13,8 +13,6 @@ const SETTINGS_PAGE_KEYS = [
   APP_KEYS.SP2_POINTS,
   APP_KEYS.SP3_POINTS,
   APP_KEYS.SKORSING_POINTS,
-  APP_KEYS.REMISI_QUIET_DAYS,
-  APP_KEYS.REMISI_PERCENT,
 ] as const;
 
 export default async function SettingsPage() {

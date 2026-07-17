@@ -4,16 +4,16 @@ import {
   dateInTimeZoneYmd,
   dateToYmdInput,
 } from "@/lib/incident-date";
-import { getRemisiPercent, getQuietPeriodDays } from "@/lib/app-settings";
 import {
   getEffectivePointsBreakdown,
   isPointAdjustmentTableMissing,
   QUIET_MONTH_REASON,
 } from "@/lib/student-effective-points";
+import { AUTO_REMISI_PERCENT } from "@/lib/remisi-rules";
+import { getQuietPeriodDays } from "@/lib/app-settings";
 
 /**
  * Tanggal KEJADIAN pelanggaran terakhir (kolom `date`), bukan `createdAt` / waktu input.
- * Input terlambat harus mengisi tanggal kejadian yang benar di form.
  */
 export async function getLastViolationDate(studentId: string): Promise<Date | null> {
   const last = await prisma.violationRecord.findFirst({
@@ -39,10 +39,11 @@ async function getLastQuietMonthAdjustmentAt(studentId: string): Promise<Date | 
 }
 
 /**
- * Layak remisi bila:
+ * Aturan no.1 (otomatis, tidak perlu diatur):
  * - Ada poin pelanggaran (bruto) > 0
- * - Sudah lewat minimal hari tenang (pengaturan sekolah / env) sejak tanggal KEJADIAN terakhir
- * - Belum ada potongan "bulan tenang" setelah tanggal kejadian terakhir itu
+ * - ≥ 30 hari kalender tanpa pelanggaran sejak tanggal KEJADIAN terakhir
+ * - Belum ada remisi periode tenang setelah tanggal kejadian terakhir
+ * - Potongan 25% dari total skor pelanggaran bruto
  */
 export async function isEligibleForQuietMonthReduction(
   studentId: string,
@@ -72,10 +73,6 @@ export type QuietMonthApplyResult = {
   remisiPercent: number;
 };
 
-/**
- * Terapkan pengurangan (default 25%, bisa diganti di pengaturan) dari total poin bruto.
- * Mengembalikan null jika tidak layak.
- */
 export async function applyQuietMonthReductionForStudent(
   studentId: string,
   now: Date = new Date()
@@ -89,11 +86,13 @@ export async function applyQuietMonthReductionForStudent(
   const gross = grossAgg._sum.points ?? 0;
   if (gross < 1) return null;
 
-  const remisiPercent = await getRemisiPercent();
+  const remisiPercent = AUTO_REMISI_PERCENT;
   const deduct = Math.round(gross * (remisiPercent / 100));
   if (deduct < 1) return null;
 
-  const pointsDelta = -Math.min(deduct, gross);
+  const { effective } = await getEffectivePointsBreakdown(studentId);
+  const pointsDelta = -Math.min(deduct, effective, gross);
+  if (pointsDelta >= 0) return null;
 
   try {
     await prisma.pointAdjustment.create({
@@ -109,12 +108,12 @@ export async function applyQuietMonthReductionForStudent(
     throw e;
   }
 
-  const { effective } = await getEffectivePointsBreakdown(studentId);
+  const after = await getEffectivePointsBreakdown(studentId);
   return {
     studentId,
     grossTotalBefore: gross,
     pointsDelta,
-    effectiveAfter: effective,
+    effectiveAfter: after.effective,
     remisiPercent,
   };
 }
@@ -134,7 +133,6 @@ export async function applyQuietMonthReductionForAllStudents(
   return out;
 }
 
-/** Daftar siswa yang saat ini memenuhi syarat remisi (belum diterapkan). */
 export async function previewEligibleQuietMonthStudents(
   now: Date = new Date()
 ): Promise<{ id: string; name: string; lastIncidentYmd: string; daysQuiet: number }[]> {

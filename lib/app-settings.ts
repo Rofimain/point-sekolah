@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 export { APP_KEYS } from "@/lib/app-setting-keys";
 import { APP_KEYS } from "@/lib/app-setting-keys";
+import { AUTO_REMISI_PERCENT, AUTO_REMISI_QUIET_DAYS } from "@/lib/remisi-rules";
 
 const DEFAULTS: Record<string, string> = {
   [APP_KEYS.COORD_NAME]: "",
@@ -13,8 +14,6 @@ const DEFAULTS: Record<string, string> = {
   [APP_KEYS.SP2_POINTS]: "",
   [APP_KEYS.SP3_POINTS]: "",
   [APP_KEYS.SKORSING_POINTS]: "",
-  [APP_KEYS.REMISI_QUIET_DAYS]: "",
-  [APP_KEYS.REMISI_PERCENT]: "",
 };
 
 export async function getAppSetting(key: string): Promise<string> {
@@ -64,22 +63,20 @@ export async function getPointThresholds(): Promise<{
   };
 }
 
-/** Fallback sync dari env saja — prefer getQuietPeriodDays() untuk nilai DB. */
+/** Aturan no.1 tetap: 30 hari (boleh override ops via env saja). */
 export function quietPeriodDaysFromEnv(): number {
-  const n = parseInt(process.env.POINT_REDUCTION_QUIET_DAYS || "30", 10);
-  return Number.isFinite(n) && n > 0 ? n : 30;
+  const n = parseInt(process.env.POINT_REDUCTION_QUIET_DAYS || String(AUTO_REMISI_QUIET_DAYS), 10);
+  return Number.isFinite(n) && n > 0 ? n : AUTO_REMISI_QUIET_DAYS;
 }
 
+/** @deprecated Prefer AUTO_REMISI_QUIET_DAYS — remisi otomatis tidak lagi dari AppSetting. */
 export async function getQuietPeriodDays(): Promise<number> {
-  const fromDb = parseOptionalInt(await getAppSetting(APP_KEYS.REMISI_QUIET_DAYS));
-  if (fromDb != null && fromDb > 0) return fromDb;
   return quietPeriodDaysFromEnv();
 }
 
+/** Aturan no.1 tetap 25%. */
 export async function getRemisiPercent(): Promise<number> {
-  const fromDb = parseOptionalInt(await getAppSetting(APP_KEYS.REMISI_PERCENT));
-  if (fromDb != null && fromDb > 0 && fromDb <= 100) return fromDb;
-  return 25;
+  return AUTO_REMISI_PERCENT;
 }
 
 export async function getPrintBlock(): Promise<{

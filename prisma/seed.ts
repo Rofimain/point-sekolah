@@ -276,8 +276,6 @@ async function main() {
     sp2_points: "",
     sp3_points: "",
     skorsing_points: "",
-    remisi_quiet_days: "30",
-    remisi_percent: "25",
   };
   for (const [key, value] of Object.entries(appSettingSeeds)) {
     await prisma.appSetting.upsert({

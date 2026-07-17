@@ -617,7 +617,7 @@ export default function StudentFormClient({
                   Riwayat remisi & penyesuaian poin
                 </h3>
                 <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                  Daftar pengurangan atau penyesuaian (misalnya remisi 25% setelah periode tenang). Ini terpisah dari tabel
+                  Daftar pengurangan atau penyesuaian (remisi periode tenang, juara, hafalan, dll.). Ini terpisah dari tabel
                   pelanggaran di atas.
                 </p>
               </div>
