@@ -41,6 +41,7 @@ export default async function StudentsPage({
         email: true,
         nisn: true,
         active: true,
+        photoPresent: true,
         class: { select: { name: true, grade: true } },
       },
       orderBy: [{ name: "asc" }, { id: "asc" }],

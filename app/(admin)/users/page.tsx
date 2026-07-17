@@ -38,6 +38,7 @@ export default async function UsersPage({
         parentTelegram: true,
         classId: true,
         active: true,
+        photoPresent: true,
         createdAt: true,
         updatedAt: true,
         class: true,

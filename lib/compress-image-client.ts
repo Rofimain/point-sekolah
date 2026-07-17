@@ -206,3 +206,6 @@ export async function compressImageToDataUrl(
 
 export const COMPRESS_TARGET_BYTES_STUDENT = 340 * 1024;
 export const COMPRESS_TARGET_BYTES_ADMIN = 360 * 1024;
+/** Foto profil user — lebih kecil dari bukti pelanggaran. */
+export const COMPRESS_TARGET_BYTES_AVATAR = 80 * 1024;
+export const COMPRESS_MAX_DIM_AVATAR = 512;

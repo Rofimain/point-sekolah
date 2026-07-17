@@ -7,18 +7,30 @@ import { Role } from "@/generated/prisma/client";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
 import { LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 import { canManageData, isAdminRole } from "@/lib/staff-roles";
+import { isStrictEvidenceImageDataUrl } from "@/lib/evidence-data-url";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
+
+function parsePhotoInput(value: unknown): { photoData: string | null; photoPresent: boolean } | { error: string } {
+  if (value === undefined) return { photoData: null, photoPresent: false };
+  if (value === null || value === "") return { photoData: null, photoPresent: false };
+  if (typeof value !== "string" || !isStrictEvidenceImageDataUrl(value)) {
+    return { error: "Format foto tidak valid. Gunakan JPEG atau PNG." };
+  }
+  return { photoData: value.trim(), photoPresent: true };
+}
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
-  const { name, email, password, role, nisn, nip, classId, active } = body;
+  const { name, email, password, role, nisn, nip, classId, active, photoData } = body;
   if (!name || !email || !password) return NextResponse.json({ error: "Nama, email, password wajib" }, { status: 400 });
   if (!role || !VALID_ROLES.has(String(role))) {
     return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
   }
+  const photo = parsePhotoInput(photoData);
+  if ("error" in photo) return NextResponse.json({ error: photo.error }, { status: 400 });
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
   const hashed = await bcrypt.hash(password, 12);
@@ -38,9 +50,11 @@ export async function POST(req: NextRequest) {
       parentTelegram: null,
       parentTelegramLinkToken: r === "STUDENT" ? newParentLinkToken() : null,
       active: active ?? true,
+      photoData: photo.photoData,
+      photoPresent: photo.photoPresent,
     },
   });
-  const { password: _, parentTelegramLinkToken: linkTok, ...safe } = user;
+  const { password: _, parentTelegramLinkToken: linkTok, photoData: __, ...safe } = user;
   const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
   const ortuTelegramLink =
     r === "STUDENT" && bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;

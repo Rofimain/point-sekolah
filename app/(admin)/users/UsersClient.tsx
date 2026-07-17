@@ -1,9 +1,16 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
-import { getInitials, getRoleLabel } from "@/lib/utils";
+import { getRoleLabel } from "@/lib/utils";
 import { canDeleteUser, canModifyUser, isSuperAdmin } from "@/lib/staff-roles";
+import {
+  compressImageToDataUrl,
+  COMPRESS_MAX_DIM_AVATAR,
+  COMPRESS_TARGET_BYTES_AVATAR,
+  isProbablyImageFile,
+} from "@/lib/compress-image-client";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 const ROLES = ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN"] as const;
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
@@ -73,6 +80,10 @@ export default function UsersClient({
   const [search, setSearch] = useState(searchParams.search || "");
   const [error, setError] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  /** null = tidak diubah; string = data URL baru; "" = hapus foto */
+  const [photoDraft, setPhotoDraft] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSearch(searchParams.search || "");
@@ -84,7 +95,12 @@ export default function UsersClient({
     sp.delete("page"); router.push(`${pathname}?${sp.toString()}`);
   }
 
-  function openAdd() { setForm({ ...emptyForm }); setError(""); setModal("add"); }
+  function openAdd() {
+    setForm({ ...emptyForm });
+    setPhotoDraft(null);
+    setError("");
+    setModal("add");
+  }
   function openEdit(u: any) {
     setForm({
       name: u.name,
@@ -96,8 +112,32 @@ export default function UsersClient({
       classId: u.classId || "",
       active: u.active,
     });
+    setPhotoDraft(null);
     setError("");
     setModal(u);
+  }
+
+  async function onPhotoFile(file: File | null) {
+    if (!file) return;
+    if (!isProbablyImageFile(file)) {
+      toast.error("Gunakan file gambar (JPG, PNG, HEIC, WebP, dll.).");
+      return;
+    }
+    setPhotoBusy(true);
+    try {
+      const { dataUrl, meta } = await compressImageToDataUrl(file, {
+        maxBytes: COMPRESS_TARGET_BYTES_AVATAR,
+        maxDimension: COMPRESS_MAX_DIM_AVATAR,
+        minShortSide: 64,
+      });
+      setPhotoDraft(dataUrl);
+      toast.success(`Foto siap (${Math.round(meta.outputBytes / 1024)} KB).`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Gagal memproses foto");
+    } finally {
+      setPhotoBusy(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
   }
 
   async function handleSave() {
@@ -119,6 +159,11 @@ export default function UsersClient({
         body.classId = null;
       }
       if (form.password) body.password = form.password;
+      if (modal === "add") {
+        if (photoDraft) body.photoData = photoDraft;
+      } else if (photoDraft !== null) {
+        body.photoData = photoDraft === "" ? null : photoDraft;
+      }
       const url = modal === "add" ? "/api/users" : `/api/users/${modal.id}`;
       const method = modal === "add" ? "POST" : "PATCH";
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -132,6 +177,7 @@ export default function UsersClient({
           toast.info(`Tautan ortu: ${data.ortuTelegramLink}`);
         }
       }
+      toast.success(modal === "add" ? "Pengguna ditambahkan." : "Data pengguna disimpan.");
       setModal(null); router.refresh();
     } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
@@ -542,7 +588,13 @@ export default function UsersClient({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>{getInitials(u.name)}</div>
+                      <UserAvatar
+                        name={u.name}
+                        userId={u.id}
+                        photoPresent={!!u.photoPresent}
+                        cacheKey={u.updatedAt ? String(u.updatedAt) : undefined}
+                        size="sm"
+                      />
                       <span className="text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>{u.name}</span>
                     </div>
                   </td>
@@ -646,6 +698,56 @@ export default function UsersClient({
           >
             <h3 className="text-sm font-serif mb-4 pb-3 border-b" style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}>{modal === "add" ? "Tambah Pengguna Baru" : `Edit: ${modal.name}`}</h3>
             <div className="space-y-3">
+              <div className="flex items-center gap-4 rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
+                <UserAvatar
+                  name={form.name || "User"}
+                  userId={modal === "add" ? undefined : modal.id}
+                  photoPresent={modal !== "add" && !!modal.photoPresent && photoDraft !== ""}
+                  previewSrc={photoDraft && photoDraft !== "" ? photoDraft : null}
+                  cacheKey={modal !== "add" && modal.updatedAt ? String(modal.updatedAt) : undefined}
+                  size="lg"
+                />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                    Foto profil
+                  </p>
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*,.heic,.heif"
+                    className="w-full text-xs"
+                    disabled={photoBusy || loading}
+                    onChange={(e) => void onPhotoFile(e.target.files?.[0] ?? null)}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {(photoDraft || (modal !== "add" && modal.photoPresent && photoDraft !== "")) && (
+                      <button
+                        type="button"
+                        disabled={photoBusy || loading}
+                        onClick={() => setPhotoDraft("")}
+                        className="px-2.5 py-1 rounded border text-[11px]"
+                        style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
+                      >
+                        Hapus foto
+                      </button>
+                    )}
+                    {photoDraft !== null && (
+                      <button
+                        type="button"
+                        disabled={photoBusy || loading}
+                        onClick={() => setPhotoDraft(null)}
+                        className="px-2.5 py-1 rounded border text-[11px]"
+                        style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+                      >
+                        Batalkan perubahan foto
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                    {photoBusy ? "Mengompres foto…" : "JPG/PNG/HEIC · otomatis dikompres. Kosongkan jika tidak diubah."}
+                  </p>
+                </div>
+              </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Nama Lengkap *</label>

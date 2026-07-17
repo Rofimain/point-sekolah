@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
-import { getInitials } from "@/lib/utils";
+import UserAvatar from "@/components/ui/UserAvatar";
 import { parseStudentBulkPaste } from "@/lib/parse-student-bulk";
 import { canManageData } from "@/lib/staff-roles";
 
@@ -24,6 +24,7 @@ type StudentRow = {
   email: string;
   nisn: string | null;
   active: boolean;
+  photoPresent?: boolean;
   class: { name: string; grade: string } | null;
 };
 
@@ -507,12 +508,13 @@ export default function StudentsClient({
                   <tr key={u.id} className="border-t" style={{ borderColor: "var(--border)", opacity: u.active ? 1 : 0.55 }}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                          style={{ background: "linear-gradient(135deg, var(--accent), #1A2340)" }}
-                        >
-                          {getInitials(u.name)}
-                        </div>
+                        <UserAvatar
+                          name={u.name}
+                          userId={u.id}
+                          photoPresent={!!u.photoPresent}
+                          size="md"
+                          rounded="lg"
+                        />
                         <span className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
                           {u.name}
                         </span>

@@ -25,6 +25,10 @@ model User {
   pointAdjustments PointAdjustment[]
   active           Boolean           @default(true)
   authVersion      Int               @default(0)
+  /// Foto profil (data URL base64 JPEG/PNG)
+  photoData        String?           @db.Text
+  /// Ringkas untuk UI daftar — ada foto (tanpa load kolom besar)
+  photoPresent     Boolean           @default(false)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 }
