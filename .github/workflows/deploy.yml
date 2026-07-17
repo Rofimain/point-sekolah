@@ -141,6 +141,7 @@ jobs:
             sudo --preserve-env=APP_IMAGE docker compose pull app
             sudo --preserve-env=APP_IMAGE docker compose up -d db --wait --wait-timeout 120
             sudo --preserve-env=APP_IMAGE docker compose run --rm app npx prisma migrate deploy
+            sudo --preserve-env=APP_IMAGE docker compose run --rm app npm run db:sync-pasal-15
             sudo --preserve-env=APP_IMAGE docker compose up -d --wait --wait-timeout 180
             sudo --preserve-env=APP_IMAGE docker compose exec -T app node -e \
               "fetch('http://127.0.0.1:3000/api/health/ready').then(async r=>{console.log(await r.text());process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"

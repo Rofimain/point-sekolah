@@ -107,6 +107,8 @@ Push ke branch `main` memicu workflow `.github/workflows/deploy.yml`:
 
 Production tidak menjalankan seed demo otomatis. `npm run db:seed` hanya untuk development/smoke test.
 
+Setelah migrate, deploy menjalankan `npm run db:sync-pasal-15` (upsert master Pasal 15 + nonaktifkan demo lama `vt-001`…`vt-007`) — aman di DB yang sudah ada user/data.
+
 ### C. Caddy / domain
 
 Edit `Caddyfile` agar host sesuai domain sekolah, pastikan origin cert ada di `certs/`.
