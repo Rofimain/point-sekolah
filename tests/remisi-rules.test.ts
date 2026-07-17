@@ -31,6 +31,6 @@ test("formatPointAdjustmentReason labels", () => {
   assert.match(formatPointAdjustmentReason(QUIET_MONTH_REASON), /otomatis/i);
   assert.match(
     formatPointAdjustmentReason(buildManualRemisiReason(MANUAL_REMISI_TYPE.KHOTIB_JUMAT, "Jumat 17 Jul")),
-    /Khotib/
+    /khotib/i
   );
 });

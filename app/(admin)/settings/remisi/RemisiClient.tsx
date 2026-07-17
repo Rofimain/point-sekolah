@@ -33,14 +33,6 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  const [qmLoading, setQmLoading] = useState(false);
-  const [qmPreview, setQmPreview] = useState<{
-    quietDays: number;
-    remisiPercent: number;
-    eligible: { id: string; name: string; lastIncidentYmd?: string; daysQuiet?: number }[];
-  } | null>(null);
-  const [qmMsg, setQmMsg] = useState("");
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return students.slice(0, 40);
@@ -108,50 +100,6 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
     }
   }
 
-  async function loadQuietPreview() {
-    setQmLoading(true);
-    setQmMsg("");
-    try {
-      const res = await fetch("/api/admin/quiet-month-preview");
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || "Gagal memuat pratinjau");
-      setQmPreview({
-        quietDays: d.quietDays ?? AUTO_REMISI_QUIET_DAYS,
-        remisiPercent: d.remisiPercent ?? AUTO_REMISI_PERCENT,
-        eligible: d.eligible ?? [],
-      });
-    } catch (err: unknown) {
-      setQmPreview(null);
-      setQmMsg(err instanceof Error ? err.message : "Gagal");
-    } finally {
-      setQmLoading(false);
-    }
-  }
-
-  async function runQuietApply() {
-    if (
-      !confirm(
-        `Terapkan remisi otomatis ${AUTO_REMISI_PERCENT}% untuk semua siswa yang memenuhi syarat periode tenang?`
-      )
-    ) {
-      return;
-    }
-    setQmLoading(true);
-    setQmMsg("");
-    try {
-      const res = await fetch("/api/admin/quiet-month-apply", { method: "POST" });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || "Gagal menerapkan remisi");
-      setQmMsg(`Selesai: ${d.count ?? 0} siswa mendapat remisi otomatis.`);
-      setQmPreview(null);
-      router.refresh();
-    } catch (err: unknown) {
-      setQmMsg(err instanceof Error ? err.message : "Gagal");
-    } finally {
-      setQmLoading(false);
-    }
-  }
-
   return (
     <div>
       <div className="mb-5">
@@ -162,71 +110,22 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
           Poin Remisi &amp; Reward
         </h1>
         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-          Remisi otomatis periode tenang, serta pemberian remisi/reward manual sesuai tata tertib.
+          Remisi otomatis berjalan sendiri; di halaman ini Anda memberi remisi/reward manual ke siswa.
         </p>
       </div>
 
       <div
-        className="mb-6 w-full max-w-3xl space-y-3 rounded-xl border p-4 sm:p-5"
+        className="mb-6 w-full max-w-3xl space-y-2 rounded-xl border p-4 sm:p-5"
         style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
       >
         <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
           1. Remisi otomatis (periode tenang)
         </h2>
         <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Jika murid tidak melakukan pelanggaran selama {AUTO_REMISI_QUIET_DAYS} hari terhitung sejak terakhir
-          melanggar, sistem memberikan remisi {AUTO_REMISI_PERCENT}% dari total skor pelanggaran. Dijalankan
-          otomatis oleh cron harian; tombol di bawah untuk cek / terapkan manual massal.
+          Jika murid tidak melanggar selama {AUTO_REMISI_QUIET_DAYS} hari sejak tanggal kejadian terakhir, sistem
+          otomatis mengurangi {AUTO_REMISI_PERCENT}% dari total skor pelanggaran (cron harian). Tidak perlu diatur
+          atau ditekan tombol apa pun.
         </p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={qmLoading}
-            onClick={() => void loadQuietPreview()}
-            className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-50"
-            style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
-          >
-            {qmLoading ? "Memuat…" : "Cek siswa layak remisi"}
-          </button>
-          <button
-            type="button"
-            disabled={qmLoading}
-            onClick={() => void runQuietApply()}
-            className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-            style={{ background: "var(--accent)" }}
-          >
-            Terapkan remisi otomatis sekarang
-          </button>
-        </div>
-        {qmPreview && (
-          <div className="rounded-lg border p-3 text-xs" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
-            <p className="font-semibold" style={{ color: "var(--text-secondary)" }}>
-              Periode tenang: {qmPreview.quietDays} hari · Remisi: {qmPreview.remisiPercent}% · Layak:{" "}
-              {qmPreview.eligible.length} siswa
-            </p>
-            {qmPreview.eligible.length > 0 ? (
-              <ul className="mt-2 max-h-40 list-inside list-disc space-y-0.5 overflow-y-auto" style={{ color: "var(--text-muted)" }}>
-                {qmPreview.eligible.map((s) => (
-                  <li key={s.id}>
-                    {s.name}
-                    {s.lastIncidentYmd != null && s.daysQuiet != null
-                      ? ` — kejadian ${s.lastIncidentYmd}, ${s.daysQuiet} hari tenang`
-                      : ""}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2" style={{ color: "var(--text-muted)" }}>
-                Tidak ada siswa yang memenuhi syarat saat ini.
-              </p>
-            )}
-          </div>
-        )}
-        {qmMsg && (
-          <p className="text-xs" style={{ color: qmMsg.startsWith("Selesai") ? "var(--success)" : "var(--danger)" }}>
-            {qmMsg}
-          </p>
-        )}
       </div>
 
       <div
@@ -238,8 +137,8 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             2–5. Remisi &amp; reward manual
           </h2>
           <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Admin/Super Admin memberikan kepada siswa tertentu: juara kejuaraan, prestasi rekomendasi, hafalan,
-            atau khotib Jumat. Dihitung dari total skor pelanggaran (bruto).
+            Admin/Super Admin memberikan kepada siswa tertentu: juara kejuaraan, prestasi rekomendasi, hafalan, atau
+            khotib Jumat. Dihitung dari total skor pelanggaran (bruto).
           </p>
         </div>
 
@@ -254,7 +153,10 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             className="w-full rounded-lg border px-3 py-2 text-sm"
             style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
           />
-          <ul className="mt-2 max-h-44 space-y-1 overflow-y-auto rounded-lg border p-1" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
+          <ul
+            className="mt-2 max-h-44 space-y-1 overflow-y-auto rounded-lg border p-1"
+            style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
+          >
             {filtered.map((s) => (
               <li key={s.id}>
                 <button
@@ -363,7 +265,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             {preview.error}
           </p>
         )}
-        {preview && "pointsDelta" in preview && (
+        {preview && !("error" in preview) && (
           <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
             Pratinjau: {preview.percent}% → potong {Math.abs(preview.pointsDelta)} poin · efektif setelah ≈{" "}
             {preview.effectiveAfter}
