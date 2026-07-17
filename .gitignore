@@ -29,6 +29,9 @@ yarn-error.log*
 .env*.local
 !.env.example
 
+# database dumps (pg_dump lokal sebelum upload rclone)
+/backups/
+
 # vercel
 .vercel
 

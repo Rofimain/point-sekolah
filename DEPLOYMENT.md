@@ -160,6 +160,129 @@ Admin tetap dapat mereset password akun yang dikelola melalui halaman Manajemen 
 
 ---
 
+## BACKUP DATABASE → Google Drive (otomatis)
+
+Tidak perlu add-on daily backup Hostinger. Cukup bayar VPS + backup `pg_dump` sendiri ke Google Drive lewat **rclone**.
+
+### Yang otomatis vs manual
+
+| Langkah | Manual / otomatis |
+|---------|-------------------|
+| Install rclone + login Google Drive | **Sekali manual** di VPS |
+| Jalankan backup | **Otomatis** via cron (harian) |
+| Restore saat disaster | Manual (pakai `scripts/restore-db.sh`) |
+
+### A. Setup rclone (sekali)
+
+Di VPS:
+
+```bash
+# Install rclone (ikuti https://rclone.org/install/ atau)
+curl https://rclone.org/install.sh | sudo bash
+
+rclone config
+```
+
+Di wizard:
+1. `n` → New remote
+2. Nama: `gdrive`
+3. Storage: Google Drive
+4. Biarkan client id/secret kosong (pakai default rclone), atau isi sendiri
+5. Scope: full access
+6. Ikuti link browser untuk login Google (di laptop: `rclone authorize "drive"` lalu paste token ke VPS bila VPS headless)
+7. Confirm
+
+### Folder di Google Drive
+
+Folder = folder biasa di Drive akun Google kamu. Bisa dibuat dua cara:
+
+1. **Via rclone** (disarankan, dari VPS):
+
+```bash
+rclone mkdir gdrive:point-sekolah-backups
+rclone lsd gdrive:
+```
+
+2. **Via browser** di [drive.google.com](https://drive.google.com) → New → Folder → nama `point-sekolah-backups`  
+   Lalu pastikan path di `RCLONE_REMOTE` sama dengan nama folder itu.
+
+Path format rclone: `nama-remote:nama-folder`  
+Contoh: `gdrive:point-sekolah-backups` = remote `gdrive`, folder `point-sekolah-backups` di root Drive.
+
+Uji upload:
+
+```bash
+rclone lsd gdrive:
+echo test > /tmp/rclone-test.txt
+rclone copy /tmp/rclone-test.txt gdrive:point-sekolah-backups/
+rclone ls gdrive:point-sekolah-backups
+```
+
+### Satu akun vs dua akun Google Drive
+
+**1 akun** (cukup untuk kebanyakan kasus) di `.env`:
+
+```env
+RCLONE_REMOTE=gdrive:point-sekolah-backups
+BACKUP_KEEP_LOCAL=7
+BACKUP_KEEP_REMOTE_DAYS=30
+```
+
+**2 akun** (redundansi: mis. akun pribadi + akun sekolah):
+
+1. Jalankan `rclone config` **dua kali** → remote `gdrive` (akun A) dan `gdrive2` (akun B)
+2. Buat folder di masing-masing:  
+   `rclone mkdir gdrive:point-sekolah-backups`  
+   `rclone mkdir gdrive2:point-sekolah-backups`
+3. Di `.env`:
+
+```env
+RCLONE_REMOTES=gdrive:point-sekolah-backups,gdrive2:point-sekolah-backups
+BACKUP_KEEP_LOCAL=7
+BACKUP_KEEP_REMOTE_DAYS=30
+```
+
+Satu kali `./scripts/backup-db.sh` akan upload dump yang sama ke **kedua** Drive.
+
+### B. Uji backup manual
+
+Di folder project di VPS (yang ada `docker-compose.yml` + `.env`):
+
+```bash
+chmod +x scripts/backup-db.sh scripts/restore-db.sh
+./scripts/backup-db.sh
+```
+
+Cek Drive: file `point-sekolah-*.sql.gz` harus muncul.
+
+### C. Jadwalkan otomatis (cron harian)
+
+```bash
+sudo crontab -e
+```
+
+Contoh jam **03:10** (setelah cron remisi 02:00):
+
+```cron
+10 3 * * * cd /root/point-sekolah && ./scripts/backup-db.sh >> /var/log/point-sekolah-backup.log 2>&1
+```
+
+Sesuaikan path `/root/point-sekolah` dengan lokasi deploy di server.
+
+Cek log: `tail -f /var/log/point-sekolah-backup.log`
+
+### D. Restore (saat VPS rusak / recreate)
+
+1. Setup VPS baru + Docker + deploy app (GitHub Actions)
+2. Unduh dump dari Drive:
+
+```bash
+rclone copyto gdrive:point-sekolah-backups/NAMA-FILE.sql.gz /tmp/restore.sql.gz
+./scripts/restore-db.sh /tmp/restore.sql.gz
+```
+
+---
+
 ## TROUBLESHOOTING
 
 **Error: PrismaClientInitializationError**
