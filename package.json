@@ -17,6 +17,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:sync-pasal-15": "tsx scripts/sync-pasal-15-violations.ts",
+    "db:clear-violation-history": "tsx scripts/clear-violation-history.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },

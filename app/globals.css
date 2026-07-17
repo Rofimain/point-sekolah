@@ -136,6 +136,11 @@
     letter-spacing: 0.02em;
     border: 1px solid transparent;
   }
+
+  .admin-chrome-body {
+    height: calc(100dvh - 3.5rem);
+    max-height: calc(100vh - 3.5rem);
+  }
 }
 
 @layer utilities {
@@ -202,4 +207,53 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--text-muted) 55%, transparent);
+}
+
+/* Cetak/PDF: hanya isi surat — sembunyikan chrome aplikasi */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    background-image: none !important;
+    color: #000 !important;
+  }
+
+  .no-print,
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Layout admin: lepas tinggi tetap & scroll supaya seluruh surat ikut ke PDF */
+  body * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  main {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .admin-chrome-body {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* Hindari kartu/panel yang memotong halaman */
+  .panel,
+  .panel-flush {
+    box-shadow: none !important;
+  }
 }

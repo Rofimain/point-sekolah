@@ -28,17 +28,19 @@ export default function AdminChrome({
 
   return (
     <StaffSubmissionNotificationsProvider>
-      <div className="flex min-h-screen min-h-[100dvh] flex-col" style={{ background: "transparent" }}>
-        <TopBar
-          adminNav={{ open: navOpen, onToggle: () => setNavOpen((v) => !v) }}
-          staffNotifications={<StaffSubmissionBell />}
-        />
-        <div className="flex min-h-0 flex-1 overflow-hidden" style={{ height: "calc(100dvh - 3.5rem)", maxHeight: "calc(100vh - 3.5rem)" }}>
+      <div className="flex min-h-screen min-h-[100dvh] flex-col print:block print:h-auto print:min-h-0" style={{ background: "transparent" }}>
+        <div className="no-print print-hide">
+          <TopBar
+            adminNav={{ open: navOpen, onToggle: () => setNavOpen((v) => !v) }}
+            staffNotifications={<StaffSubmissionBell />}
+          />
+        </div>
+        <div className="admin-chrome-body flex min-h-0 flex-1 overflow-hidden print:block print:h-auto print:max-h-none print:overflow-visible">
           {navOpen ? (
             <button
               type="button"
               id="admin-nav-backdrop"
-              className="fixed inset-0 top-14 z-40 cursor-default bg-black/40 backdrop-blur-[2px] lg:hidden"
+              className="no-print print-hide fixed inset-0 top-14 z-40 cursor-default bg-black/40 backdrop-blur-[2px] lg:hidden"
               aria-label="Tutup menu"
               onClick={() => setNavOpen(false)}
             />
@@ -46,7 +48,7 @@ export default function AdminChrome({
           <div
             id="admin-sidebar-panel"
             className={cn(
-              "fixed bottom-0 left-0 top-14 z-50 flex w-[min(18.5rem,92vw)] flex-col border-r transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:static lg:top-auto lg:z-auto lg:h-auto lg:w-60 lg:shrink-0 lg:translate-x-0",
+              "no-print print-hide fixed bottom-0 left-0 top-14 z-50 flex w-[min(18.5rem,92vw)] flex-col border-r transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:static lg:top-auto lg:z-auto lg:h-auto lg:w-60 lg:shrink-0 lg:translate-x-0",
               "lg:transition-none",
               navOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
             )}
@@ -70,7 +72,7 @@ export default function AdminChrome({
               </Suspense>
             </div>
           </div>
-          <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-pb-safe-bottom px-3 pt-5 pb-safe-bottom motion-safe:animate-fade-up sm:px-6 sm:pt-6 lg:px-8">
+          <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-pb-safe-bottom px-3 pt-5 pb-safe-bottom motion-safe:animate-fade-up sm:px-6 sm:pt-6 lg:px-8 print:overflow-visible print:p-0 print:pb-0">
             {children}
           </main>
         </div>

@@ -35,7 +35,13 @@ function parseOptionalNumber(raw: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export default function SettingsClient({ initial }: { initial: Record<string, string> }) {
+export default function SettingsClient({
+  initial,
+  canResetPoints = false,
+}: {
+  initial: Record<string, string>;
+  canResetPoints?: boolean;
+}) {
   const router = useRouter();
   const [form, setForm] = useState(() => ({ ...emptyForm(), ...initial }));
   const [loading, setLoading] = useState(false);
@@ -45,6 +51,8 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
   const [tgLoading, setTgLoading] = useState(false);
   const [tgInfo, setTgInfo] = useState<Record<string, unknown> | null>(null);
   const [tgMsg, setTgMsg] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMsg, setResetMsg] = useState("");
 
   const thresholdWarning = useMemo(() => {
     const sp1 = parseOptionalNumber(form[APP_KEYS.SP1_POINTS]);
@@ -89,6 +97,37 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
       setTgMsg(err instanceof Error ? err.message : "Gagal");
     } finally {
       setTgLoading(false);
+    }
+  }
+
+  async function resetAllViolationHistory() {
+    const typed = window.prompt(
+      'Hapus SEMUA catatan pelanggaran, foto bukti, dan remisi?\n\nKetik RESET_ALL_POINTS untuk konfirmasi:'
+    );
+    if (typed !== "RESET_ALL_POINTS") {
+      setResetMsg(typed == null ? "" : "Dibatalkan — konfirmasi tidak cocok.");
+      return;
+    }
+    if (!window.confirm("Yakin? Tindakan ini tidak bisa dibatalkan. Poin semua siswa jadi 0.")) return;
+
+    setResetLoading(true);
+    setResetMsg("");
+    try {
+      const res = await fetch("/api/admin/clear-violation-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "RESET_ALL_POINTS" }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || "Gagal menghapus");
+      setResetMsg(
+        `Berhasil. Dihapus: ${d.deleted?.records ?? 0} catatan, ${d.deleted?.evidence ?? 0} bukti, ${d.deleted?.adjustments ?? 0} remisi.`
+      );
+      router.refresh();
+    } catch (err: unknown) {
+      setResetMsg(err instanceof Error ? err.message : "Gagal menghapus");
+    } finally {
+      setResetLoading(false);
     }
   }
 
@@ -259,6 +298,35 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
           </pre>
         )}
       </div>
+
+      {canResetPoints && (
+        <div
+          className="mt-8 w-full max-w-2xl space-y-3 rounded-xl border p-4 sm:p-5"
+          style={{ background: "var(--danger-bg)", borderColor: "var(--danger)" }}
+        >
+          <h2 className="text-sm font-serif" style={{ color: "var(--danger)" }}>
+            Zona berbahaya — reset poin
+          </h2>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            Hapus seluruh riwayat pelanggaran siswa, foto bukti, dan remisi/penyesuaian. Master jenis pelanggaran,
+            akun, dan kelas tetap aman. Poin semua siswa kembali 0.
+          </p>
+          <button
+            type="button"
+            disabled={resetLoading}
+            onClick={() => void resetAllViolationHistory()}
+            className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            style={{ background: "var(--danger)" }}
+          >
+            {resetLoading ? "Menghapus…" : "Reset semua poin & riwayat"}
+          </button>
+          {resetMsg && (
+            <p className="text-xs" style={{ color: resetMsg.startsWith("Berhasil") ? "var(--success)" : "var(--danger)" }}>
+              {resetMsg}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

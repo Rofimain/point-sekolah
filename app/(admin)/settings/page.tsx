@@ -2,7 +2,7 @@ import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { APP_KEYS, getAppSettingsMap } from "@/lib/app-settings";
 import SettingsClient from "./SettingsClient";
-import { canManageData } from "@/lib/staff-roles";
+import { canManageData, isSuperAdmin } from "@/lib/staff-roles";
 
 const SETTINGS_PAGE_KEYS = [
   APP_KEYS.SP1_POINTS,
@@ -16,5 +16,5 @@ export default async function SettingsPage() {
   if (!canManageData(session?.user?.role)) redirect("/dashboard");
 
   const initial = await getAppSettingsMap(SETTINGS_PAGE_KEYS);
-  return <SettingsClient initial={initial} />;
+  return <SettingsClient initial={initial} canResetPoints={isSuperAdmin(session?.user?.role)} />;
 }

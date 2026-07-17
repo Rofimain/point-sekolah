@@ -31,7 +31,7 @@ export function TopBar({
   return (
     <>
     <header
-      className="sticky top-0 z-[60] flex h-14 shrink-0 items-center justify-between gap-2 border-b px-3 sm:px-5"
+      className="no-print print-hide sticky top-0 z-[60] flex h-14 shrink-0 items-center justify-between gap-2 border-b px-3 sm:px-5"
       style={{
         background: "color-mix(in srgb, var(--bg-secondary) 92%, transparent)",
         borderColor: "var(--border)",
