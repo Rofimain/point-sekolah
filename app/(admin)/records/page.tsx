@@ -34,7 +34,13 @@ export default async function RecordsPage({
     prisma.violationType.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { points: "asc" }] }),
     prisma.user.findMany({
       where: { role: "STUDENT", active: true },
-      select: { id: true, name: true, nisn: true, class: { select: { name: true, grade: true } } },
+      select: {
+        id: true,
+        name: true,
+        nisn: true,
+        photoPresent: true,
+        class: { select: { name: true, grade: true } },
+      },
       orderBy: { name: "asc" },
     }),
     getEffectivePointsMap(),

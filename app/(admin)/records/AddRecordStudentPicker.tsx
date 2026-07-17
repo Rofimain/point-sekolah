@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
-import { getInitials } from "@/lib/utils";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 export type PickerStudent = {
   id: string;
   name: string;
   nisn: string | null;
+  photoPresent?: boolean;
   class: { name: string; grade: string } | null;
 };
 
@@ -88,12 +89,13 @@ export function AddRecordStudentPicker({
       >
         {selected ? (
           <>
-            <span
-              className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white"
-              style={{ background: "linear-gradient(135deg, var(--accent) 0%, #1A2340 100%)" }}
-            >
-              {getInitials(selected.name)}
-            </span>
+            <UserAvatar
+              name={selected.name}
+              userId={selected.id}
+              photoPresent={selected.photoPresent}
+              size="xl"
+              rounded="xl"
+            />
             <span className="flex-1 min-w-0">
               <span className="block text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
                 {selected.name}
@@ -177,12 +179,13 @@ export function AddRecordStudentPicker({
                         if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent";
                       }}
                     >
-                      <span
-                        className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold text-white"
-                        style={{ background: active ? "var(--accent)" : "linear-gradient(135deg, #4A5A8A 0%, #1A2340 100%)" }}
-                      >
-                        {getInitials(s.name)}
-                      </span>
+                      <UserAvatar
+                        name={s.name}
+                        userId={s.id}
+                        photoPresent={s.photoPresent}
+                        size="lg"
+                        rounded="lg"
+                      />
                       <span className="flex-1 min-w-0">
                         <span className="block text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
                           {s.name}

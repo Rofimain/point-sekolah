@@ -2,7 +2,9 @@ import { calendarTodayYmd } from "@/lib/incident-date";
 
 export type StudentSubmissionNotification = {
   id: string;
+  studentId: string;
   studentName: string;
+  studentPhotoPresent: boolean;
   classLabel: string | null;
   violationName: string;
   points: number;

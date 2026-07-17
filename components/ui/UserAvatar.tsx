@@ -10,15 +10,23 @@ type UserAvatarProps = {
   previewSrc?: string | null;
   /** Bust cache setelah ganti foto (mis. updatedAt ISO) */
   cacheKey?: string | null;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   className?: string;
-  rounded?: "full" | "lg";
+  rounded?: "full" | "lg" | "xl";
 };
 
 const SIZE = {
-  sm: "w-6 h-6 text-[9px]",
-  md: "w-8 h-8 text-[10px]",
-  lg: "w-16 h-16 text-sm",
+  sm: "h-6 w-6 text-[9px]",
+  md: "h-8 w-8 text-[10px]",
+  lg: "h-14 w-14 text-xs sm:h-16 sm:w-16 sm:text-sm",
+  xl: "h-16 w-16 text-sm sm:h-20 sm:w-20 sm:text-base",
+  "2xl": "h-20 w-20 text-base sm:h-24 sm:w-24 sm:text-lg",
+} as const;
+
+const ROUND = {
+  full: "rounded-full",
+  lg: "rounded-lg",
+  xl: "rounded-xl",
 } as const;
 
 export default function UserAvatar({
@@ -31,7 +39,7 @@ export default function UserAvatar({
   className = "",
   rounded = "full",
 }: UserAvatarProps) {
-  const round = rounded === "full" ? "rounded-full" : "rounded-lg";
+  const round = ROUND[rounded];
   const stored =
     photoPresent && userId
       ? `/api/users/${encodeURIComponent(userId)}/photo${cacheKey ? `?v=${encodeURIComponent(cacheKey)}` : ""}`
@@ -40,11 +48,12 @@ export default function UserAvatar({
 
   if (src) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element -- data URL / auth-gated photo API
       <img
         src={src}
         alt={name}
-        className={`${SIZE[size]} ${round} object-cover flex-shrink-0 ${className}`}
-        style={{ background: "var(--bg-tertiary)" }}
+        className={`${SIZE[size]} ${round} object-cover object-center flex-shrink-0 ${className}`}
+        style={{ background: "var(--bg-tertiary)", aspectRatio: "1 / 1" }}
       />
     );
   }
@@ -52,7 +61,7 @@ export default function UserAvatar({
   return (
     <div
       className={`${SIZE[size]} ${round} flex items-center justify-center font-bold flex-shrink-0 ${className}`}
-      style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+      style={{ background: "var(--accent-light)", color: "var(--accent)", aspectRatio: "1 / 1" }}
       aria-hidden
     >
       {getInitials(name)}

@@ -16,6 +16,7 @@ export function QrisStyleSuccessSheet({
   autoCloseMs = 0,
   afterPrimaryActions,
   receiptRecordId,
+  headerMedia,
 }: {
   open: boolean;
   onClose: () => void;
@@ -28,6 +29,8 @@ export function QrisStyleSuccessSheet({
   afterPrimaryActions?: ReactNode;
   /** ID catatan untuk unduhan bukti PDF yang dibuat dan diotorisasi server. */
   receiptRecordId?: string;
+  /** Opsional: foto siswa di atas judul (notifikasi laporan). */
+  headerMedia?: ReactNode;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -65,11 +68,15 @@ export function QrisStyleSuccessSheet({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 pt-9 pb-2 text-center">
-          <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/35 motion-safe:animate-qris-check">
-            <svg className="h-9 w-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-          </div>
+          {headerMedia ? (
+            <div className="mx-auto mb-4 flex justify-center">{headerMedia}</div>
+          ) : (
+            <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/35 motion-safe:animate-qris-check">
+              <svg className="h-9 w-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+          )}
 
           <h2 id="qris-success-title" className="mt-5 text-[1.35rem] font-bold tracking-tight text-neutral-900">
             {title}

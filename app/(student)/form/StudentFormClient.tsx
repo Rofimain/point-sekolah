@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
 import { TopBar } from "@/components/layouts/TopBar";
-import { formatDate, formatIncidentDateOnly, formatInputDateTime, getInitials, getCategoryLabel } from "@/lib/utils";
+import { formatDate, formatIncidentDateOnly, formatInputDateTime, getCategoryLabel } from "@/lib/utils";
 import { formatPointAdjustmentReason } from "@/lib/point-adjustment-reason";
 import {
   VIOLATION_SECTIONS,
@@ -19,6 +19,7 @@ import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/hea
 import { calendarTodayYmd } from "@/lib/incident-date";
 import { EvidencePreviewModal } from "@/components/records/EvidencePreviewModal";
 import { EvidenceMultiUploader } from "@/components/records/EvidenceMultiUploader";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 const SESSIONS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 const CRITICAL = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
@@ -72,6 +73,8 @@ export default function StudentFormClient({
   remisiCountdown = null,
   studentClass,
   studentNisn,
+  studentPhotoPresent = false,
+  studentPhotoCacheKey = null,
 }: {
   session: Session;
   violationTypes: any[];
@@ -87,6 +90,8 @@ export default function StudentFormClient({
   remisiCountdown?: { daysRemaining: number; quietDays: number; remisiPercent: number } | null;
   studentClass: string | null;
   studentNisn: string | null;
+  studentPhotoPresent?: boolean;
+  studentPhotoCacheKey?: string | null;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("lapor");
@@ -244,15 +249,18 @@ export default function StudentFormClient({
       )}
       <TopBar />
       <div className="mx-auto max-w-2xl px-3 pt-4 pb-safe-bottom sm:px-5 sm:pt-5">
-        <div className="mb-4 flex items-center gap-3 rounded-xl p-3 sm:p-4" style={{ background: "var(--bg-sidebar)" }}>
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-serif text-sm"
-            style={{ background: "rgba(255,255,255,0.15)" }}
-          >
-            {getInitials(session.user.name || "S")}
-          </div>
+        <div className="mb-4 flex items-center gap-3 rounded-xl p-3 sm:gap-4 sm:p-4" style={{ background: "var(--bg-sidebar)" }}>
+          <UserAvatar
+            name={session.user.name || "Siswa"}
+            userId={session.user.id}
+            photoPresent={studentPhotoPresent}
+            cacheKey={studentPhotoCacheKey}
+            size="2xl"
+            rounded="xl"
+            className="ring-2 ring-white/20"
+          />
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-serif text-white truncate">{session.user.name}</div>
+            <div className="text-sm font-serif text-white truncate sm:text-base">{session.user.name}</div>
             <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
               {studentClass || "Kelas tidak ditetapkan"} {studentNisn ? `· NISN: ${studentNisn}` : ""}
             </div>

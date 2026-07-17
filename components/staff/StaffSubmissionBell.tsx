@@ -7,6 +7,7 @@ import { QrisStyleSuccessSheet } from "@/components/QrisStyleSuccessSheet";
 import { useStaffSubmissionNotifications } from "@/lib/use-staff-submission-notifications";
 import type { StudentSubmissionNotification } from "@/lib/staff-submission-notifications";
 import { formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 export type { StudentSubmissionNotification };
 
@@ -19,6 +20,19 @@ function sheetDetails(it: StudentSubmissionNotification) {
     { label: "Tanggal kejadian", value: formatIncidentDateOnly(it.incidentDate) },
     { label: "Waktu input", value: formatInputDateTime(it.createdAt) },
   ];
+}
+
+function studentPhoto(it: StudentSubmissionNotification) {
+  return (
+    <UserAvatar
+      name={it.studentName}
+      userId={it.studentId}
+      photoPresent={it.studentPhotoPresent}
+      size="2xl"
+      rounded="xl"
+      className="mx-auto ring-2 ring-neutral-200"
+    />
+  );
 }
 
 export function StaffSubmissionBell() {
@@ -108,10 +122,12 @@ export function StaffSubmissionBell() {
                         }}
                         onClick={() => handlePick(it)}
                       >
-                        <span
-                          className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
-                          style={{ background: isRead ? "var(--border)" : "rgb(59 130 246)" }}
-                          aria-hidden
+                        <UserAvatar
+                          name={it.studentName}
+                          userId={it.studentId}
+                          photoPresent={it.studentPhotoPresent}
+                          size="lg"
+                          rounded="lg"
                         />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate font-semibold">{it.studentName}</span>
@@ -141,6 +157,7 @@ export function StaffSubmissionBell() {
         title="Laporan diterima"
         subtitle="Pelanggaran dari portal siswa telah masuk ke catatan."
         details={sheetItem ? sheetDetails(sheetItem) : []}
+        headerMedia={sheetItem ? studentPhoto(sheetItem) : null}
         receiptRecordId={sheetItem?.id}
         afterPrimaryActions={
           <button

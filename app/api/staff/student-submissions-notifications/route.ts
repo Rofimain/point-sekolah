@@ -41,7 +41,9 @@ export async function GET() {
       points: true,
       student: {
         select: {
+          id: true,
           name: true,
+          photoPresent: true,
           class: { select: { grade: true, name: true, major: true } },
         },
       },
@@ -51,7 +53,9 @@ export async function GET() {
 
   const items = rows.map((r) => ({
     id: r.id,
+    studentId: r.student.id,
     studentName: r.student.name,
+    studentPhotoPresent: r.student.photoPresent,
     classLabel: classLabel(r.student.class),
     violationName: r.violationType.name,
     points: r.points,

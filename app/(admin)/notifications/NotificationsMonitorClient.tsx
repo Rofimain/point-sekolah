@@ -6,6 +6,7 @@ import { QrisStyleSuccessSheet } from "@/components/QrisStyleSuccessSheet";
 import { useStaffSubmissionNotifications } from "@/lib/use-staff-submission-notifications";
 import type { StudentSubmissionNotification } from "@/lib/staff-submission-notifications";
 import { formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 function sheetDetails(it: StudentSubmissionNotification) {
   return [
@@ -146,13 +147,12 @@ export default function NotificationsMonitorClient() {
                       background: isRead ? "transparent" : "rgba(59, 130, 246, 0.07)",
                     }}
                   >
-                    <span
-                      className="mt-1.5 h-3 w-3 shrink-0 rounded-full"
-                      style={{
-                        background: isRead ? "var(--border)" : "rgb(59 130 246)",
-                        boxShadow: isRead ? undefined : "0 0 0 3px rgba(59, 130, 246, 0.2)",
-                      }}
-                      aria-hidden
+                    <UserAvatar
+                      name={it.studentName}
+                      userId={it.studentId}
+                      photoPresent={it.studentPhotoPresent}
+                      size="xl"
+                      rounded="xl"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
@@ -218,6 +218,18 @@ export default function NotificationsMonitorClient() {
         title="Laporan diterima"
         subtitle="Pelanggaran dari portal siswa telah masuk ke catatan."
         details={sheetItem ? sheetDetails(sheetItem) : []}
+        headerMedia={
+          sheetItem ? (
+            <UserAvatar
+              name={sheetItem.studentName}
+              userId={sheetItem.studentId}
+              photoPresent={sheetItem.studentPhotoPresent}
+              size="2xl"
+              rounded="xl"
+              className="mx-auto ring-2 ring-neutral-200"
+            />
+          ) : null
+        }
         receiptRecordId={sheetItem?.id}
         afterPrimaryActions={
           <button

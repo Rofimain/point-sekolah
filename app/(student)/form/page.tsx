@@ -81,6 +81,8 @@ export default async function StudentFormPage() {
       remisiCountdown={remisiCountdown}
       studentClass={student?.class?.name ?? null}
       studentNisn={student?.nisn ?? null}
+      studentPhotoPresent={student?.photoPresent ?? false}
+      studentPhotoCacheKey={student?.updatedAt?.toISOString() ?? null}
     />
   );
 }
