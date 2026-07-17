@@ -12,6 +12,8 @@ import {
   getViolationSectionLabel,
   sortViolationSections,
 } from "@/lib/violation-sections";
+import { splitViolationName } from "@/lib/violation-name";
+import { ViolationTypePicker } from "@/components/ViolationTypePicker";
 import type { Session } from "next-auth";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
 import { calendarTodayYmd } from "@/lib/incident-date";
@@ -107,6 +109,8 @@ export default function StudentFormClient({
     details: QrisSuccessDetail[];
     receiptRecordId?: string;
   } | null>(null);
+  const [tataSearch, setTataSearch] = useState("");
+  const [tataQuery, setTataQuery] = useState("");
 
   const selectedVt = violationTypes.find((v: any) => v.id === vtId);
   const resolvedPoints = selectedVt?.points ?? 0;
@@ -125,8 +129,19 @@ export default function StudentFormClient({
   }, [violationTypes]);
 
   const typesBySection = useMemo(() => {
+    const q = tataQuery.trim().toLowerCase();
+    const parts = q ? q.split(/\s+/).filter(Boolean) : [];
+    const filtered = !parts.length
+      ? sortedTypes
+      : sortedTypes.filter((v: any) => {
+          const { code, title } = splitViolationName(v.name || "");
+          const blob = [v.name, code, title, String(v.points), v.description ?? "", getViolationSectionLabel(v.section)]
+            .join(" ")
+            .toLowerCase();
+          return parts.every((p) => blob.includes(p));
+        });
     const map = new Map<string, any[]>();
-    for (const v of sortedTypes) {
+    for (const v of filtered) {
       const key = v.section || "";
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(v);
@@ -136,7 +151,7 @@ export default function StudentFormClient({
       ...[...map.keys()].filter((k) => !(VIOLATION_SECTIONS as readonly string[]).includes(k)),
     ];
     return keys.map((section) => ({ section, items: map.get(section)! }));
-  }, [sortedTypes]);
+  }, [sortedTypes, tataQuery]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -321,13 +336,41 @@ export default function StudentFormClient({
 
         {tab === "tata" && (
           <div className="rounded-xl border overflow-hidden mb-6" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-            <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
-              <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
-                Daftar jenis pelanggaran & poin
-              </h2>
-              <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
-                Hanya informasi — Anda tetap dapat melihat riwayat pelanggaran sendiri di tab &quot;Lapor&quot;.
-              </p>
+            <div className="px-4 py-3 border-b space-y-3" style={{ borderColor: "var(--border)" }}>
+              <div>
+                <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
+                  Daftar jenis pelanggaran & poin
+                </h2>
+                <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                  Hanya informasi — Anda tetap dapat melihat riwayat pelanggaran sendiri di tab &quot;Lapor&quot;.
+                </p>
+              </div>
+              <form
+                className="flex flex-col gap-2 sm:flex-row"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setTataQuery(tataSearch);
+                }}
+              >
+                <input
+                  type="search"
+                  value={tataSearch}
+                  onChange={(e) => {
+                    setTataSearch(e.target.value);
+                    if (!e.target.value.trim()) setTataQuery("");
+                  }}
+                  placeholder="Cari no / nama pelanggaran…"
+                  className="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"
+                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                />
+                <button
+                  type="submit"
+                  className="shrink-0 rounded-lg px-4 py-2 text-xs font-semibold text-white"
+                  style={{ background: "var(--accent)" }}
+                >
+                  Cari
+                </button>
+              </form>
             </div>
             <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
               {typesBySection.map(({ section, items }) => (
@@ -339,17 +382,24 @@ export default function StudentFormClient({
                     {getViolationSectionLabel(section)}
                   </div>
                   <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
-                    {items.map((v: any) => (
+                    {items.map((v: any) => {
+                      const { code, title } = splitViolationName(v.name || "");
+                      return (
                       <li key={v.id} className="px-4 py-3 flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
-                            {v.name}
-                          </div>
-                          {v.description && (
-                            <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
-                              {v.description}
+                        <div className="min-w-0 flex gap-2">
+                          <span className="shrink-0 w-9 text-[11px] font-semibold tabular-nums" style={{ color: "var(--text-muted)" }}>
+                            {code || "—"}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                              {title || v.name}
                             </div>
-                          )}
+                            {v.description && (
+                              <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                                {v.description}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           <CategoryBadge category={v.category} />
@@ -358,10 +408,16 @@ export default function StudentFormClient({
                           </span>
                         </div>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 </li>
               ))}
+              {!typesBySection.length && (
+                <li className="px-4 py-6 text-center text-xs list-none" style={{ color: "var(--text-muted)" }}>
+                  Tidak ada hasil pencarian.
+                </li>
+              )}
             </ul>
           </div>
         )}
@@ -386,27 +442,13 @@ export default function StudentFormClient({
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                    Jenis pelanggaran *
-                  </label>
-                  <select
-                    value={vtId}
-                    onChange={(e) => setVtId(e.target.value)}
+                  <ViolationTypePicker
+                    label="Jenis pelanggaran"
                     required
-                    className="w-full px-3 py-2.5 rounded-lg border text-sm"
-                    style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                  >
-                    <option value="">— Pilih jenis pelanggaran —</option>
-                    {typesBySection.map(({ section, items }) => (
-                      <optgroup key={section || "lainnya"} label={getViolationSectionLabel(section)}>
-                        {items.map((v: any) => (
-                          <option key={v.id} value={v.id}>
-                            {v.name} ({v.points} poin)
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                    violationTypes={violationTypes}
+                    value={vtId}
+                    onChange={setVtId}
+                  />
                   {selectedVt && (
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       <CategoryBadge category={selectedVt.category} />

@@ -5,11 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
 import { formatDate, formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
-import {
-  VIOLATION_SECTIONS,
-  getViolationSectionLabel,
-  sortViolationSections,
-} from "@/lib/violation-sections";
+import { ViolationTypePicker } from "@/components/ViolationTypePicker";
 import type { RecordsRow, ViolationRecordListItem } from "./records-view";
 import { AddRecordStudentPicker, type PickerStudent } from "./AddRecordStudentPicker";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
@@ -62,25 +58,6 @@ export default function RecordsClient({
     if (!searchParams.grade) return classes;
     return classes.filter((c) => c.grade === searchParams.grade);
   }, [classes, searchParams.grade]);
-
-  const violationTypesBySection = useMemo(() => {
-    const sorted = [...violationTypes].sort((a, b) => {
-      const sec = sortViolationSections(a.section, b.section);
-      if (sec !== 0) return sec;
-      return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.points - b.points || a.name.localeCompare(b.name);
-    });
-    const map = new Map<string, any[]>();
-    for (const v of sorted) {
-      const key = v.section || "";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(v);
-    }
-    const keys = [
-      ...VIOLATION_SECTIONS.filter((s) => map.has(s)),
-      ...[...map.keys()].filter((k) => !(VIOLATION_SECTIONS as readonly string[]).includes(k)),
-    ];
-    return keys.map((section) => ({ section, items: map.get(section)! }));
-  }, [violationTypes]);
 
   const [editModal, setEditModal] = useState<any>(null);
   const [editPoints, setEditPoints] = useState(0);
@@ -643,15 +620,15 @@ export default function RecordsClient({
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Jenis Pelanggaran</label>
-                <select value={editVtId} onChange={(e) => { setEditVtId(e.target.value); const vt = violationTypes.find((v: any) => v.id === e.target.value); if (vt) setEditPoints(vt.points); }} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}>
-                  {violationTypesBySection.map(({ section, items }) => (
-                    <optgroup key={section || "lainnya"} label={getViolationSectionLabel(section)}>
-                      {items.map((v: any) => (
-                        <option key={v.id} value={v.id}>{v.name} ({v.points} poin)</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+                <ViolationTypePicker
+                  violationTypes={violationTypes}
+                  value={editVtId}
+                  onChange={(id) => {
+                    setEditVtId(id);
+                    const vt = violationTypes.find((v: any) => v.id === id);
+                    if (vt) setEditPoints(vt.points);
+                  }}
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Poin</label>
@@ -750,26 +727,12 @@ export default function RecordsClient({
               />
 
               <div>
-                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                  Jenis pelanggaran
-                </label>
-                <select
+                <ViolationTypePicker
+                  label="Jenis pelanggaran"
+                  violationTypes={violationTypes}
                   value={addVtId}
-                  onChange={(e) => setAddVtId(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border text-sm"
-                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                >
-                  <option value="">— Pilih jenis —</option>
-                  {violationTypesBySection.map(({ section, items }) => (
-                    <optgroup key={section || "lainnya"} label={getViolationSectionLabel(section)}>
-                      {items.map((v: any) => (
-                        <option key={v.id} value={v.id}>
-                          {v.name} ({v.points} poin)
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+                  onChange={setAddVtId}
+                />
               </div>
 
               <div>
