@@ -10,6 +10,7 @@ import {
 } from "@/lib/student-upsert";
 import { canManageData } from "@/lib/staff-roles";
 import { buildParentTelegramDeepLink } from "@/lib/parent-telegram-link";
+import { parseUserPhotoInput } from "@/lib/user-photo";
 
 function staffOk(role: string | undefined) {
   return canManageData(role);
@@ -24,17 +25,21 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, nisn, classId, email, password } = body as {
+  const { name, nisn, classId, email, password, photoData } = body as {
     name?: string;
     nisn?: string;
     classId?: string;
     email?: string | null;
     password?: string | null;
+    photoData?: string | null;
   };
 
   if (!name?.trim() || !nisn?.trim() || !classId) {
     return NextResponse.json({ error: "Nama, NISN, dan kelas wajib diisi" }, { status: 400 });
   }
+
+  const photo = parseUserPhotoInput(photoData);
+  if ("error" in photo) return NextResponse.json({ error: photo.error }, { status: 400 });
 
   const cls = await prisma.class.findUnique({ where: { id: classId } });
   if (!cls) return NextResponse.json({ error: "Kelas tidak ditemukan" }, { status: 400 });
@@ -67,6 +72,8 @@ export async function POST(req: NextRequest) {
       classId,
       email: finalEmail,
       hashedPassword: hashed,
+      photoData: photo.photoData,
+      photoPresent: photo.photoPresent,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Data Telegram ortu tidak valid";
@@ -74,7 +81,7 @@ export async function POST(req: NextRequest) {
   }
 
   const user = await prisma.user.create({ data, include: { class: true } });
-  const { password: _, parentTelegramLinkToken: linkTok, ...safe } = user;
+  const { password: _, parentTelegramLinkToken: linkTok, photoData: __, ...safe } = user;
   const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
   const ortuTelegramLink =
     bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;

@@ -7,6 +7,12 @@ import { useRouter, usePathname } from "next/navigation";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { parseStudentBulkPaste } from "@/lib/parse-student-bulk";
 import { canManageData } from "@/lib/staff-roles";
+import {
+  COMPRESS_MAX_DIM_AVATAR,
+  COMPRESS_TARGET_BYTES_AVATAR,
+  compressImageToDataUrl,
+  isProbablyImageFile,
+} from "@/lib/compress-image-client";
 
 const GRADES = ["X", "XI", "XII"] as const;
 
@@ -52,6 +58,7 @@ export default function StudentsClient({
   const router = useRouter();
   const pathname = usePathname();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const totalPages = Math.ceil(total / perPage);
   const canManage = canManageData(viewerRole);
   type StudentsPanelTab = "single" | "bulk" | "kelas";
@@ -84,6 +91,8 @@ export default function StudentsClient({
   const [classId, setClassId] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [photoDraft, setPhotoDraft] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const [bulkText, setBulkText] = useState("");
   const [bulkDefaultPwd, setBulkDefaultPwd] = useState("");
@@ -93,6 +102,9 @@ export default function StudentsClient({
     errors: { row: number; message: string }[];
     truncatedErrors?: boolean;
     telegramOrtuNote?: string;
+    photosAttached?: number;
+    unmatchedPhotos?: string[];
+    photoErrors?: { file: string; message: string }[];
   } | null>(null);
 
   const [classModalOpen, setClassModalOpen] = useState(false);
@@ -141,6 +153,29 @@ export default function StudentsClient({
     }
   }
 
+  async function onPhotoFile(file: File | null) {
+    if (!file) return;
+    if (!isProbablyImageFile(file)) {
+      toast.error("Gunakan file gambar (JPG, PNG, HEIC, WebP, dll.).");
+      return;
+    }
+    setPhotoBusy(true);
+    try {
+      const { dataUrl, meta } = await compressImageToDataUrl(file, {
+        maxBytes: COMPRESS_TARGET_BYTES_AVATAR,
+        maxDimension: COMPRESS_MAX_DIM_AVATAR,
+        minShortSide: 64,
+      });
+      setPhotoDraft(dataUrl);
+      toast.success(`Foto siap (${Math.round(meta.outputBytes / 1024)} KB).`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Gagal memproses foto");
+    } finally {
+      setPhotoBusy(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  }
+
   async function submitSingle(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
@@ -159,6 +194,7 @@ export default function StudentsClient({
           classId,
           email: email.trim() || undefined,
           password: password.trim() || undefined,
+          photoData: photoDraft || undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -177,6 +213,7 @@ export default function StudentsClient({
       setClassId("");
       setEmail("");
       setPassword("");
+      setPhotoDraft(null);
       setTabQuery(null);
       router.refresh();
     } catch (err: unknown) {
@@ -263,10 +300,15 @@ export default function StudentsClient({
         errors: data.errors || [],
         truncatedErrors: data.truncatedErrors,
         telegramOrtuNote: data.telegramOrtuNote,
+        photosAttached: data.photosAttached,
+        unmatchedPhotos: data.unmatchedPhotos,
+        photoErrors: data.photoErrors,
       });
       setMsg({
         type: data.failed ? "err" : "ok",
-        text: `File: ${data.created} siswa ditambahkan${data.failed ? `, ${data.failed} baris gagal.` : "."}`,
+        text: `File: ${data.created} siswa ditambahkan${data.failed ? `, ${data.failed} baris gagal.` : "."}${
+          data.photosAttached ? ` Foto terpasang: ${data.photosAttached}.` : ""
+        }`,
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
       if (!data.failed) setTabQuery(null);
@@ -786,6 +828,42 @@ export default function StudentsClient({
                 style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
               />
             </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                Foto profil <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opsional)</span>
+              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*,.heic,.heif"
+                  className="hidden"
+                  onChange={(e) => void onPhotoFile(e.target.files?.[0] ?? null)}
+                />
+                <button
+                  type="button"
+                  disabled={photoBusy || loading}
+                  onClick={() => photoInputRef.current?.click()}
+                  className="rounded-xl border px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                  style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                >
+                  {photoBusy ? "Memproses…" : photoDraft ? "Ganti foto" : "Pilih foto"}
+                </button>
+                {photoDraft && (
+                  <>
+                    <UserAvatar name={name || "Siswa"} size="lg" previewSrc={photoDraft} />
+                    <button
+                      type="button"
+                      onClick={() => setPhotoDraft(null)}
+                      className="text-xs font-semibold"
+                      style={{ color: "var(--danger)" }}
+                    >
+                      Hapus
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
             <div className="rounded-xl border p-3 text-[11px] leading-relaxed" style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
               <strong style={{ color: "var(--text-secondary)" }}>Telegram ortu</strong>
               <p className="mt-1">
@@ -825,12 +903,12 @@ export default function StudentsClient({
                 Impor banyak siswa
               </h2>
               <p className="mt-1 max-w-xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Unggah file <strong style={{ color: "var(--text-secondary)" }}>.xlsx</strong> (sheet{" "}
-                <code className="text-[10px]">Data siswa</code> atau sheet pertama), atau salin dari Excel / tempel CSV/tab. Baris pertama
-                boleh berisi judul: <code className="text-[10px]">nama</code>, <code className="text-[10px]">nisn</code>,{" "}
+                Unggah <strong style={{ color: "var(--text-secondary)" }}>.xlsx</strong> atau paket{" "}
+                <strong style={{ color: "var(--text-secondary)" }}>.zip</strong> (Excel + folder{" "}
+                <code className="text-[10px]">foto/</code> bernama NISN), atau tempel CSV/tab. Kolom:{" "}
+                <code className="text-[10px]">nama</code>, <code className="text-[10px]">nisn</code>,{" "}
                 <code className="text-[10px]">nama_kelas</code>, <code className="text-[10px]">email</code>,{" "}
-                <code className="text-[10px]">password</code> — opsional kecuali nama, nisn, kelas. Telegram ortu{" "}
-                <strong style={{ color: "var(--text-secondary)" }}>tidak</strong> diisi lewat impor: setelah siswa masuk, Admin salin tautan per siswa di Manajemen Pengguna.
+                <code className="text-[10px]">password</code>. Foto profil hanya lewat unggah ZIP. Telegram ortu diisi setelah impor via Manajemen Pengguna.
               </p>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -860,7 +938,7 @@ export default function StudentsClient({
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              accept=".xlsx,.zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
@@ -874,10 +952,11 @@ export default function StudentsClient({
               className="rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
               style={{ background: "var(--accent)" }}
             >
-              {loading ? "Memproses…" : "Unggah file .xlsx"}
+              {loading ? "Memproses…" : "Unggah .xlsx / .zip"}
             </button>
             <p className="max-w-md text-[10px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
-              Maks. 8 MB. Password default di bawah berlaku untuk baris tanpa kolom password.
+              .xlsx maks. 8 MB; ZIP + foto maks. 40 MB. Struktur ZIP: <code className="text-[10px]">data.xlsx</code> +{" "}
+              <code className="text-[10px]">foto/0012345678.jpg</code>. Password default di bawah untuk baris tanpa kolom password.
             </p>
           </div>
 
@@ -943,6 +1022,24 @@ export default function StudentsClient({
                   Hanya 50 error pertama ditampilkan.
                 </p>
               )}
+            </div>
+          )}
+
+          {bulkResult && ((bulkResult.photoErrors?.length ?? 0) > 0 || (bulkResult.unmatchedPhotos?.length ?? 0) > 0) && (
+            <div className="mt-4 max-h-36 overflow-y-auto rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
+              <div className="mb-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                Catatan foto
+              </div>
+              <ul className="space-y-1 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                {(bulkResult.photoErrors || []).map((e) => (
+                  <li key={`pe-${e.file}-${e.message}`}>
+                    {e.file}: {e.message}
+                  </li>
+                ))}
+                {(bulkResult.unmatchedPhotos || []).map((n) => (
+                  <li key={`up-${n}`}>Foto NISN {n} tidak cocok dengan baris Excel</li>
+                ))}
+              </ul>
             </div>
           )}
 

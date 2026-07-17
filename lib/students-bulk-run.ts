@@ -5,6 +5,7 @@ import {
   DEFAULT_STUDENT_PASSWORD,
   studentEmailFromNisn,
 } from "@/lib/student-upsert";
+import { parseUserPhotoInput } from "@/lib/user-photo";
 
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
 
@@ -15,6 +16,8 @@ export type BulkStudentRow = {
   className?: string;
   email?: string;
   password?: string;
+  /** Data-URL JPEG/PNG untuk foto profil (opsional). */
+  photoData?: string;
 };
 
 export type BulkImportResult = {
@@ -116,6 +119,18 @@ export async function runBulkStudentImport(
       }
       const hashed = pwdRow ? await bcrypt.hash(pwd, 12) : hashedDefault;
 
+      let photoData: string | null = null;
+      let photoPresent = false;
+      if (r.photoData?.trim()) {
+        const photo = parseUserPhotoInput(r.photoData);
+        if ("error" in photo) {
+          errors.push({ row: rowNum, message: photo.error });
+          continue;
+        }
+        photoData = photo.photoData;
+        photoPresent = photo.photoPresent;
+      }
+
       await prisma.user.create({
         data: buildStudentCreateInput({
           name,
@@ -123,6 +138,8 @@ export async function runBulkStudentImport(
           classId,
           email,
           hashedPassword: hashed,
+          photoData,
+          photoPresent,
         }),
       });
       created++;

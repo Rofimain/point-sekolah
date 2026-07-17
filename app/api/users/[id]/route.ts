@@ -8,18 +8,9 @@ import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { assertCanDeleteSuperAdmin, assertCanDemoteSuperAdmin, LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 import { canDeleteUser, canManageData, canModifyUser, isAdminRole } from "@/lib/staff-roles";
 import { validateNewPassword } from "@/lib/password-policy";
-import { isStrictEvidenceImageDataUrl } from "@/lib/evidence-data-url";
+import { parseUserPhotoPatch } from "@/lib/user-photo";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
-
-function parsePhotoPatch(value: unknown): { photoData: string | null; photoPresent: boolean } | { error: string } | null {
-  if (value === undefined) return null;
-  if (value === null || value === "") return { photoData: null, photoPresent: false };
-  if (typeof value !== "string" || !isStrictEvidenceImageDataUrl(value)) {
-    return { error: "Format foto tidak valid. Gunakan JPEG atau PNG." };
-  }
-  return { photoData: value.trim(), photoPresent: true };
-}
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -97,7 +88,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     updateData.parentTelegramLinkToken = null;
   }
 
-  const photo = parsePhotoPatch(body.photoData);
+  const photo = parseUserPhotoPatch(body.photoData);
   if (photo && "error" in photo) {
     return NextResponse.json({ error: photo.error }, { status: 400 });
   }

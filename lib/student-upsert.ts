@@ -17,9 +17,12 @@ export function buildStudentCreateInput(input: {
   email: string;
   hashedPassword: string;
   parentTelegram?: string | null;
+  photoData?: string | null;
+  photoPresent?: boolean;
 }): Prisma.UserCreateInput {
   const tg = parseParentTelegramForDb(input.parentTelegram ?? undefined);
   if (!tg.ok) throw new Error(tg.error);
+  const hasPhoto = Boolean(input.photoPresent && input.photoData);
   return {
     name: input.name.trim(),
     email: input.email.toLowerCase().trim(),
@@ -30,5 +33,7 @@ export function buildStudentCreateInput(input: {
     parentTelegramLinkToken: newParentLinkToken(),
     class: { connect: { id: input.classId } },
     active: true,
+    photoData: hasPhoto ? input.photoData! : null,
+    photoPresent: hasPhoto,
   };
 }
