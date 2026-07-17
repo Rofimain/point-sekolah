@@ -20,7 +20,10 @@ export default async function UsersPage({
     where.role = query.role;
   }
   if (query.search) where.name = { contains: query.search, mode: "insensitive" };
-  if (query.classId) where.classId = query.classId;
+  // Filter kelas hanya untuk siswa
+  if (query.classId && query.role === "STUDENT") {
+    where.classId = query.classId;
+  }
 
   const [rawUsers, total, classes, superAdminTotal, activeSuperAdminCount] = await Promise.all([
     prisma.user.findMany({

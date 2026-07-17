@@ -4,14 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { APP_KEYS } from "@/lib/app-setting-keys";
-import { addMonthsFromYmd, reviewStatusLabel } from "@/lib/review-dates";
-
-const GENERAL_KEYS = [
-  APP_KEYS.COORD_NAME,
-  APP_KEYS.COORD_TITLE,
-  APP_KEYS.NEXT_REVIEW_VIOLATIONS,
-  APP_KEYS.NEXT_REVIEW_ROSTER,
-] as const;
 
 const THRESHOLD_KEYS = [
   APP_KEYS.SP1_POINTS,
@@ -20,34 +12,15 @@ const THRESHOLD_KEYS = [
   APP_KEYS.SKORSING_POINTS,
 ] as const;
 
-const SETTING_KEYS = [...GENERAL_KEYS, ...THRESHOLD_KEYS] as const;
-
-const LABELS: Record<(typeof SETTING_KEYS)[number], string> = {
-  [APP_KEYS.COORD_NAME]: "Nama koordinator (untuk tanda tangan cetak)",
-  [APP_KEYS.COORD_TITLE]: "Jabatan koordinator (mis. Koordinator BP/BK)",
-  [APP_KEYS.NEXT_REVIEW_VIOLATIONS]: "Jadwal review poin / jenis pelanggaran (YYYY-MM-DD)",
-  [APP_KEYS.NEXT_REVIEW_ROSTER]: "Jadwal review data murid & guru (YYYY-MM-DD)",
+const LABELS: Record<(typeof THRESHOLD_KEYS)[number], string> = {
   [APP_KEYS.SP1_POINTS]: "Batas poin SP1",
   [APP_KEYS.SP2_POINTS]: "Batas poin SP2",
   [APP_KEYS.SP3_POINTS]: "Batas poin SP3",
   [APP_KEYS.SKORSING_POINTS]: "Batas poin skorsing",
 };
 
-const REVIEW_KEYS = [APP_KEYS.NEXT_REVIEW_VIOLATIONS, APP_KEYS.NEXT_REVIEW_ROSTER] as const;
-
-function statusChip(status: ReturnType<typeof reviewStatusLabel>) {
-  if (status === "overdue") return { label: "Terlewat", bg: "var(--danger-bg)", color: "var(--danger)" };
-  if (status === "soon") return { label: "≤30 hari", bg: "var(--warning-bg)", color: "var(--warning)" };
-  if (status === "ok") return { label: "Terjadwal", bg: "var(--success-bg)", color: "var(--success)" };
-  return { label: "Belum diisi", bg: "var(--bg-tertiary)", color: "var(--text-muted)" };
-}
-
-function emptyForm(): Record<(typeof SETTING_KEYS)[number], string> {
+function emptyForm(): Record<(typeof THRESHOLD_KEYS)[number], string> {
   return {
-    [APP_KEYS.COORD_NAME]: "",
-    [APP_KEYS.COORD_TITLE]: "",
-    [APP_KEYS.NEXT_REVIEW_VIOLATIONS]: "",
-    [APP_KEYS.NEXT_REVIEW_ROSTER]: "",
     [APP_KEYS.SP1_POINTS]: "",
     [APP_KEYS.SP2_POINTS]: "",
     [APP_KEYS.SP3_POINTS]: "",
@@ -82,13 +55,6 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
     if (sp1 != null && sp3 != null && sp1 > sp3) return "SP1 sebaiknya ≤ SP3.";
     return "";
   }, [form]);
-
-  function bumpReview(key: (typeof REVIEW_KEYS)[number], months: number) {
-    setForm((prev) => ({
-      ...prev,
-      [key]: addMonthsFromYmd(prev[key], months),
-    }));
-  }
 
   async function loadTelegramWebhookInfo() {
     setTgLoading(true);
@@ -145,7 +111,7 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
 
     try {
       const payload: Record<string, string> = {};
-      for (const key of SETTING_KEYS) payload[key] = form[key].trim();
+      for (const key of THRESHOLD_KEYS) payload[key] = form[key].trim();
 
       const res = await fetch("/api/app-settings", {
         method: "PATCH",
@@ -165,56 +131,6 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
     }
   }
 
-  function renderField(key: (typeof SETTING_KEYS)[number], opts?: { number?: boolean }) {
-    const isReview = (REVIEW_KEYS as readonly string[]).includes(key);
-    const chip = isReview ? statusChip(reviewStatusLabel(form[key])) : null;
-    return (
-      <div key={key}>
-        <div className="mb-1.5 flex flex-wrap items-center gap-2">
-          <label className="block text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-            {LABELS[key]}
-          </label>
-          {chip && (
-            <span className="badge-soft" style={{ background: chip.bg, color: chip.color }}>
-              {chip.label}
-            </span>
-          )}
-        </div>
-        <input
-          value={form[key]}
-          onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-          placeholder={isReview ? "YYYY-MM-DD" : opts?.number ? "kosong = belum diatur" : undefined}
-          inputMode={opts?.number ? "numeric" : undefined}
-          className="w-full px-3 py-2.5 rounded-lg border text-sm"
-          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-        />
-        {isReview && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => bumpReview(key as (typeof REVIEW_KEYS)[number], 6)}
-              className="rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold"
-              style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
-            >
-              +6 bulan
-            </button>
-            <button
-              type="button"
-              onClick={() => bumpReview(key as (typeof REVIEW_KEYS)[number], 12)}
-              className="rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold"
-              style={{ borderColor: "var(--accent-border)", color: "var(--accent)", background: "var(--accent-light)" }}
-            >
-              +1 tahun
-            </button>
-            <span className="self-center text-[10px]" style={{ color: "var(--text-muted)" }}>
-              dari tanggal di atas (atau hari ini jika kosong) — lalu Simpan
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="mb-5">
@@ -222,7 +138,7 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
           Pengaturan sekolah
         </h1>
         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-          Batasan poin SP/skorsing, koordinator, dan jadwal pembaharuan data.
+          Batasan poin SP/skorsing. Nama pejabat cetak diisi saat mencetak surat.
         </p>
         <p className="text-xs mt-2 flex flex-wrap gap-x-3 gap-y-1">
           <Link href="/settings/remisi" className="font-semibold" style={{ color: "var(--accent)" }}>
@@ -247,20 +163,34 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
             Isi angka batas akumulasi poin. Kosongkan jika belum ingin ditetapkan.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {THRESHOLD_KEYS.map((key) => renderField(key, { number: true }))}
+            {THRESHOLD_KEYS.map((key) => (
+              <div key={key}>
+                <label
+                  className="mb-1.5 block text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {LABELS[key]}
+                </label>
+                <input
+                  value={form[key]}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  placeholder="kosong = belum diatur"
+                  inputMode="numeric"
+                  className="w-full px-3 py-2.5 rounded-lg border text-sm"
+                  style={{
+                    background: "var(--bg-primary)",
+                    borderColor: "var(--border)",
+                    color: "var(--text-primary)",
+                  }}
+                />
+              </div>
+            ))}
           </div>
           {thresholdWarning && (
             <p className="text-xs" style={{ color: "var(--warning)" }}>
               {thresholdWarning}
             </p>
           )}
-        </section>
-
-        <section className="space-y-4 border-t pt-5" style={{ borderColor: "var(--border)" }}>
-          <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
-            Koordinator &amp; jadwal review
-          </h2>
-          {GENERAL_KEYS.map((key) => renderField(key))}
         </section>
 
         {error && (

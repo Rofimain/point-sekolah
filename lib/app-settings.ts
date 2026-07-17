@@ -4,12 +4,8 @@ import { APP_KEYS } from "@/lib/app-setting-keys";
 import { AUTO_REMISI_PERCENT, AUTO_REMISI_QUIET_DAYS } from "@/lib/remisi-rules";
 
 const DEFAULTS: Record<string, string> = {
-  [APP_KEYS.COORD_NAME]: "",
-  [APP_KEYS.COORD_TITLE]: "Koordinator BP/BK",
   [APP_KEYS.REDAKSI_PRINT]:
     "Dengan ini menyatakan bahwa data poin pelanggaran di bawah merupakan catatan resmi sekolah sesuai tata tertib yang berlaku. Dokumen ini dapat digunakan untuk arsip orang tua/wali dan tindak lanjut pembinaan.",
-  [APP_KEYS.NEXT_REVIEW_VIOLATIONS]: "",
-  [APP_KEYS.NEXT_REVIEW_ROSTER]: "",
   [APP_KEYS.SP1_POINTS]: "",
   [APP_KEYS.SP2_POINTS]: "",
   [APP_KEYS.SP3_POINTS]: "",
@@ -79,15 +75,7 @@ export async function getRemisiPercent(): Promise<number> {
   return AUTO_REMISI_PERCENT;
 }
 
-export async function getPrintBlock(): Promise<{
-  coordinatorName: string;
-  coordinatorTitle: string;
-  redaksi: string;
-}> {
-  const map = await getAppSettingsMap([APP_KEYS.COORD_NAME, APP_KEYS.COORD_TITLE, APP_KEYS.REDAKSI_PRINT]);
-  return {
-    coordinatorName: map[APP_KEYS.COORD_NAME] || "_______________________",
-    coordinatorTitle: map[APP_KEYS.COORD_TITLE] || "Koordinator BP/BK",
-    redaksi: map[APP_KEYS.REDAKSI_PRINT] || DEFAULTS[APP_KEYS.REDAKSI_PRINT],
-  };
+export async function getPrintBlock(): Promise<{ redaksi: string }> {
+  const redaksi = await getAppSetting(APP_KEYS.REDAKSI_PRINT);
+  return { redaksi: redaksi || DEFAULTS[APP_KEYS.REDAKSI_PRINT] };
 }

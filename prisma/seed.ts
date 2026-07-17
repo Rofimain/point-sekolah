@@ -92,7 +92,6 @@ async function main() {
       password: teacherPwd,
       role: Role.TEACHER,
       nip: "198505152010012002",
-      classId: "cls-xii-ipa1",
     },
   });
 
@@ -282,12 +281,8 @@ async function main() {
   }
 
   const appSettingSeeds: Record<string, string> = {
-    coord_name: "Drs. Hartanto",
-    coord_title: "Koordinator BP/BK",
     redaksi_print:
       "Dengan ini menyatakan bahwa data poin pelanggaran di bawah merupakan catatan resmi sekolah sesuai tata tertib yang berlaku. Dokumen ini dapat digunakan untuk arsip orang tua/wali dan tindak lanjut pembinaan.",
-    next_review_violations: "2026-07-01",
-    next_review_roster: "2026-07-15",
     sp1_points: "",
     sp2_points: "",
     sp3_points: "",
@@ -336,14 +331,13 @@ async function main() {
   });
   await prisma.user.upsert({
     where: { email: "walas.mipa1@sman1contoh.sch.id" },
-    update: { role: Role.TEACHER, classId: "cls-x-mipa1", active: true },
+    update: { role: Role.TEACHER, classId: null, active: true },
     create: {
       email: "walas.mipa1@sman1contoh.sch.id",
       name: "Wali Kelas X MIPA 1",
       password: teacherPwd,
       role: Role.TEACHER,
       nip: "198303031990033001",
-      classId: "cls-x-mipa1",
     },
   });
 
@@ -352,7 +346,7 @@ async function main() {
   console.log("Super Admin: admin@sman1contoh.sch.id / Admin@1234");
   console.log("Guru:        s.rahayu@sman1contoh.sch.id / Guru@1234");
   console.log("Admin:       piket@sman1contoh.sch.id / Guru@1234");
-  console.log("Guru/Walas:  walas.mipa1@sman1contoh.sch.id / Guru@1234");
+  console.log("Guru:        walas.mipa1@sman1contoh.sch.id / Guru@1234");
   console.log("Siswa:       0051234567@siswa.sman1contoh.sch.id / Siswa@1234");
   console.log("\nDemo pengurangan 25% (bulan tenang, password Siswa@1234):");
   console.log("  Ali (otomatis lewat logic): 0051111111@siswa.sman1contoh.sch.id");

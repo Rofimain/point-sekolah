@@ -1,12 +1,10 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSafeServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPrintBlock, getQuietPeriodDays } from "@/lib/app-settings";
 import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 import { isStaffRole } from "@/lib/staff-roles";
-import { PrintButton } from "@/components/PrintButton";
-import { StudentPointsPrintArticle } from "@/components/StudentPointsPrintArticle";
+import { StudentPointsPrintClient } from "@/components/StudentPointsPrintClient";
 
 export default async function StaffStudentPrintPointsPage({ params }: { params: Promise<{ studentId: string }> }) {
   const session = await getSafeServerSession();
@@ -51,43 +49,25 @@ export default async function StaffStudentPrintPointsPage({ params }: { params: 
 
   if (!student) notFound();
 
-  const issued = new Date();
-
   return (
-    <div className="pb-safe-bottom">
-      <div className="no-print mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Link href="/students" className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
-          ← Kembali ke daftar siswa
-        </Link>
-        <PrintButton />
-      </div>
-
-      <StudentPointsPrintArticle
-        studentName={student.name}
-        nisn={student.nisn}
-        classNameLabel={student.class?.name ?? null}
-        issued={issued}
-        print={print}
-        breakdown={breakdown}
-        quietDays={quietDays}
-        history={{
-          records: records.map((r) => ({
-            id: r.id,
-            date: r.date,
-            violationName: r.violationType.name,
-            points: r.points,
-            notes: r.notes,
-          })),
-          adjustments,
-        }}
-      />
-
-      <style>{`
-        @media print {
-          .no-print { display: none !important; }
-          body { background: white !important; }
-        }
-      `}</style>
-    </div>
+    <StudentPointsPrintClient
+      studentName={student.name}
+      nisn={student.nisn}
+      classNameLabel={student.class?.name ?? null}
+      issued={new Date()}
+      redaksi={print.redaksi}
+      breakdown={breakdown}
+      quietDays={quietDays}
+      history={{
+        records: records.map((r) => ({
+          id: r.id,
+          date: r.date,
+          violationName: r.violationType.name,
+          points: r.points,
+          notes: r.notes,
+        })),
+        adjustments,
+      }}
+    />
   );
 }

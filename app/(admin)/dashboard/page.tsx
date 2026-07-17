@@ -1,8 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
-import { getAppSetting, APP_KEYS } from "@/lib/app-settings";
 import { indonesianAcademicYearLabel } from "@/lib/academic-year";
-import { reviewStatusLabel } from "@/lib/review-dates";
 import DashboardRankedTables from "@/components/dashboard/DashboardRankedTables";
 
 export const dynamic = "force-dynamic";
@@ -34,8 +32,6 @@ async function getDashboardData() {
     lastMonthCount,
     vtGroups,
     effectivePointsMap,
-    nextReviewViolations,
-    nextReviewRoster,
     ...monthCounts
   ] = await Promise.all([
     prisma.user.count({ where: { role: "STUDENT", active: true } }),
@@ -50,8 +46,6 @@ async function getDashboardData() {
       _count: { id: true },
     }),
     getEffectivePointsMap(),
-    getAppSetting(APP_KEYS.NEXT_REVIEW_VIOLATIONS),
-    getAppSetting(APP_KEYS.NEXT_REVIEW_ROSTER),
     ...monthRanges.map(({ d, end }) =>
       prisma.violationRecord.count({ where: { date: { gte: d, lte: end } } })
     ),
@@ -133,8 +127,6 @@ async function getDashboardData() {
     topStudents,
     monthlyData,
     topViolations,
-    nextReviewViolations,
-    nextReviewRoster,
   };
 }
 
@@ -167,8 +159,6 @@ export default async function DashboardPage() {
     topStudents,
     monthlyData,
     topViolations,
-    nextReviewViolations,
-    nextReviewRoster,
   } = await getDashboardData();
   const maxCount = Math.max(...monthlyData.map((m) => m.count), 1);
   const trend = lastMonthCount > 0 ? ((thisMonthCount - lastMonthCount) / lastMonthCount * 100).toFixed(0) : null;
@@ -194,43 +184,6 @@ export default async function DashboardPage() {
           Ringkasan data seluruh siswa · Tahun Ajaran {indonesianAcademicYearLabel()}
         </p>
       </div>
-
-      {(nextReviewViolations.trim() || nextReviewRoster.trim()) && (
-        <div
-          className="mb-4 rounded-xl border p-3 text-xs leading-relaxed"
-          style={{
-            background:
-              reviewStatusLabel(nextReviewViolations) === "overdue" || reviewStatusLabel(nextReviewRoster) === "overdue"
-                ? "var(--danger-bg)"
-                : "var(--accent-light)",
-            borderColor:
-              reviewStatusLabel(nextReviewViolations) === "overdue" || reviewStatusLabel(nextReviewRoster) === "overdue"
-                ? "var(--danger)"
-                : "var(--accent-border)",
-            color:
-              reviewStatusLabel(nextReviewViolations) === "overdue" || reviewStatusLabel(nextReviewRoster) === "overdue"
-                ? "var(--danger)"
-                : "var(--accent)",
-          }}
-        >
-          <strong>Pengingat pembaharuan:</strong>
-          {nextReviewViolations.trim() ? (
-            <span className="block mt-1">
-              Review poin / jenis pelanggaran: {nextReviewViolations}
-              {reviewStatusLabel(nextReviewViolations) === "overdue" ? " — terlewat, segera perbarui di Pengaturan" : ""}
-              {reviewStatusLabel(nextReviewViolations) === "soon" ? " — kurang dari 30 hari" : ""}
-            </span>
-          ) : null}
-          {nextReviewRoster.trim() ? (
-            <span className="block mt-1">
-              Review data murid dan guru: {nextReviewRoster}
-              {reviewStatusLabel(nextReviewRoster) === "overdue" ? " — terlewat, segera perbarui di Pengaturan" : ""}
-              {reviewStatusLabel(nextReviewRoster) === "soon" ? " — kurang dari 30 hari" : ""}
-            </span>
-          ) : null}
-          <span className="block mt-1 opacity-90">Atur / perpanjang (+6 bulan / +1 tahun) di Pengaturan sekolah (super admin).</span>
-        </div>
-      )}
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Siswa Aktif" value={totalStudents} sub={`${totalTeachers} staf (guru / admin / super admin)`} />

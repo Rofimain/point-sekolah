@@ -72,10 +72,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const nextRoleResolved = (updateData.role as Role | undefined) ?? existing.role;
 
-  if (nextRoleResolved === "STUDENT" || nextRoleResolved === "TEACHER") {
+  if (nextRoleResolved === "STUDENT") {
     if (body.classId !== undefined) updateData.classId = body.classId || null;
+    updateData.nip = null;
   } else {
     updateData.classId = null;
+    updateData.nisn = null;
   }
 
   if (nextRoleResolved === "STUDENT") {

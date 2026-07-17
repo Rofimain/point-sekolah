@@ -68,10 +68,8 @@ export default function StudentFormClient({
   violationTypes,
   records,
   totalPoints,
-  grossPoints = 0,
-  adjustmentSum = 0,
   pointAdjustments = [],
-  quietDays = 30,
+  remisiCountdown = null,
   studentClass,
   studentNisn,
 }: {
@@ -79,8 +77,6 @@ export default function StudentFormClient({
   violationTypes: any[];
   records: any[];
   totalPoints: number;
-  grossPoints?: number;
-  adjustmentSum?: number;
   pointAdjustments?: {
     id: string;
     pointsDelta: number;
@@ -88,7 +84,7 @@ export default function StudentFormClient({
     grossTotalBefore: number;
     createdAt: string | Date;
   }[];
-  quietDays?: number;
+  remisiCountdown?: { daysRemaining: number; quietDays: number; remisiPercent: number } | null;
   studentClass: string | null;
   studentNisn: string | null;
 }) {
@@ -301,14 +297,22 @@ export default function StudentFormClient({
           </button>
         </div>
 
-        {adjustmentSum < 0 && (
+        {remisiCountdown && (
           <div
             className="p-3 rounded-lg text-[11px] mb-4 leading-relaxed"
             style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid var(--accent-border)" }}
           >
-            <strong>Pengurangan periode tenang:</strong> total dari catatan pelanggaran {grossPoints} poin, penyesuaian{" "}
-            <strong>{adjustmentSum}</strong> poin (25% dari total saat diterapkan, setelah ≥{quietDays} hari sejak tanggal
-            kejadian pelanggaran terakhir). <strong>Poin yang dipakai: {totalPoints}.</strong>
+            {remisiCountdown.daysRemaining > 0 ? (
+              <>
+                <strong>{remisiCountdown.daysRemaining} hari lagi</strong> menuju remisi otomatis{" "}
+                {remisiCountdown.remisiPercent}% (setelah {remisiCountdown.quietDays} hari tanpa pelanggaran baru).
+              </>
+            ) : (
+              <>
+                Periode tenang {remisiCountdown.quietDays} hari sudah terpenuhi. Remisi otomatis{" "}
+                {remisiCountdown.remisiPercent}% akan diterapkan segera.
+              </>
+            )}
           </div>
         )}
 

@@ -98,7 +98,9 @@ export function StudentPointsPrintArticle({
             {/* sesuai permintaan: hapus teks \"Tanda tangan dan stempel sekolah (bila ada)\" */}
             <div className="mb-10" />
             <p className="min-w-[200px] border-t border-neutral-400 pt-2 font-semibold">{print.coordinatorName}</p>
-            <p className="mt-0.5 text-xs text-neutral-600">{print.coordinatorTitle}</p>
+            {print.coordinatorTitle ? (
+              <p className="mt-0.5 text-xs text-neutral-600">{print.coordinatorTitle}</p>
+            ) : null}
           </div>
         </div>
       </article>

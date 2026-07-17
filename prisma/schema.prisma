@@ -111,7 +111,7 @@ model ViolationEvidenceImage {
   @@index([recordId, sortOrder])
 }
 
-/// Pengaturan key–value (koordinator cetak, redaksi lama, threshold, remisi, jadwal review).
+/// Pengaturan key–value (redaksi lama, threshold SP/skorsing).
 model AppSetting {
   key       String   @id
   value     String   @db.Text

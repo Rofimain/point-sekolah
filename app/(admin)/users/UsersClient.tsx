@@ -52,10 +52,9 @@ function telegramOrtuTableCell(u: {
   return "—";
 }
 
-function kelasAtauJabatan(u: { role: string; class?: { name: string } | null; nisn?: string | null; nip?: string | null }) {
-  if (u.role === "STUDENT") return u.class?.name || u.nisn || "—";
-  if (u.role === "TEACHER" && u.class?.name) return u.class.name;
-  return u.nip || "—";
+function kelasAtauNip(u: { role: string; class?: { name: string } | null; nisn?: string | null; nip?: string | null }) {
+  if (u.role === "STUDENT") return u.class?.name || "—";
+  return u.nip?.trim() || "—";
 }
 
 export default function UsersClient({
@@ -153,7 +152,7 @@ export default function UsersClient({
         nip: form.nip || null,
         active: form.active,
       };
-      if (form.role === "STUDENT" || form.role === "TEACHER") {
+      if (form.role === "STUDENT") {
         body.classId = form.classId || null;
       } else {
         body.classId = null;
@@ -394,6 +393,11 @@ export default function UsersClient({
     { v: "SUPER_ADMIN", l: "Super Admin" },
   ];
 
+  const roleParam = (searchParams.role || "").trim();
+  const showClassFilter = roleParam === "STUDENT";
+  const metaColumnLabel =
+    roleParam === "STUDENT" ? "Kelas" : roleParam === "TEACHER" || roleParam === "ADMIN" || roleParam === "SUPER_ADMIN" ? "NIP" : "Kelas / NIP";
+
   return (
     <div>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -500,58 +504,75 @@ export default function UsersClient({
         <button type="button" onClick={() => navigate({ search: search.trim() })} className="btn-primary px-4 py-2 text-xs">
           Cari
         </button>
-        <select value={searchParams.role || ""} onChange={e => navigate({ role: e.target.value })} className="px-3 py-2 rounded-lg border text-xs" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}>
-          {roleFilter.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
-        </select>
         <select
-          value={searchParams.classId || ""}
-          onChange={(e) => navigate({ classId: e.target.value })}
+          value={searchParams.role || ""}
+          onChange={(e) => {
+            const role = e.target.value;
+            // Filter kelas hanya relevan untuk siswa
+            navigate(role === "STUDENT" ? { role } : { role, classId: "" });
+          }}
           className="px-3 py-2 rounded-lg border text-xs"
           style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
         >
-          <option value="">Semua Kelas</option>
-          {classes.map((c: any) => (
-            <option key={c.id} value={c.id}>
-              {c.grade} {c.name} {c.major}
+          {roleFilter.map((r) => (
+            <option key={r.v} value={r.v}>
+              {r.l}
             </option>
           ))}
         </select>
-        <button
-          type="button"
-          disabled={loading || !(searchParams.classId || "").trim()}
-          onClick={async () => {
-            const classId = (searchParams.classId || "").trim();
-            if (!classId) return;
-            const classObj = classes.find((c: any) => c.id === classId);
-            const label = classObj ? `${classObj.grade} ${classObj.name} ${classObj.major}` : "kelas terpilih";
-            const confirmText = window.prompt(
-              `Anda akan menghapus SEMUA akun siswa di ${label}.\nSemua catatan pelanggaran mereka juga akan terhapus.\n\nKetik HAPUS untuk lanjut:`
-            );
-            if (confirmText !== "HAPUS") return;
-            setLoading(true);
-            try {
-              const res = await fetch("/api/users", {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ classId }),
-              });
-              const data = await res.json().catch(() => ({}));
-              if (!res.ok) throw new Error(data.error || "Gagal menghapus");
-              toast.success(`Berhasil menghapus ${data.count ?? 0} akun siswa di ${label}.`);
-              setSelectedIds(new Set());
-              router.refresh();
-            } catch (e: any) {
-              toast.error(e?.message || "Gagal menghapus");
-            } finally {
-              setLoading(false);
-            }
-          }}
-          className="px-3 py-2 rounded-lg border text-xs font-semibold disabled:opacity-60"
-          style={{ borderColor: "var(--danger)", background: "var(--danger-bg)", color: "var(--danger)" }}
-          title={!(searchParams.classId || "").trim() ? "Pilih kelas dulu" : undefined}
-        >
-          Hapus siswa per kelas
-        </button>
+        {showClassFilter ? (
+          <>
+            <select
+              value={searchParams.classId || ""}
+              onChange={(e) => navigate({ classId: e.target.value })}
+              className="px-3 py-2 rounded-lg border text-xs"
+              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+            >
+              <option value="">Semua Kelas</option>
+              {classes.map((c: any) => (
+                <option key={c.id} value={c.id}>
+                  {c.grade} {c.name} {c.major}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              disabled={loading || !(searchParams.classId || "").trim()}
+              onClick={async () => {
+                const classId = (searchParams.classId || "").trim();
+                if (!classId) return;
+                const classObj = classes.find((c: any) => c.id === classId);
+                const label = classObj ? `${classObj.grade} ${classObj.name} ${classObj.major}` : "kelas terpilih";
+                const confirmText = window.prompt(
+                  `Anda akan menghapus SEMUA akun siswa di ${label}.\nSemua catatan pelanggaran mereka juga akan terhapus.\n\nKetik HAPUS untuk lanjut:`
+                );
+                if (confirmText !== "HAPUS") return;
+                setLoading(true);
+                try {
+                  const res = await fetch("/api/users", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ classId }),
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok) throw new Error(data.error || "Gagal menghapus");
+                  toast.success(`Berhasil menghapus ${data.count ?? 0} akun siswa di ${label}.`);
+                  setSelectedIds(new Set());
+                  router.refresh();
+                } catch (e: any) {
+                  toast.error(e?.message || "Gagal menghapus");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="px-3 py-2 rounded-lg border text-xs font-semibold disabled:opacity-60"
+              style={{ borderColor: "var(--danger)", background: "var(--danger-bg)", color: "var(--danger)" }}
+              title={!(searchParams.classId || "").trim() ? "Pilih kelas dulu" : undefined}
+            >
+              Hapus siswa per kelas
+            </button>
+          </>
+        ) : null}
       </div>
 
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
@@ -570,7 +591,7 @@ export default function UsersClient({
                   aria-label="Pilih semua di halaman"
                 />
               </th>
-              {["Nama","Email","Role","Kelas / Jabatan","Ortu (Telegram)","Status","Aksi"].map(h => (
+              {["Nama", "Email", "Role", metaColumnLabel, "Ortu (Telegram)", "Status", "Aksi"].map((h) => (
                 <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
             </tr></thead>
@@ -600,7 +621,7 @@ export default function UsersClient({
                   </td>
                   <td className="px-4 py-3 text-[11px]" style={{ color: "var(--text-muted)" }}>{u.email}</td>
                   <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
-                  <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>{kelasAtauJabatan(u)}</td>
+                  <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>{kelasAtauNip(u)}</td>
                   <td
                     className="px-4 py-3 max-w-[11rem] truncate text-[11px]"
                     style={{ color: "var(--text-muted)" }}
@@ -819,10 +840,10 @@ export default function UsersClient({
                   </div>
                   </>
                 )}
-                {(form.role === "STUDENT" || form.role === "TEACHER") && (
+                {form.role === "STUDENT" && (
                   <div>
                     <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                      {form.role === "TEACHER" ? "Kelas yang diampu (opsional)" : "Kelas"}
+                      Kelas
                     </label>
                     <select value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}>
                       <option value="">— Pilih kelas —</option>

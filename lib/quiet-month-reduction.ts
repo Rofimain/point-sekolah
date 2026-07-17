@@ -49,20 +49,33 @@ export async function isEligibleForQuietMonthReduction(
   studentId: string,
   now: Date = new Date()
 ): Promise<boolean> {
+  const info = await getQuietMonthCountdown(studentId, now);
+  return info != null && info.daysRemaining === 0;
+}
+
+/** Info hitungan mundur remisi otomatis untuk UI siswa. `null` = tidak perlu ditampilkan. */
+export async function getQuietMonthCountdown(
+  studentId: string,
+  now: Date = new Date()
+): Promise<{ daysRemaining: number; quietDays: number; remisiPercent: number } | null> {
   const { gross } = await getEffectivePointsBreakdown(studentId);
-  if (gross < 1) return false;
+  if (gross < 1) return null;
 
   const lastVio = await getLastViolationDate(studentId);
-  if (!lastVio) return false;
+  if (!lastVio) return null;
+
+  const lastAdj = await getLastQuietMonthAdjustmentAt(studentId);
+  if (lastAdj && dateInTimeZoneYmd(lastAdj) >= dateToYmdInput(lastVio)) return null;
 
   const quietDays = await getQuietPeriodDays();
   const daysQuiet = calendarDaysSinceIncident(lastVio, now);
-  if (!Number.isFinite(daysQuiet) || daysQuiet < quietDays) return false;
+  if (!Number.isFinite(daysQuiet)) return null;
 
-  const lastAdj = await getLastQuietMonthAdjustmentAt(studentId);
-  if (lastAdj && dateInTimeZoneYmd(lastAdj) >= dateToYmdInput(lastVio)) return false;
-
-  return true;
+  return {
+    daysRemaining: Math.max(0, quietDays - daysQuiet),
+    quietDays,
+    remisiPercent: AUTO_REMISI_PERCENT,
+  };
 }
 
 export type QuietMonthApplyResult = {

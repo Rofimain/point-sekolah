@@ -5,10 +5,6 @@ import SettingsClient from "./SettingsClient";
 import { canManageData } from "@/lib/staff-roles";
 
 const SETTINGS_PAGE_KEYS = [
-  APP_KEYS.COORD_NAME,
-  APP_KEYS.COORD_TITLE,
-  APP_KEYS.NEXT_REVIEW_VIOLATIONS,
-  APP_KEYS.NEXT_REVIEW_ROSTER,
   APP_KEYS.SP1_POINTS,
   APP_KEYS.SP2_POINTS,
   APP_KEYS.SP3_POINTS,
