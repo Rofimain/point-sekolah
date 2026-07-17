@@ -7,6 +7,11 @@ import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/Qris
 import { TopBar } from "@/components/layouts/TopBar";
 import { formatDate, formatIncidentDateOnly, formatInputDateTime, getInitials, getCategoryLabel } from "@/lib/utils";
 import { formatPointAdjustmentReason } from "@/lib/point-adjustment-reason";
+import {
+  VIOLATION_SECTIONS,
+  getViolationSectionLabel,
+  sortViolationSections,
+} from "@/lib/violation-sections";
 import type { Session } from "next-auth";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
 import { calendarTodayYmd } from "@/lib/incident-date";
@@ -113,13 +118,25 @@ export default function StudentFormClient({
 
   const sortedTypes = useMemo(() => {
     return [...violationTypes].sort((a, b) => {
-      const catOrder = (c: string) => (c === "RINGAN" ? 0 : c === "SEDANG" ? 1 : 2);
-      const ca = catOrder(a.category);
-      const cb = catOrder(b.category);
-      if (ca !== cb) return ca - cb;
-      return a.points - b.points;
+      const sec = sortViolationSections(a.section, b.section);
+      if (sec !== 0) return sec;
+      return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.points - b.points;
     });
   }, [violationTypes]);
+
+  const typesBySection = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const v of sortedTypes) {
+      const key = v.section || "";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(v);
+    }
+    const keys = [
+      ...VIOLATION_SECTIONS.filter((s) => map.has(s)),
+      ...[...map.keys()].filter((k) => !(VIOLATION_SECTIONS as readonly string[]).includes(k)),
+    ];
+    return keys.map((section) => ({ section, items: map.get(section)! }));
+  }, [sortedTypes]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -313,24 +330,36 @@ export default function StudentFormClient({
               </p>
             </div>
             <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
-              {sortedTypes.map((v: any) => (
-                <li key={v.id} className="px-4 py-3 flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
-                      {v.name}
-                    </div>
-                    {v.description && (
-                      <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
-                        {v.description}
-                      </div>
-                    )}
+              {typesBySection.map(({ section, items }) => (
+                <li key={section || "lainnya"} className="list-none">
+                  <div
+                    className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wide"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}
+                  >
+                    {getViolationSectionLabel(section)}
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <CategoryBadge category={v.category} />
-                    <span className="text-xs font-bold tabular-nums" style={{ color: "var(--text-secondary)" }}>
-                      {v.points} poin
-                    </span>
-                  </div>
+                  <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+                    {items.map((v: any) => (
+                      <li key={v.id} className="px-4 py-3 flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                            {v.name}
+                          </div>
+                          {v.description && (
+                            <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                              {v.description}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <CategoryBadge category={v.category} />
+                          <span className="text-xs font-bold tabular-nums" style={{ color: "var(--text-secondary)" }}>
+                            {v.points} poin
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               ))}
             </ul>
@@ -368,19 +397,15 @@ export default function StudentFormClient({
                     style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
                   >
                     <option value="">— Pilih jenis pelanggaran —</option>
-                    {(["RINGAN", "SEDANG", "BERAT"] as const).map((cat) => {
-                      const items = violationTypes.filter((v: any) => v.category === cat);
-                      if (!items.length) return null;
-                      return (
-                        <optgroup key={cat} label={`— ${getCategoryLabel(cat)} —`}>
-                          {items.map((v: any) => (
-                            <option key={v.id} value={v.id}>
-                              {v.name} ({v.points} poin)
-                            </option>
-                          ))}
-                        </optgroup>
-                      );
-                    })}
+                    {typesBySection.map(({ section, items }) => (
+                      <optgroup key={section || "lainnya"} label={getViolationSectionLabel(section)}>
+                        {items.map((v: any) => (
+                          <option key={v.id} value={v.id}>
+                            {v.name} ({v.points} poin)
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                   {selectedVt && (
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">

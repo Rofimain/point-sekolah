@@ -5,7 +5,7 @@ import { canManageData } from "@/lib/staff-roles";
 
 export default async function ViolationsPage() {
   const [violations, session] = await Promise.all([
-    prisma.violationType.findMany({ orderBy: [{ category: "asc" }, { points: "asc" }] }),
+    prisma.violationType.findMany({ orderBy: [{ sortOrder: "asc" }, { points: "asc" }] }),
     getSafeServerSession(),
   ]);
   return <ViolationsClient violations={violations} canManage={canManageData(session?.user?.role)} />;

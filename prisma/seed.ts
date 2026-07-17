@@ -1,9 +1,10 @@
-import { Role, Category } from "../generated/prisma/client";
+import { Role } from "../generated/prisma/client";
 import bcrypt from "bcryptjs";
 import { QUIET_MONTH_REASON } from "../lib/student-effective-points";
 import { applyQuietMonthReductionForStudent } from "../lib/quiet-month-reduction";
 import { createPrismaClient } from "../lib/prisma";
 import { DEFAULT_PRINT_TEMPLATES, PRINT_TEMPLATES_LAYOUT_VERSION } from "../lib/print-templates";
+import { PASAL_15_VIOLATIONS, pasal15ToCreateInput } from "./pasal-15-violations";
 
 const prisma = createPrismaClient();
 
@@ -27,16 +28,28 @@ async function main() {
     prisma.class.upsert({ where: { id: "cls-xii-ips1" }, update: {}, create: { id: "cls-xii-ips1", name: "XII IPS 1", grade: "XII", major: "IPS", year: "2025/2026" } }),
   ]);
 
-  // Create violation types
-  await Promise.all([
-    prisma.violationType.upsert({ where: { id: "vt-001" }, update: {}, create: { id: "vt-001", name: "Terlambat masuk sekolah", category: Category.RINGAN, points: 5, description: "Per kejadian, lebih dari 15 menit" } }),
-    prisma.violationType.upsert({ where: { id: "vt-002" }, update: {}, create: { id: "vt-002", name: "Tidak memakai atribut lengkap", category: Category.RINGAN, points: 10, description: "Seragam, dasi, sabuk, atau sepatu tidak sesuai" } }),
-    prisma.violationType.upsert({ where: { id: "vt-003" }, update: {}, create: { id: "vt-003", name: "Tidak mengerjakan PR / tugas", category: Category.RINGAN, points: 8, description: "Per mata pelajaran" } }),
-    prisma.violationType.upsert({ where: { id: "vt-004" }, update: {}, create: { id: "vt-004", name: "Membawa HP saat KBM", category: Category.SEDANG, points: 15, description: "HP akan disita sementara oleh guru" } }),
-    prisma.violationType.upsert({ where: { id: "vt-005" }, update: {}, create: { id: "vt-005", name: "Membolos jam pelajaran", category: Category.SEDANG, points: 25, description: "Per jam pelajaran yang dibolos" } }),
-    prisma.violationType.upsert({ where: { id: "vt-006" }, update: {}, create: { id: "vt-006", name: "Berkelahi / perkelahian", category: Category.BERAT, points: 50, description: "Wajib laporan ke orang tua / wali" } }),
-    prisma.violationType.upsert({ where: { id: "vt-007" }, update: {}, create: { id: "vt-007", name: "Membawa / mengonsumsi rokok", category: Category.BERAT, points: 75, description: "Sidang komite sekolah" } }),
-  ]);
+  // Pasal 15 — pelanggaran per bagian (Kelakuan / Kerajinan / Kerapihan)
+  for (const v of PASAL_15_VIOLATIONS) {
+    const data = pasal15ToCreateInput(v);
+    await prisma.violationType.upsert({
+      where: { id: data.id },
+      update: {
+        name: data.name,
+        section: data.section,
+        category: data.category,
+        points: data.points,
+        description: data.description,
+        sortOrder: data.sortOrder,
+        active: true,
+      },
+      create: data,
+    });
+  }
+
+  // Nonaktifkan contoh lama (diganti Pasal 15)
+  for (const id of ["vt-001", "vt-002", "vt-003", "vt-004", "vt-005", "vt-006", "vt-007"]) {
+    await prisma.violationType.updateMany({ where: { id }, data: { active: false } });
+  }
 
   // Super admin
   const superAdminPwd = await bcrypt.hash("Admin@1234", 12);
@@ -94,10 +107,10 @@ async function main() {
     if (existing === 0) {
       await prisma.violationRecord.createMany({
         data: [
-          { studentId: ahmad.id, violationTypeId: "vt-001", points: 5, session: "Masuk Pagi", notes: "Kemacetan", date: new Date("2026-04-14"), createdByName: "Siti Rahayu" },
-          { studentId: ahmad.id, violationTypeId: "vt-002", points: 10, session: "Umum", date: new Date("2026-04-10"), createdByName: "Siti Rahayu" },
-          { studentId: ahmad.id, violationTypeId: "vt-004", points: 15, session: "Jam 3-4", notes: "HP disita guru Fisika", date: new Date("2026-04-03"), createdByName: "Siti Rahayu" },
-          { studentId: ahmad.id, violationTypeId: "vt-005", points: 25, session: "Jam 5-6", date: new Date("2026-03-22"), createdByName: "Siti Rahayu" },
+          { studentId: ahmad.id, violationTypeId: "vt-p15-049", points: 5, session: "Masuk Pagi", notes: "Kemacetan", date: new Date("2026-04-14"), createdByName: "Siti Rahayu" },
+          { studentId: ahmad.id, violationTypeId: "vt-p15-072", points: 10, session: "Umum", date: new Date("2026-04-10"), createdByName: "Siti Rahayu" },
+          { studentId: ahmad.id, violationTypeId: "vt-p15-012a", points: 20, session: "Jam 3-4", notes: "Barang disita", date: new Date("2026-04-03"), createdByName: "Siti Rahayu" },
+          { studentId: ahmad.id, violationTypeId: "vt-p15-057", points: 20, session: "Jam 5-6", date: new Date("2026-03-22"), createdByName: "Siti Rahayu" },
         ],
       });
     }
@@ -108,10 +121,10 @@ async function main() {
     if (existing === 0) {
       await prisma.violationRecord.createMany({
         data: [
-          { studentId: rizky.id, violationTypeId: "vt-006", points: 50, session: "Istirahat", notes: "Insiden di kantin", date: new Date("2026-04-15"), createdByName: "Drs. Hartanto" },
-          { studentId: rizky.id, violationTypeId: "vt-005", points: 25, session: "Jam 7-8", date: new Date("2026-04-08"), createdByName: "Siti Rahayu" },
-          { studentId: rizky.id, violationTypeId: "vt-004", points: 15, session: "Jam 1-2", date: new Date("2026-04-02"), createdByName: "Siti Rahayu" },
-          { studentId: rizky.id, violationTypeId: "vt-002", points: 10, session: "Umum", date: new Date("2026-03-20"), createdByName: "Siti Rahayu" },
+          { studentId: rizky.id, violationTypeId: "vt-p15-034a", points: 75, session: "Istirahat", notes: "Insiden di kantin", date: new Date("2026-04-15"), createdByName: "Drs. Hartanto" },
+          { studentId: rizky.id, violationTypeId: "vt-p15-057", points: 20, session: "Jam 7-8", date: new Date("2026-04-08"), createdByName: "Siti Rahayu" },
+          { studentId: rizky.id, violationTypeId: "vt-p15-012a", points: 20, session: "Jam 1-2", date: new Date("2026-04-02"), createdByName: "Siti Rahayu" },
+          { studentId: rizky.id, violationTypeId: "vt-p15-072", points: 10, session: "Umum", date: new Date("2026-03-20"), createdByName: "Siti Rahayu" },
         ],
       });
     }
@@ -160,8 +173,8 @@ async function main() {
       data: [
         {
           studentId: demoTenang.id,
-          violationTypeId: "vt-005",
-          points: 25,
+          violationTypeId: "vt-p15-057",
+          points: 20,
           session: "Jam 3-4",
           notes: "Demo: pelanggaran terakhir >30 hari lalu",
           date: daysAgo(38),
@@ -169,8 +182,8 @@ async function main() {
         },
         {
           studentId: demoTenang.id,
-          violationTypeId: "vt-004",
-          points: 15,
+          violationTypeId: "vt-p15-012a",
+          points: 20,
           session: "Jam 1-2",
           date: daysAgo(40),
           createdByName: "Sistem (seed)",
@@ -194,8 +207,8 @@ async function main() {
     await prisma.violationRecord.create({
       data: {
         studentId: demoAktif.id,
-        violationTypeId: "vt-006",
-        points: 50,
+        violationTypeId: "vt-p15-034a",
+        points: 75,
         session: "Istirahat",
         notes: "Demo: pelanggaran baru-baru ini (tidak dapat potongan)",
         date: daysAgo(5),
@@ -209,7 +222,7 @@ async function main() {
       data: [
         {
           studentId: demoManual.id,
-          violationTypeId: "vt-007",
+          violationTypeId: "vt-p15-027",
           points: 75,
           session: "Umum",
           notes: "Demo: histori lama",
@@ -218,7 +231,7 @@ async function main() {
         },
         {
           studentId: demoManual.id,
-          violationTypeId: "vt-002",
+          violationTypeId: "vt-p15-072",
           points: 10,
           session: "Umum",
           date: daysAgo(55),

@@ -53,13 +53,18 @@ model Class {
 model ViolationType {
   id          String    @id @default(cuid())
   name        String
+  /// Bagian Pasal 15: KELAKUAN | KERAJINAN | KERAPIHAN
+  section     String?
   category    Category
   points      Int
   description String?
+  sortOrder   Int       @default(0)
   active      Boolean   @default(true)
   records     ViolationRecord[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([section, sortOrder])
 }
 
 enum Category {

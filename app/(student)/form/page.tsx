@@ -14,7 +14,7 @@ export default async function StudentFormPage() {
 
   const violationTypes = await prisma.violationType.findMany({
     where: { active: true },
-    orderBy: [{ category: "asc" }, { points: "asc" }],
+    orderBy: [{ sortOrder: "asc" }, { points: "asc" }],
   });
 
   const records = await prisma.violationRecord.findMany({

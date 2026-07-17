@@ -9,7 +9,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
-  const updated = await prisma.violationType.update({ where: { id }, data: { name: body.name, category: body.category, points: parseInt(body.points), description: body.description || null } });
+  const updated = await prisma.violationType.update({
+    where: { id },
+    data: {
+      name: body.name,
+      category: body.category,
+      points: parseInt(body.points, 10),
+      description: body.description || null,
+      section: body.section ?? undefined,
+    },
+  });
   return NextResponse.json(updated);
 }
 

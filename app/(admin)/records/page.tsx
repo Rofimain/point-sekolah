@@ -31,7 +31,7 @@ export default async function RecordsPage({
 
   const [classes, violationTypes, studentsForPicker, totalPointsMap] = await Promise.all([
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
-    prisma.violationType.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    prisma.violationType.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { points: "asc" }] }),
     prisma.user.findMany({
       where: { role: "STUDENT", active: true },
       select: { id: true, name: true, nisn: true, class: { select: { name: true, grade: true } } },
