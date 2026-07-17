@@ -86,7 +86,8 @@ export function StudentPointsPrintArticle({
             </div>
           </div>
           <p className="text-xs text-neutral-600 mt-3">
-            Remisi otomatis 25% dapat diterapkan setelah ≥{quietDays} hari sejak tanggal kejadian pelanggaran terakhir
+            Remisi otomatis dapat diterapkan setelah ≥{quietDays} hari sejak tanggal kejadian pelanggaran terakhir
+            (dihitung dari tanggal kejadian, bukan tanggal input).
             (bukan tanggal input catatan), sesuai kebijakan sekolah.
           </p>
         </div>

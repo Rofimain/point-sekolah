@@ -4,11 +4,11 @@ import {
   dateInTimeZoneYmd,
   dateToYmdInput,
 } from "@/lib/incident-date";
+import { getRemisiPercent, getQuietPeriodDays } from "@/lib/app-settings";
 import {
   getEffectivePointsBreakdown,
   isPointAdjustmentTableMissing,
   QUIET_MONTH_REASON,
-  quietPeriodDays,
 } from "@/lib/student-effective-points";
 
 /**
@@ -39,10 +39,9 @@ async function getLastQuietMonthAdjustmentAt(studentId: string): Promise<Date | 
 }
 
 /**
- * Layak dipotong 25% bila:
+ * Layak remisi bila:
  * - Ada poin pelanggaran (bruto) > 0
- * - Sudah lewat minimal `POINT_REDUCTION_QUIET_DAYS` (default 30) **hari kalender**
- *   sejak tanggal KEJADIAN pelanggaran terakhir (`ViolationRecord.date`) — bukan sejak diinput
+ * - Sudah lewat minimal hari tenang (pengaturan sekolah / env) sejak tanggal KEJADIAN terakhir
  * - Belum ada potongan "bulan tenang" setelah tanggal kejadian terakhir itu
  */
 export async function isEligibleForQuietMonthReduction(
@@ -55,11 +54,11 @@ export async function isEligibleForQuietMonthReduction(
   const lastVio = await getLastViolationDate(studentId);
   if (!lastVio) return false;
 
+  const quietDays = await getQuietPeriodDays();
   const daysQuiet = calendarDaysSinceIncident(lastVio, now);
-  if (!Number.isFinite(daysQuiet) || daysQuiet < quietPeriodDays()) return false;
+  if (!Number.isFinite(daysQuiet) || daysQuiet < quietDays) return false;
 
   const lastAdj = await getLastQuietMonthAdjustmentAt(studentId);
-  // Sudah pernah remisi setelah (atau pada hari) tanggal kejadian terakhir → jangan ulang
   if (lastAdj && dateInTimeZoneYmd(lastAdj) >= dateToYmdInput(lastVio)) return false;
 
   return true;
@@ -70,10 +69,11 @@ export type QuietMonthApplyResult = {
   grossTotalBefore: number;
   pointsDelta: number;
   effectiveAfter: number;
+  remisiPercent: number;
 };
 
 /**
- * Terapkan pengurangan 25% dari total poin bruto (bukan dari poin efektif).
+ * Terapkan pengurangan (default 25%, bisa diganti di pengaturan) dari total poin bruto.
  * Mengembalikan null jika tidak layak.
  */
 export async function applyQuietMonthReductionForStudent(
@@ -89,7 +89,8 @@ export async function applyQuietMonthReductionForStudent(
   const gross = grossAgg._sum.points ?? 0;
   if (gross < 1) return null;
 
-  const deduct = Math.round(gross * 0.25);
+  const remisiPercent = await getRemisiPercent();
+  const deduct = Math.round(gross * (remisiPercent / 100));
   if (deduct < 1) return null;
 
   const pointsDelta = -Math.min(deduct, gross);
@@ -114,6 +115,7 @@ export async function applyQuietMonthReductionForStudent(
     grossTotalBefore: gross,
     pointsDelta,
     effectiveAfter: effective,
+    remisiPercent,
   };
 }
 
@@ -132,7 +134,7 @@ export async function applyQuietMonthReductionForAllStudents(
   return out;
 }
 
-/** Daftar siswa yang saat ini memenuhi syarat remisi 25% (belum diterapkan). */
+/** Daftar siswa yang saat ini memenuhi syarat remisi (belum diterapkan). */
 export async function previewEligibleQuietMonthStudents(
   now: Date = new Date()
 ): Promise<{ id: string; name: string; lastIncidentYmd: string; daysQuiet: number }[]> {

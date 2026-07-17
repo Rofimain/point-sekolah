@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { QUIET_MONTH_REASON } from "../lib/student-effective-points";
 import { applyQuietMonthReductionForStudent } from "../lib/quiet-month-reduction";
 import { createPrismaClient } from "../lib/prisma";
+import { DEFAULT_PRINT_TEMPLATES } from "../lib/print-templates";
 
 const prisma = createPrismaClient();
 
@@ -258,12 +259,31 @@ async function main() {
       "Dengan ini menyatakan bahwa data poin pelanggaran di bawah merupakan catatan resmi sekolah sesuai tata tertib yang berlaku. Dokumen ini dapat digunakan untuk arsip orang tua/wali dan tindak lanjut pembinaan.",
     next_review_violations: "2026-07-01",
     next_review_roster: "2026-07-15",
+    sp1_points: "",
+    sp2_points: "",
+    sp3_points: "",
+    skorsing_points: "",
+    remisi_quiet_days: "30",
+    remisi_percent: "25",
   };
   for (const [key, value] of Object.entries(appSettingSeeds)) {
     await prisma.appSetting.upsert({
       where: { key },
       update: { value },
       create: { key, value },
+    });
+  }
+
+  for (const t of DEFAULT_PRINT_TEMPLATES) {
+    await prisma.printTemplate.upsert({
+      where: { slug: t.slug },
+      update: {},
+      create: {
+        slug: t.slug,
+        title: t.title,
+        body: t.body,
+        sortOrder: t.sortOrder,
+      },
     });
   }
 

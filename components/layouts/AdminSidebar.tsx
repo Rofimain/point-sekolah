@@ -191,7 +191,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
   const { data: session } = useSession();
   const canManage = canManageData(session?.user?.role);
 
-  const [openMenu, setOpenMenu] = useState<null | "records" | "students" | "users">(null);
+  const [openMenu, setOpenMenu] = useState<null | "records" | "students" | "users" | "settings">(null);
 
   const classId = searchParams.get("classId") || "";
   const roleFilter = searchParams.get("role") || "";
@@ -200,6 +200,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
     if (pathname.startsWith("/records")) setOpenMenu("records");
     else if (pathname.startsWith("/students")) setOpenMenu("students");
     else if (pathname.startsWith("/users")) setOpenMenu("users");
+    else if (pathname.startsWith("/settings")) setOpenMenu("settings");
     else setOpenMenu(null);
   }, [pathname]);
 
@@ -293,9 +294,12 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
           <SectionLabel>Pengaturan</SectionLabel>
 
           {canManage && (
-            <SimpleNavLink
+            <SplitNavRow
               href="/settings"
               active={pathname.startsWith("/settings")}
+              open={openMenu === "settings"}
+              onToggle={() => setOpenMenu((m) => (m === "settings" ? null : "settings"))}
+              ariaToggle="Buka submenu — Pengaturan sekolah"
               icon={
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                   <circle cx="12" cy="12" r="3" />
@@ -306,7 +310,14 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
                 </svg>
               }
               label="Pengaturan sekolah"
-            />
+            >
+              <SubmenuLink href="/settings" active={pathname === "/settings"}>
+                Umum
+              </SubmenuLink>
+              <SubmenuLink href="/settings/redaksi" active={pathname.startsWith("/settings/redaksi")}>
+                Redaksi cetak
+              </SubmenuLink>
+            </SplitNavRow>
           )}
 
           <SimpleNavLink

@@ -106,11 +106,24 @@ model ViolationEvidenceImage {
   @@index([recordId, sortOrder])
 }
 
-/// Pengaturan key–value (koordinator cetak, redaksi, jadwal review).
+/// Pengaturan key–value (koordinator cetak, redaksi lama, threshold, remisi, jadwal review).
 model AppSetting {
   key       String   @id
   value     String   @db.Text
   updatedAt DateTime @updatedAt
+}
+
+/// Master redaksi surat cetak. Admin dapat menambah, mengubah, dan menghapus jenis surat.
+model PrintTemplate {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  body      String   @db.Text
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder, title])
 }
 
 /// Koreksi poin (nilai negatif). Digunakan untuk pengurangan 25% setelah periode tenang.

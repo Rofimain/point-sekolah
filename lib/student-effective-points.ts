@@ -1,7 +1,9 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getQuietPeriodDays, quietPeriodDaysFromEnv } from "@/lib/app-settings";
 
 export { QUIET_MONTH_REASON } from "@/lib/point-adjustment-reason";
+export { getQuietPeriodDays };
 
 /** DB belum di-migrate (mis. image jalan sebelum `prisma migrate deploy`) */
 export function isPointAdjustmentTableMissing(e: unknown): boolean {
@@ -12,9 +14,9 @@ export function isPointAdjustmentTableMissing(e: unknown): boolean {
   );
 }
 
+/** Sync fallback env-only. Prefer getQuietPeriodDays() untuk nilai dari pengaturan sekolah. */
 export function quietPeriodDays(): number {
-  const n = parseInt(process.env.POINT_REDUCTION_QUIET_DAYS || "30", 10);
-  return Number.isFinite(n) && n > 0 ? n : 30;
+  return quietPeriodDaysFromEnv();
 }
 
 export function quietPeriodMs(): number {

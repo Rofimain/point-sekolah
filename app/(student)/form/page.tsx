@@ -2,7 +2,8 @@ import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import StudentFormClient from "./StudentFormClient";
-import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing, quietPeriodDays } from "@/lib/student-effective-points";
+import { getQuietPeriodDays } from "@/lib/app-settings";
+import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 
 /** Form siswa query DB per session — skip static generation saat image build. */
 export const dynamic = "force-dynamic";
@@ -36,7 +37,10 @@ export default async function StudentFormPage() {
     take: 20,
   });
 
-  const { gross, adjustmentSum, effective } = await getEffectivePointsBreakdown(session.user.id);
+  const [{ gross, adjustmentSum, effective }, quietDays] = await Promise.all([
+    getEffectivePointsBreakdown(session.user.id),
+    getQuietPeriodDays(),
+  ]);
 
   let pointAdjustments: {
     id: string;
@@ -76,7 +80,7 @@ export default async function StudentFormPage() {
       grossPoints={gross}
       adjustmentSum={adjustmentSum}
       pointAdjustments={pointAdjustments}
-      quietDays={quietPeriodDays()}
+      quietDays={quietDays}
       studentClass={student?.class?.name ?? null}
       studentNisn={student?.nisn ?? null}
     />

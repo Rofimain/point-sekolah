@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSafeServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPrintBlock } from "@/lib/app-settings";
-import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing, quietPeriodDays } from "@/lib/student-effective-points";
+import { getPrintBlock, getQuietPeriodDays } from "@/lib/app-settings";
+import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 import { isStaffRole } from "@/lib/staff-roles";
 import { PrintButton } from "@/components/PrintButton";
 import { StudentPointsPrintArticle } from "@/components/StudentPointsPrintArticle";
@@ -14,7 +14,7 @@ export default async function StaffStudentPrintPointsPage({ params }: { params: 
 
   const { studentId } = await params;
 
-  const [print, student, breakdown, records, adjustments] = await Promise.all([
+  const [print, student, breakdown, records, adjustments, quietDays] = await Promise.all([
     getPrintBlock(),
     prisma.user.findFirst({
       where: { id: studentId, role: "STUDENT" },
@@ -46,6 +46,7 @@ export default async function StaffStudentPrintPointsPage({ params }: { params: 
         throw e;
       }
     })(),
+    getQuietPeriodDays(),
   ]);
 
   if (!student) notFound();
@@ -68,7 +69,7 @@ export default async function StaffStudentPrintPointsPage({ params }: { params: 
         issued={issued}
         print={print}
         breakdown={breakdown}
-        quietDays={quietPeriodDays()}
+        quietDays={quietDays}
         history={{
           records: records.map((r) => ({
             id: r.id,

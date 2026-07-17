@@ -1,20 +1,26 @@
 import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { APP_KEYS, getAppSetting } from "@/lib/app-settings";
+import { APP_KEYS, getAppSettingsMap } from "@/lib/app-settings";
 import SettingsClient from "./SettingsClient";
 import { canManageData } from "@/lib/staff-roles";
+
+const SETTINGS_PAGE_KEYS = [
+  APP_KEYS.COORD_NAME,
+  APP_KEYS.COORD_TITLE,
+  APP_KEYS.NEXT_REVIEW_VIOLATIONS,
+  APP_KEYS.NEXT_REVIEW_ROSTER,
+  APP_KEYS.SP1_POINTS,
+  APP_KEYS.SP2_POINTS,
+  APP_KEYS.SP3_POINTS,
+  APP_KEYS.SKORSING_POINTS,
+  APP_KEYS.REMISI_QUIET_DAYS,
+  APP_KEYS.REMISI_PERCENT,
+] as const;
 
 export default async function SettingsPage() {
   const session = await getSafeServerSession();
   if (!canManageData(session?.user?.role)) redirect("/dashboard");
 
-  const initial = {
-    [APP_KEYS.COORD_NAME]: await getAppSetting(APP_KEYS.COORD_NAME),
-    [APP_KEYS.COORD_TITLE]: await getAppSetting(APP_KEYS.COORD_TITLE),
-    [APP_KEYS.REDAKSI_PRINT]: await getAppSetting(APP_KEYS.REDAKSI_PRINT),
-    [APP_KEYS.NEXT_REVIEW_VIOLATIONS]: await getAppSetting(APP_KEYS.NEXT_REVIEW_VIOLATIONS),
-    [APP_KEYS.NEXT_REVIEW_ROSTER]: await getAppSetting(APP_KEYS.NEXT_REVIEW_ROSTER),
-  };
-
+  const initial = await getAppSettingsMap(SETTINGS_PAGE_KEYS);
   return <SettingsClient initial={initial} />;
 }
