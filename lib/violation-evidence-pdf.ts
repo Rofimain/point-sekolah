@@ -12,7 +12,8 @@ export type ViolationEvidencePdfRecord = {
   date: Date;
   createdAt: Date;
   createdByName: string | null;
-  evidenceImageData: string | null;
+  evidenceImageData?: string | null;
+  evidenceImages?: string[] | null;
   studentSignatureData: string | null;
 };
 
@@ -99,10 +100,19 @@ export async function createViolationEvidencePdf(record: ViolationEvidencePdfRec
   drawField("Diinput oleh", record.createdByName);
   drawField("Keterangan", record.notes);
 
-  const evidence = await embedImage(pdf, record.evidenceImageData);
-  if (evidence) {
+  const evidenceList =
+    Array.isArray(record.evidenceImages) && record.evidenceImages.length > 0
+      ? record.evidenceImages.filter((s) => typeof s === "string" && s.trim())
+      : record.evidenceImageData?.trim()
+        ? [record.evidenceImageData.trim()]
+        : [];
+
+  for (let i = 0; i < evidenceList.length; i++) {
+    const evidence = await embedImage(pdf, evidenceList[i]);
+    if (!evidence) continue;
     ensureSpace(250);
-    page.drawText("FOTO BUKTI", { x: margin, y, size: 7.5, font: bold, color: rgb(0.42, 0.42, 0.42) });
+    const label = evidenceList.length > 1 ? `FOTO BUKTI (${i + 1}/${evidenceList.length})` : "FOTO BUKTI";
+    page.drawText(label, { x: margin, y, size: 7.5, font: bold, color: rgb(0.42, 0.42, 0.42) });
     y -= 14;
     const dimensions = evidence.scaleToFit(contentWidth, Math.min(330, y - margin));
     page.drawImage(evidence, { x: margin, y: y - dimensions.height, width: dimensions.width, height: dimensions.height });

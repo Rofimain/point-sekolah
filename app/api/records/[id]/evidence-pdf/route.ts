@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createViolationEvidencePdf, evidencePdfFilename } from "@/lib/violation-evidence-pdf";
 import { canReadViolationRecord } from "@/lib/record-access";
+import { listRecordEvidenceImageData } from "@/lib/record-evidence-images";
 
 export const runtime = "nodejs";
 
@@ -37,7 +38,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   try {
-    const pdf = await createViolationEvidencePdf(record);
+    const evidenceImages = await listRecordEvidenceImageData(id);
+    const pdf = await createViolationEvidencePdf({
+      ...record,
+      evidenceImages,
+      evidenceImageData: evidenceImages[0] ?? record.evidenceImageData,
+    });
     return new NextResponse(Buffer.from(pdf), {
       status: 200,
       headers: {

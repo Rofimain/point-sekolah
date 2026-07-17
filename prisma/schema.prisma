@@ -79,7 +79,7 @@ model ViolationRecord {
   points                Int
   date                  DateTime      @default(now())
   createdByName         String?
-  /// Bukti foto (data URL base64), wajib untuk poin > ambang bila tidak ada tanda tangan
+  /// Bukti foto pertama (data URL) — denormalisasi untuk kompatibilitas; sumber utama di evidenceImages
   evidenceImageData     String?       @db.Text
   /// Ringkas untuk UI daftar — ada foto bukti (tanpa load kolom besar)
   evidenceImagePresent  Boolean       @default(false)
@@ -89,8 +89,21 @@ model ViolationRecord {
   submittedByStudent    Boolean       @default(false)
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
+  evidenceImages        ViolationEvidenceImage[]
 
   @@index([submittedByStudent, createdAt])
+}
+
+/// Foto bukti pelanggaran (bisa banyak per catatan).
+model ViolationEvidenceImage {
+  id        String          @id @default(cuid())
+  recordId  String
+  record    ViolationRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  sortOrder Int             @default(0)
+  imageData String          @db.Text
+  createdAt DateTime        @default(now())
+
+  @@index([recordId, sortOrder])
 }
 
 /// Pengaturan key–value (koordinator cetak, redaksi, jadwal review).

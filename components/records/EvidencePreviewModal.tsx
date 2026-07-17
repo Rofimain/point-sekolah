@@ -9,6 +9,7 @@ function isImageDataUrl(s: string) {
 type Payload = {
   id: string;
   evidenceImageData: string | null;
+  evidenceImages?: string[];
   studentSignatureData: string | null;
   points: number;
   session: string | null;
@@ -24,12 +25,14 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<Payload | null>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       setError(null);
+      setActiveIdx(0);
       try {
         const res = await fetch(`/api/records/${recordId}`, { cache: "no-store", credentials: "same-origin" });
         const json = await res.json().catch(() => ({}));
@@ -51,8 +54,14 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
     };
   }, [recordId]);
 
-  const img = data?.evidenceImageData?.trim();
+  const images =
+    data?.evidenceImages && data.evidenceImages.length > 0
+      ? data.evidenceImages.filter((s) => s?.trim())
+      : data?.evidenceImageData?.trim()
+        ? [data.evidenceImageData.trim()]
+        : [];
   const sig = data?.studentSignatureData?.trim();
+  const activeImg = images[Math.min(activeIdx, Math.max(0, images.length - 1))] ?? null;
 
   return (
     <div
@@ -90,7 +99,7 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
         {loading && <p className="py-8 text-center text-xs text-neutral-500">Memuat…</p>}
         {error && !loading && <p className="py-6 text-center text-xs text-red-600">{error}</p>}
 
-        {!loading && data && !img && !sig && (
+        {!loading && data && images.length === 0 && !sig && (
           <p className="py-6 text-center text-xs text-neutral-500">Tidak ada foto atau teks pengakuan untuk catatan ini.</p>
         )}
 
@@ -119,15 +128,32 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
           </dl>
         ) : null}
 
-        {img && (
+        {activeImg && (
           <div className="mb-4">
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-500">Foto bukti</p>
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+              Foto bukti{images.length > 1 ? ` (${activeIdx + 1}/${images.length})` : ""}
+            </p>
             <img
-              src={img}
+              src={activeImg}
               alt="Bukti pelanggaran"
-              className="max-h-[min(360px,55vh)] w-full rounded-lg border object-contain bg-neutral-50"
+              className="max-h-[min(420px,58vh)] w-full rounded-lg border object-contain bg-neutral-50"
               style={{ borderColor: "var(--border)" }}
             />
+            {images.length > 1 ? (
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                {images.map((src, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setActiveIdx(i)}
+                    className="h-14 w-14 shrink-0 overflow-hidden rounded-md border-2"
+                    style={{ borderColor: i === activeIdx ? "rgb(16 185 129)" : "var(--border)" }}
+                  >
+                    <img src={src} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         )}
 

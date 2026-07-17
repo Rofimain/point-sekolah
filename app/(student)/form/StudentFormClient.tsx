@@ -10,12 +10,8 @@ import { formatPointAdjustmentReason } from "@/lib/point-adjustment-reason";
 import type { Session } from "next-auth";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
 import { calendarTodayYmd } from "@/lib/incident-date";
-import {
-  compressImageToDataUrl,
-  COMPRESS_TARGET_BYTES_STUDENT,
-  isProbablyImageFile,
-} from "@/lib/compress-image-client";
 import { EvidencePreviewModal } from "@/components/records/EvidencePreviewModal";
+import { EvidenceMultiUploader } from "@/components/records/EvidenceMultiUploader";
 
 const SESSIONS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 const CRITICAL = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
@@ -94,7 +90,7 @@ export default function StudentFormClient({
   const [vtId, setVtId] = useState("");
   const [sessionSlot, setSessionSlot] = useState("");
   const [notes, setNotes] = useState("");
-  const [evidenceDataUrl, setEvidenceDataUrl] = useState("");
+  const [evidenceImages, setEvidenceImages] = useState<string[]>([]);
   const [signatureText, setSignatureText] = useState("");
   const [incidentDate, setIncidentDate] = useState(() => calendarTodayYmd());
   const [loading, setLoading] = useState(false);
@@ -125,33 +121,13 @@ export default function StudentFormClient({
     });
   }, [violationTypes]);
 
-  async function onPickEvidenceFile(file: File | null) {
-    setEvidenceDataUrl("");
-    if (!file) return;
-    if (!isProbablyImageFile(file)) {
-      toast.error("Gunakan file gambar (JPG, PNG, HEIC, WebP, dll.).");
-      return;
-    }
-    await toast.promise(
-      compressImageToDataUrl(file, { maxBytes: COMPRESS_TARGET_BYTES_STUDENT }).then(({ dataUrl, meta }) => {
-        setEvidenceDataUrl(dataUrl);
-        return meta.outputBytes;
-      }),
-      {
-        loading: "Mengompres foto…",
-        success: (bytes) => `Foto siap (~${Math.max(1, Math.round(bytes / 1024))} KB)`,
-        error: (err: unknown) => (err instanceof Error ? err.message : "Gagal memproses gambar"),
-      }
-    );
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!vtId) {
       setError("Pilih jenis pelanggaran terlebih dahulu");
       return;
     }
-    if (needEvidence && !evidenceDataUrl.trim() && signatureText.trim().length < 12) {
+    if (needEvidence && evidenceImages.length === 0 && signatureText.trim().length < 12) {
       setError(`Pelanggaran di atas ${threshold} poin wajib foto bukti dan/atau pengakuan tertulis (minimal 12 karakter).`);
       return;
     }
@@ -166,7 +142,7 @@ export default function StudentFormClient({
           session: sessionSlot,
           notes,
           date: incidentDate,
-          evidenceImageData: evidenceDataUrl || undefined,
+          evidenceImages: evidenceImages.length > 0 ? evidenceImages : undefined,
           studentSignatureData: signatureText.trim() || undefined,
         }),
       });
@@ -208,7 +184,7 @@ export default function StudentFormClient({
       setVtId("");
       setSessionSlot("");
       setNotes("");
-      setEvidenceDataUrl("");
+      setEvidenceImages([]);
       setSignatureText("");
       setIncidentDate(calendarTodayYmd());
       router.refresh();
@@ -477,25 +453,11 @@ export default function StudentFormClient({
                     <div className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
                       Bukti tambahan (wajib salah satu atau keduanya)
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                        Foto bukti
-                      </label>
-                      <input
-                        type="file"
-                        accept="image/*,.heic,.heif"
-                        className="w-full text-xs"
-                        onChange={(e) => void onPickEvidenceFile(e.target.files?.[0] ?? null)}
-                      />
-                      <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
-                        Foto akan dioptimalkan otomatis (ukuran dan kualitas) agar ringan di server.
-                      </p>
-                      {evidenceDataUrl && (
-                        <p className="text-[10px] mt-1" style={{ color: "var(--success)" }}>
-                          Foto terpasang.
-                        </p>
-                      )}
-                    </div>
+                    <EvidenceMultiUploader
+                      images={evidenceImages}
+                      onChange={setEvidenceImages}
+                      disabled={loading}
+                    />
                     <div>
                       <label className="block text-[10px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
                         Pengakuan / tanda tangan digital (teks)
@@ -525,7 +487,7 @@ export default function StudentFormClient({
                       setVtId("");
                       setSessionSlot("");
                       setNotes("");
-                      setEvidenceDataUrl("");
+                      setEvidenceImages([]);
                       setSignatureText("");
                       setIncidentDate(calendarTodayYmd());
                     }}

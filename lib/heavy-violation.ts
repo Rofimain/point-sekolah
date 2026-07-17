@@ -1,4 +1,9 @@
-import { isStrictEvidenceImageDataUrl } from "@/lib/evidence-data-url";
+import {
+  isStrictEvidenceImageDataUrl,
+  MAX_EVIDENCE_CHARS_PER_IMAGE,
+  MAX_EVIDENCE_IMAGES,
+  validateEvidenceImageList,
+} from "@/lib/evidence-data-url";
 
 /** Pelanggaran di atas ambang ini wajib bukti (foto) dan/atau tanda tangan digital murid. */
 export function heavyViolationPointsThreshold(): number {
@@ -10,30 +15,49 @@ export function violationNeedsEvidence(points: number): boolean {
   return points > heavyViolationPointsThreshold();
 }
 
-const MAX_EVIDENCE_CHARS = 550_000;
-
 /** Foto data-URL yang masuk akal, atau teks pengakuan + nama (≥12 karakter), atau gambar tanda tangan. */
-export function hasHeavyViolationEvidence(evidenceImageData: string | null | undefined, studentSignatureData: string | null | undefined): boolean {
-  const img = (evidenceImageData ?? "").trim();
+export function hasHeavyViolationEvidence(
+  evidenceImages: string[] | string | null | undefined,
+  studentSignatureData: string | null | undefined
+): boolean {
+  const images = Array.isArray(evidenceImages)
+    ? evidenceImages
+    : typeof evidenceImages === "string" && evidenceImages.trim()
+      ? [evidenceImages.trim()]
+      : [];
+  const hasImg = images.some((img) => isStrictEvidenceImageDataUrl(img));
   const sig = (studentSignatureData ?? "").trim();
-  const hasImg = isStrictEvidenceImageDataUrl(img);
-  const hasSig = sig.length >= 12 && !sig.startsWith("data:") || isStrictEvidenceImageDataUrl(sig);
+  const hasSig = (sig.length >= 12 && !sig.startsWith("data:")) || isStrictEvidenceImageDataUrl(sig);
   return hasImg || hasSig;
 }
 
 export function validateHeavyViolationEvidence(
   points: number,
-  evidenceImageData: string | null | undefined,
+  evidenceImages: string[] | string | null | undefined,
   studentSignatureData: string | null | undefined
 ): { ok: true } | { ok: false; error: string } {
-  const img = (evidenceImageData ?? "").trim();
+  const images = Array.isArray(evidenceImages)
+    ? evidenceImages.filter((s) => typeof s === "string" && s.trim()).map((s) => s.trim())
+    : typeof evidenceImages === "string" && evidenceImages.trim()
+      ? [evidenceImages.trim()]
+      : [];
+
+  if (images.length > MAX_EVIDENCE_IMAGES) {
+    return { ok: false, error: `Maksimal ${MAX_EVIDENCE_IMAGES} foto bukti per catatan.` };
+  }
+  for (let i = 0; i < images.length; i++) {
+    if (images[i].length > MAX_EVIDENCE_CHARS_PER_IMAGE) {
+      return {
+        ok: false,
+        error: `Foto bukti ke-${i + 1} terlalu besar. Disarankan di bawah ~800 KB setelah kompresi.`,
+      };
+    }
+  }
+
+  const listCheck = validateEvidenceImageList(images);
+  if (!listCheck.ok) return listCheck;
+
   const sig = (studentSignatureData ?? "").trim();
-  if (img.length > MAX_EVIDENCE_CHARS) {
-    return { ok: false, error: "Foto bukti terlalu besar. Gunakan gambar yang lebih kecil (disarankan di bawah 360 KB)." };
-  }
-  if (img && !isStrictEvidenceImageDataUrl(img)) {
-    return { ok: false, error: "Format foto bukti tidak valid. Gunakan JPEG atau PNG." };
-  }
   if (sig.length > 50_000) {
     return { ok: false, error: "Data tanda tangan / teks terlalu panjang." };
   }
@@ -41,7 +65,7 @@ export function validateHeavyViolationEvidence(
     return { ok: false, error: "Format gambar tanda tangan tidak valid." };
   }
   if (!violationNeedsEvidence(points)) return { ok: true };
-  if (!hasHeavyViolationEvidence(evidenceImageData, studentSignatureData)) {
+  if (!hasHeavyViolationEvidence(images, studentSignatureData)) {
     return {
       ok: false,
       error: `Pelanggaran di atas ${heavyViolationPointsThreshold()} poin wajib dilampiri foto bukti dan/atau kolom tanda tangan / pengakuan tertulis murid (minimal 12 karakter).`,

@@ -6,6 +6,11 @@ import { canManageData } from "@/lib/staff-roles";
 import { validateHeavyViolationEvidence } from "@/lib/heavy-violation";
 import { parseIncidentDateYmd } from "@/lib/incident-date";
 import { canReadViolationRecord } from "@/lib/record-access";
+import { normalizeEvidenceImagesFromBody } from "@/lib/evidence-data-url";
+import {
+  listRecordEvidenceImageData,
+  replaceRecordEvidenceImages,
+} from "@/lib/record-evidence-images";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,7 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = await req.json();
-  const { points, notes, violationTypeId, evidenceImageData, studentSignatureData, date: dateInput } = body;
+  const { points, notes, violationTypeId, studentSignatureData, date: dateInput } = body;
 
   const nextVtId = typeof violationTypeId === "string" && violationTypeId ? violationTypeId : existing.violationTypeId;
   const vt = await prisma.violationType.findUnique({ where: { id: nextVtId } });
@@ -32,12 +37,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     nextPoints = vt.points;
   }
 
-  const nextEvidence =
-    evidenceImageData !== undefined
-      ? typeof evidenceImageData === "string"
-        ? evidenceImageData.trim() || null
-        : existing.evidenceImageData
-      : existing.evidenceImageData;
+  const evidenceTouched = body.evidenceImages !== undefined || body.evidenceImageData !== undefined;
+  let nextEvidenceImages: string[];
+  if (evidenceTouched) {
+    nextEvidenceImages = normalizeEvidenceImagesFromBody(body);
+  } else {
+    nextEvidenceImages = await listRecordEvidenceImageData(id);
+  }
+
   const nextSig =
     studentSignatureData !== undefined
       ? typeof studentSignatureData === "string"
@@ -45,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         : existing.studentSignatureData
       : existing.studentSignatureData;
 
-  const check = validateHeavyViolationEvidence(nextPoints, nextEvidence, nextSig);
+  const check = validateHeavyViolationEvidence(nextPoints, nextEvidenceImages, nextSig);
   if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
 
   let nextDate: Date | undefined;
@@ -61,12 +68,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       violationTypeId: nextVtId,
       points: nextPoints,
       ...(notes !== undefined && { notes }),
-      evidenceImageData: nextEvidence,
-      evidenceImagePresent: Boolean(nextEvidence?.trim()),
       studentSignatureData: nextSig,
       ...(nextDate && { date: nextDate }),
+      ...(evidenceTouched
+        ? {
+            evidenceImageData: nextEvidenceImages[0] ?? null,
+            evidenceImagePresent: nextEvidenceImages.length > 0,
+          }
+        : {}),
     },
   });
+
+  if (evidenceTouched) {
+    await replaceRecordEvidenceImages(id, nextEvidenceImages);
+  }
+
   return NextResponse.json(updated);
 }
 
@@ -97,10 +113,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!canReadViolationRecord(session.user, record.studentId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  const { studentId: _studentId, ...safeRecord } = record;
-  return NextResponse.json(safeRecord, {
-    headers: { "Cache-Control": "private, no-store, max-age=0", "X-Content-Type-Options": "nosniff" },
-  });
+
+  const evidenceImages = await listRecordEvidenceImageData(id);
+  const { studentId: _studentId, evidenceImageData: _legacy, ...safeRecord } = record;
+  return NextResponse.json(
+    {
+      ...safeRecord,
+      evidenceImages,
+      evidenceImageData: evidenceImages[0] ?? null,
+    },
+    {
+      headers: { "Cache-Control": "private, no-store, max-age=0", "X-Content-Type-Options": "nosniff" },
+    }
+  );
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

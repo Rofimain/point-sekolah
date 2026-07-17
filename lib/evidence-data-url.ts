@@ -1,4 +1,9 @@
-const MAX_IMAGE_BYTES = 400 * 1024;
+/** Batas decode server per foto bukti (~selaras target kompresi client 800 KB). */
+export const MAX_EVIDENCE_IMAGE_BYTES = 850 * 1024;
+export const MAX_EVIDENCE_IMAGES = 5;
+/** Panjang string data-URL per foto (base64 ≈ 4/3 byte + header). */
+export const MAX_EVIDENCE_CHARS_PER_IMAGE = 1_200_000;
+
 const IMAGE_DATA_URL = /^data:image\/(jpeg|png);base64,([A-Za-z0-9+/]+={0,2})$/;
 
 export type ParsedEvidenceImage = {
@@ -6,7 +11,10 @@ export type ParsedEvidenceImage = {
   mime: "image/jpeg" | "image/png";
 };
 
-export function parseEvidenceImageDataUrl(value: string, maxBytes = MAX_IMAGE_BYTES): ParsedEvidenceImage {
+export function parseEvidenceImageDataUrl(
+  value: string,
+  maxBytes = MAX_EVIDENCE_IMAGE_BYTES
+): ParsedEvidenceImage {
   const match = IMAGE_DATA_URL.exec(value.trim());
   if (!match) throw new Error("Format gambar bukti tidak valid.");
 
@@ -45,4 +53,44 @@ export function isStrictEvidenceImageDataUrl(value: string | null | undefined): 
   } catch {
     return false;
   }
+}
+
+/**
+ * Ambil daftar foto dari body API.
+ * Mendukung `evidenceImages: string[]` (baru) dan `evidenceImageData: string` (lama).
+ */
+export function normalizeEvidenceImagesFromBody(body: {
+  evidenceImages?: unknown;
+  evidenceImageData?: unknown;
+}): string[] {
+  const out: string[] = [];
+  if (Array.isArray(body.evidenceImages)) {
+    for (const item of body.evidenceImages) {
+      if (typeof item === "string" && item.trim()) out.push(item.trim());
+    }
+  } else if (typeof body.evidenceImageData === "string" && body.evidenceImageData.trim()) {
+    out.push(body.evidenceImageData.trim());
+  }
+  return out.slice(0, MAX_EVIDENCE_IMAGES);
+}
+
+export function validateEvidenceImageList(
+  images: string[]
+): { ok: true; images: string[] } | { ok: false; error: string } {
+  if (images.length > MAX_EVIDENCE_IMAGES) {
+    return { ok: false, error: `Maksimal ${MAX_EVIDENCE_IMAGES} foto bukti per catatan.` };
+  }
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    if (img.length > MAX_EVIDENCE_CHARS_PER_IMAGE) {
+      return {
+        ok: false,
+        error: `Foto bukti ke-${i + 1} terlalu besar. Kompres otomatis biasanya di bawah ~800 KB.`,
+      };
+    }
+    if (!isStrictEvidenceImageDataUrl(img)) {
+      return { ok: false, error: `Format foto bukti ke-${i + 1} tidak valid. Gunakan JPEG atau PNG.` };
+    }
+  }
+  return { ok: true, images };
 }

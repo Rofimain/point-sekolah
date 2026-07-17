@@ -6,6 +6,8 @@ import { isStaffRole } from "@/lib/staff-roles";
 import { validateHeavyViolationEvidence } from "@/lib/heavy-violation";
 import { sendParentViolationTelegram } from "@/lib/telegram-notify";
 import { parseOptionalIncidentDate } from "@/lib/incident-date";
+import { normalizeEvidenceImagesFromBody } from "@/lib/evidence-data-url";
+import { replaceRecordEvidenceImages } from "@/lib/record-evidence-images";
 
 const studentRecordSelect = {
   id: true,
@@ -26,7 +28,8 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { violationTypeId, session: sessionSlot, notes, studentId, evidenceImageData, studentSignatureData, date: dateInput } = body;
+  const { violationTypeId, session: sessionSlot, notes, studentId, studentSignatureData, date: dateInput } = body;
+  const evidenceImages = normalizeEvidenceImagesFromBody(body);
 
   let targetStudentId = session.user.id;
   if (session.user.role !== "STUDENT") {
@@ -47,16 +50,13 @@ export async function POST(req: NextRequest) {
   if (!vt) return NextResponse.json({ error: "Jenis pelanggaran tidak ditemukan" }, { status: 404 });
 
   const resolvedPoints = vt.points;
-  const evidence = typeof evidenceImageData === "string" ? evidenceImageData : null;
   const signature = typeof studentSignatureData === "string" ? studentSignatureData : null;
 
-  const check = validateHeavyViolationEvidence(resolvedPoints, evidence, signature);
+  const check = validateHeavyViolationEvidence(resolvedPoints, evidenceImages, signature);
   if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
 
   const incident = parseOptionalIncidentDate(dateInput);
   if (!incident.ok) return NextResponse.json({ error: incident.error }, { status: 400 });
-
-  const evidenceStored = evidence && evidence.trim() ? evidence.trim() : null;
 
   const record = await prisma.violationRecord.create({
     data: {
@@ -68,8 +68,8 @@ export async function POST(req: NextRequest) {
       date: incident.date,
       submittedByStudent: session.user.role === "STUDENT",
       createdByName: session.user.name ?? undefined,
-      evidenceImageData: evidenceStored,
-      evidenceImagePresent: Boolean(evidenceStored),
+      evidenceImageData: evidenceImages[0] ?? null,
+      evidenceImagePresent: evidenceImages.length > 0,
       studentSignatureData: signature && signature.trim() ? signature.trim() : null,
     },
     include: {
@@ -77,6 +77,10 @@ export async function POST(req: NextRequest) {
       violationType: true,
     },
   });
+
+  if (evidenceImages.length > 0) {
+    await replaceRecordEvidenceImages(record.id, evidenceImages);
+  }
 
   const staffName = session.user.role === "STUDENT" ? null : session.user.name ?? null;
   const payload = {
