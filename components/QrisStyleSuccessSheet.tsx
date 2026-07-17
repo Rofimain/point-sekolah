@@ -48,20 +48,20 @@ export function QrisStyleSuccessSheet({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex max-sm:items-end sm:items-center sm:justify-center sm:p-4"
+      className="fixed inset-0 z-[200] flex items-end justify-center overflow-y-auto overscroll-contain p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="qris-success-title"
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/55 backdrop-blur-[3px] motion-safe:transition-opacity"
+        className="fixed inset-0 bg-black/55 backdrop-blur-[3px] motion-safe:transition-opacity"
         onClick={onClose}
         aria-label="Tutup"
       />
 
       <div
-        className="relative z-10 w-full max-sm:max-h-[88vh] max-sm:overflow-y-auto sm:max-w-[360px] rounded-t-[1.35rem] border border-neutral-200/80 bg-white shadow-[0_-8px_40px_rgba(0,0,0,0.18)] sm:rounded-2xl sm:shadow-2xl max-sm:animate-qris-sheet sm:animate-qris-modal"
+        className="relative z-10 my-auto w-full max-h-[min(90dvh,100%)] overflow-y-auto overscroll-contain sm:max-w-[360px] rounded-t-[1.35rem] border border-neutral-200/80 bg-white shadow-[0_-8px_40px_rgba(0,0,0,0.18)] sm:rounded-2xl sm:shadow-2xl max-sm:animate-qris-sheet sm:animate-qris-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 pt-9 pb-2 text-center">

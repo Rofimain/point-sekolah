@@ -1,118 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { QrisStyleSuccessSheet } from "@/components/QrisStyleSuccessSheet";
-import {
-  loadStaffSubmissionReadIds,
-  persistStaffSubmissionReadIds,
-  pruneStaffSubmissionReadIds,
-} from "@/lib/staff-submission-reads";
+import { useStaffSubmissionNotifications } from "@/lib/use-staff-submission-notifications";
+import type { StudentSubmissionNotification } from "@/lib/staff-submission-notifications";
 import { formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
 
-const POLL_MS = 5000;
-const POLL_HIDDEN_MS = 45000;
+export type { StudentSubmissionNotification };
 
-export type StudentSubmissionNotification = {
-  id: string;
-  studentName: string;
-  classLabel: string | null;
-  violationName: string;
-  points: number;
-  incidentDate: string;
-  createdAt: string;
-};
-
-type ApiResponse = {
-  revision: string;
-  items: StudentSubmissionNotification[];
-};
+function sheetDetails(it: StudentSubmissionNotification) {
+  return [
+    { label: "Siswa", value: it.studentName },
+    ...(it.classLabel ? [{ label: "Kelas", value: it.classLabel }] : []),
+    { label: "Pelanggaran", value: it.violationName },
+    { label: "Poin", value: String(it.points) },
+    { label: "Tanggal kejadian", value: formatIncidentDateOnly(it.incidentDate) },
+    { label: "Waktu input", value: formatInputDateTime(it.createdAt) },
+  ];
+}
 
 export function StaffSubmissionBell() {
   const router = useRouter();
   const panelRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [readSet, setReadSet] = useState<Set<string>>(() => new Set());
-  const [readReady, setReadReady] = useState(false);
-  const [items, setItems] = useState<StudentSubmissionNotification[]>([]);
   const [sheetItem, setSheetItem] = useState<StudentSubmissionNotification | null>(null);
-
-  useEffect(() => {
-    setReadSet(loadStaffSubmissionReadIds());
-    setReadReady(true);
-  }, []);
-
-  const markRead = useCallback((id: string) => {
-    setReadSet((prev) => {
-      if (prev.has(id)) return prev;
-      const next = new Set(prev);
-      next.add(id);
-      persistStaffSubmissionReadIds(next);
-      return next;
-    });
-  }, []);
-
-  const itemsKey = useMemo(() => items.map((i) => i.id).join(","), [items]);
-  useEffect(() => {
-    if (!itemsKey) return;
-    const validIdSet = new Set(itemsKey.split(",").filter(Boolean));
-    const pruned = pruneStaffSubmissionReadIds(validIdSet);
-    setReadSet(pruned);
-  }, [itemsKey]);
-
-  const unreadCount = useMemo(
-    () => (readReady ? items.filter((i) => !readSet.has(i.id)).length : 0),
-    [items, readSet, readReady]
-  );
-
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function poll() {
-      try {
-        const res = await fetch("/api/staff/student-submissions-notifications", {
-          cache: "no-store",
-          credentials: "same-origin",
-        });
-        if (!res.ok || cancelled) return;
-        const data = (await res.json()) as ApiResponse;
-        setItems(data.items);
-      } catch {
-        /* abaikan error jaringan sesekali */
-      }
-    }
-
-    function clearTimer() {
-      if (pollTimerRef.current) {
-        clearInterval(pollTimerRef.current);
-        pollTimerRef.current = null;
-      }
-    }
-
-    function armTimer() {
-      clearTimer();
-      const ms = typeof document !== "undefined" && document.hidden ? POLL_HIDDEN_MS : POLL_MS;
-      pollTimerRef.current = setInterval(poll, ms);
-    }
-
-    poll();
-    armTimer();
-
-    function onVisibility() {
-      if (!document.hidden) poll();
-      armTimer();
-    }
-
-    document.addEventListener("visibilitychange", onVisibility);
-
-    return () => {
-      cancelled = true;
-      clearTimer();
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, []);
+  const { items, readSet, readReady, unreadCount, markRead } = useStaffSubmissionNotifications();
 
   useEffect(() => {
     if (!open) return;
@@ -128,17 +42,6 @@ export function StaffSubmissionBell() {
     markRead(it.id);
     setSheetItem(it);
     setOpen(false);
-  }
-
-  function sheetDetails(it: StudentSubmissionNotification) {
-    return [
-      { label: "Siswa", value: it.studentName },
-      ...(it.classLabel ? [{ label: "Kelas", value: it.classLabel }] : []),
-      { label: "Pelanggaran", value: it.violationName },
-      { label: "Poin", value: String(it.points) },
-      { label: "Tanggal kejadian", value: formatIncidentDateOnly(it.incidentDate) },
-      { label: "Waktu input", value: formatInputDateTime(it.createdAt) },
-    ];
   }
 
   return (
@@ -172,15 +75,24 @@ export function StaffSubmissionBell() {
             aria-label="Daftar laporan dari siswa"
           >
             <div
-              className="border-b px-3 py-2.5 text-xs font-semibold uppercase tracking-wide"
-              style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+              className="flex items-center justify-between gap-2 border-b px-3 py-2.5"
+              style={{ borderColor: "var(--border)" }}
             >
-              Laporan dari siswa
+              <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                Laporan hari ini
+              </span>
+              <Link
+                href="/notifications"
+                className="text-[11px] font-semibold text-blue-600 hover:underline"
+                onClick={() => setOpen(false)}
+              >
+                Buka halaman
+              </Link>
             </div>
-            <ul className="max-h-[min(64vh,22rem)] overflow-y-auto overscroll-contain p-1.5">
+            <ul className="max-h-[min(56vh,20rem)] overflow-y-auto overscroll-contain p-1.5">
               {items.length === 0 ? (
                 <li className="px-2 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                  Belum ada laporan dari portal siswa.
+                  Belum ada laporan dari portal siswa hari ini.
                 </li>
               ) : (
                 items.map((it) => {

@@ -3,10 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isStaffRole } from "@/lib/staff-roles";
+import { startOfSchoolDay } from "@/lib/staff-submission-notifications";
 
 export const dynamic = "force-dynamic";
 
-const LIMIT = 40;
+const LIMIT = 200;
 
 function classLabel(c: { grade: string; name: string; major: string } | null): string | null {
   if (!c) return null;
@@ -15,7 +16,8 @@ function classLabel(c: { grade: string; name: string; major: string } | null): s
 }
 
 /**
- * Daftar laporan dari siswa untuk lonceng notifikasi + polling revisi.
+ * Daftar laporan dari siswa untuk lonceng + halaman monitoring.
+ * Hanya hari ini (zona sekolah); otomatis kosong setelah berganti hari.
  */
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -23,8 +25,13 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const since = startOfSchoolDay();
+
   const rows = await prisma.violationRecord.findMany({
-    where: { submittedByStudent: true },
+    where: {
+      submittedByStudent: true,
+      createdAt: { gte: since },
+    },
     orderBy: { createdAt: "desc" },
     take: LIMIT,
     select: {
@@ -56,5 +63,5 @@ export async function GET() {
   const revision =
     latest != null ? `${latest.id}:${latest.createdAt.toISOString()}:${rows.length}` : "none";
 
-  return NextResponse.json({ revision, items });
+  return NextResponse.json({ revision, items, since: since.toISOString() });
 }

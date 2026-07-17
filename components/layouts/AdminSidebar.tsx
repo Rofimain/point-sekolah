@@ -220,6 +220,18 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             label="Dashboard"
           />
 
+          <SimpleNavLink
+            href="/notifications"
+            active={pathname.startsWith("/notifications")}
+            icon={
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
+            label="Notifikasi"
+          />
+
           <SplitNavRow
             href="/records"
             active={pathname.startsWith("/records")}
