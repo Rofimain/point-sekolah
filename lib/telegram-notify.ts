@@ -1,4 +1,5 @@
 import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
+import { sanitizeTelegramBotToken } from "@/lib/telegram-env";
 
 const TG_API = "https://api.telegram.org";
 
@@ -64,7 +65,7 @@ export async function sendParentViolationTelegram(
   chatIdOrUsername: string,
   payload: ParentViolationNotifyPayload
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const token = sanitizeTelegramBotToken(process.env.TELEGRAM_BOT_TOKEN);
   if (!token) {
     return { ok: false, error: "TELEGRAM_BOT_TOKEN tidak diatur" };
   }

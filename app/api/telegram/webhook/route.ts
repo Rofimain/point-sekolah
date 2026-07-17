@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sanitizeTelegramBotToken, sanitizeTelegramWebhookSecret } from "@/lib/telegram-env";
 
 const TG = "https://api.telegram.org";
 
@@ -19,7 +20,7 @@ export async function GET() {
  * Set webhook + TELEGRAM_WEBHOOK_SECRET (lihat POST /api/telegram/set-webhook).
  */
 export async function POST(req: NextRequest) {
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+  const secret = sanitizeTelegramWebhookSecret(process.env.TELEGRAM_WEBHOOK_SECRET);
   if (secret) {
     const hdr = req.headers.get("x-telegram-bot-api-secret-token");
     if (hdr !== secret) {
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
   }
   const chatIdStr = String(chatId);
 
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const token = sanitizeTelegramBotToken(process.env.TELEGRAM_BOT_TOKEN);
   if (!token) {
     console.warn("[telegram webhook] TELEGRAM_BOT_TOKEN kosong");
     return NextResponse.json({ ok: true });
