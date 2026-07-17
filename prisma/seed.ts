@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { QUIET_MONTH_REASON } from "../lib/student-effective-points";
 import { applyQuietMonthReductionForStudent } from "../lib/quiet-month-reduction";
 import { createPrismaClient } from "../lib/prisma";
-import { DEFAULT_PRINT_TEMPLATES } from "../lib/print-templates";
+import { DEFAULT_PRINT_TEMPLATES, PRINT_TEMPLATES_LAYOUT_VERSION } from "../lib/print-templates";
 
 const prisma = createPrismaClient();
 
@@ -277,7 +277,11 @@ async function main() {
   for (const t of DEFAULT_PRINT_TEMPLATES) {
     await prisma.printTemplate.upsert({
       where: { slug: t.slug },
-      update: {},
+      update: {
+        title: t.title,
+        body: t.body,
+        sortOrder: t.sortOrder,
+      },
       create: {
         slug: t.slug,
         title: t.title,
@@ -286,6 +290,11 @@ async function main() {
       },
     });
   }
+  await prisma.appSetting.upsert({
+    where: { key: "print_templates_layout_v" },
+    update: { value: PRINT_TEMPLATES_LAYOUT_VERSION },
+    create: { key: "print_templates_layout_v", value: PRINT_TEMPLATES_LAYOUT_VERSION },
+  });
 
   await prisma.user.upsert({
     where: { email: "piket@sman1contoh.sch.id" },

@@ -5,6 +5,9 @@ export type PrintTemplateSeed = {
   sortOrder: number;
 };
 
+/** Naikkan versi ini bila layout default template diubah (satu kali sync ke DB). */
+export const PRINT_TEMPLATES_LAYOUT_VERSION = "2";
+
 export const PRINT_PLACEHOLDERS: { key: string; label: string }[] = [
   { key: "nama", label: "Nama siswa" },
   { key: "kelas", label: "Kelas" },
@@ -23,26 +26,6 @@ export const PRINT_PLACEHOLDERS: { key: string; label: string }[] = [
   { key: "kepala_sekolah", label: "Nama kepala sekolah" },
   { key: "sekolah", label: "Nama sekolah" },
 ];
-
-export const PREVIEW_SAMPLE_VARS: Record<string, string> = {
-  nama: "Fakhirah Shakila Rizqi",
-  kelas: "X.1",
-  nis: "1234567890",
-  poin: "55",
-  poin_terbilang: "Lima puluh lima",
-  tanggal: "17 Juli 2026",
-  nomor_surat: "30/SP.1/Tanse/VII/1447.2026",
-  daftar_pelanggaran:
-    "Pasal 52 yang berbunyi : Terlambat masuk sekolah sampai jam 07.00 WIB.",
-  hari_skorsing: "2",
-  tanggal_skorsing: "18 Juli 2026",
-  tanggal_kembali: "20 Juli 2026",
-  pic: "Koordinator Ketahanan Sekolah",
-  materi: "Pembinaan akumulasi poin pelanggaran tata tertib",
-  alamat: "Jl. Contoh No. 1, Jakarta",
-  kepala_sekolah: "H. Bahron Fathin, M.A",
-  sekolah: "SMA Islam Al Azhar 1 Jakarta",
-};
 
 export function slugifyPrintTemplate(input: string): string {
   const base = input
@@ -75,6 +58,42 @@ export function sortPrintTemplates<T extends { sortOrder: number; title: string 
   return [...rows].sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title, "id"));
 }
 
+/** Blok tanda tangan kanan (surat resmi satu penandatangan). */
+function ttdRight(role: string, name: string): string {
+  return [
+    `${"".padStart(42)}${role}`,
+    "",
+    "",
+    "",
+    `${"".padStart(42)}${name}`,
+  ].join("\n");
+}
+
+/** Dua kolom kiri–kanan. */
+function ttdTwoCol(leftRole: string, rightRole: string, leftName = "_______________", rightName = "_______________"): string {
+  const L = 34;
+  const pad = (s: string) => s.padEnd(L, " ").slice(0, L);
+  return [
+    `${pad(leftRole)}${rightRole}`,
+    "",
+    "",
+    "",
+    `${pad(leftName)}${rightName}`,
+  ].join("\n");
+}
+
+/** Tiga kolom. */
+function ttdThreeCol(a: string, b: string, c: string, aLine = "_______________", bLine = "_______________________", cLine = "_______________________"): string {
+  const L = 24;
+  const pad = (s: string) => s.padEnd(L, " ").slice(0, L);
+  return [
+    `${pad(a)}${pad(b)}${c}`,
+    "",
+    "",
+    `${pad(aLine)}${pad(bLine)}${cLine}`,
+  ].join("\n");
+}
+
 export const DEFAULT_PRINT_TEMPLATES: PrintTemplateSeed[] = [
   {
     slug: "sp1",
@@ -104,11 +123,7 @@ Demikian Surat Peringatan 1 (SP 1) ini dibuat agar menjadi perhatian dan perbaik
 
 Wassalamualaikum Wr.Wb.
 
-Kepala {{sekolah}}
-
-
-
-{{kepala_sekolah}}`,
+${ttdRight("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
   },
   {
     slug: "sp2",
@@ -138,11 +153,7 @@ Demikian surat Peringatan Ke-2 (SP 2) ini dibuat agar menjadi perhatian dan perb
 
 Wassalamualaikum wr.wb.
 
-Kepala {{sekolah}}
-
-
-
-{{kepala_sekolah}}`,
+${ttdRight("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
   },
   {
     slug: "sp3",
@@ -175,11 +186,7 @@ Demikian Surat Peringatan ke-3 (SP 3) ini dibuat agar diperhatikan dan wajib dip
 
 Wassalamu'alaikum Warrohmatullohi Wabarokaatuh.
 
-Kepala {{sekolah}}
-
-
-
-{{kepala_sekolah}}`,
+${ttdRight("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
   },
   {
     slug: "info-poin",
@@ -209,12 +216,12 @@ Demikian surat informasi dari kami, atas perhatian Bapak/Ibu kami ucapkan terima
 Billahit Taufiq Walhidayah
 Wassalamu 'alaikum Wr. Wb.
 
-Kepala {{sekolah}}                    Mengetahui
-                                          Orangtua Murid
+Kepala {{sekolah}}                     Mengetahui
+                                       Orangtua Murid
 
 
 
-{{kepala_sekolah}}                         ........................................
+{{kepala_sekolah}}                     ................................
 
 Catatan : Surat ini dikembalikan ke sekolah setelah ditandatangani oleh orangtua murid paling lambat 2 hari sejak tanggal pemberian surat.`,
   },
@@ -249,11 +256,7 @@ Demikian surat ini kami sampaikan, atas perhatian dan kesediaan Bapak/Ibu untuk 
 Billahit Taufiq Walhidayah
 Wassalamu 'alaikum Wr. Wb.
 
-Kepala {{sekolah}}
-
-
-
-{{kepala_sekolah}}
+${ttdRight("Kepala {{sekolah}}", "{{kepala_sekolah}}")}
 
 Catatan :
 Harap hadir sesuai dengan waktu yang telah ditentukan.`,
@@ -284,18 +287,14 @@ Demikianlah surat perjanjian ini saya buat dengan penuh kesadaran dan kesungguha
 
 {{tanggal}}
 
-Menyaksikan,
-Wali kelas              Orangtua/wali murid        saya yang berjanji
+          Menyaksikan,
+${ttdThreeCol("Wali kelas", "Orangtua/wali murid", "saya yang berjanji")}
 
 Materai Rp. 10.000,-
 
-________________       _______________________             _______________________
+                    Mengetahui,
 
-Mengetahui,
-
-Kepala {{sekolah}}          Korbid Tanse           Bimb. Konseling
-
-________________       _______________________             _______________________`,
+${ttdThreeCol("Kepala {{sekolah}}", "Korbid Tanse", "Bimb. Konseling")}`,
   },
   {
     slug: "skorsing",
@@ -328,15 +327,13 @@ Demikianlah surat pemberitahuan ini. Atas perhatian bapak/ibu kami ucapkan terim
 Billahit Taufiq Walhidayah
 Wassalamu'alaikum Wr.Wb
 
-Ketahanan Sekolah                    Wali Kelas
+${ttdTwoCol("Ketahanan Sekolah", "Wali Kelas")}
+
+                                          Mengetahui
+                                          Kepala {{sekolah}}
 
 
-_______________                               __________________
 
-Mengetahui
-Kepala {{sekolah}}
-
-
-{{kepala_sekolah}}`,
+                                          {{kepala_sekolah}}`,
   },
 ];

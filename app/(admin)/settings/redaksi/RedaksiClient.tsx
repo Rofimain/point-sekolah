@@ -6,9 +6,7 @@ import { useRouter } from "next/navigation";
 import { PrintButton } from "@/components/PrintButton";
 import {
   PRINT_PLACEHOLDERS,
-  PREVIEW_SAMPLE_VARS,
   escapeHtml,
-  renderTemplate,
   sortPrintTemplates,
 } from "@/lib/print-templates";
 
@@ -44,8 +42,6 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
   const dirty = selected
     ? selected.title !== title || selected.slug !== slug || selected.body !== body
     : false;
-
-  const previewText = useMemo(() => renderTemplate(body, PREVIEW_SAMPLE_VARS), [body]);
 
   function selectTemplate(row: PrintTemplateRow) {
     if (dirty && !confirm("Ada perubahan yang belum disimpan. Pindah template?")) return;
@@ -158,14 +154,14 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
 
   function downloadBlank() {
     const safeTitle = escapeHtml(title || "template");
-    const safeBody = escapeHtml(previewText);
+    const safeBody = escapeHtml(body);
     const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="utf-8" />
 <title>${safeTitle}</title>
 <style>
-  body { font-family: Georgia, 'Times New Roman', serif; max-width: 720px; margin: 2rem auto; line-height: 1.55; white-space: pre-wrap; }
+  body { font-family: 'Courier New', Courier, monospace; max-width: 720px; margin: 2rem auto; line-height: 1.55; white-space: pre-wrap; }
 </style>
 </head>
 <body>${safeBody}</body>
@@ -412,9 +408,9 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
               >
                 <header className="mb-4 border-b border-neutral-300 pb-3 text-center no-print">
                   <h2 className="text-base font-bold">{title}</h2>
-                  <p className="text-xs text-neutral-500 mt-1">Pratinjau dengan data contoh</p>
+                  <p className="text-xs text-neutral-500 mt-1">Pratinjau dengan placeholder (tanpa data contoh)</p>
                 </header>
-                <pre className="whitespace-pre-wrap font-serif text-sm leading-relaxed">{previewText}</pre>
+                <pre className="whitespace-pre-wrap font-mono text-xs sm:text-sm leading-relaxed">{body}</pre>
               </article>
             </>
           )}
