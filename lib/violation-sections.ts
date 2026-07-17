@@ -1,11 +1,11 @@
-/** Bagian Pasal 15 — Pedoman Penilaian Sikap / Budi Pekerti */
+/** Bagian jenis pelanggaran: kelakuan, kerajinan, kerapihan. */
 export const VIOLATION_SECTIONS = ["KELAKUAN", "KERAJINAN", "KERAPIHAN"] as const;
 export type ViolationSection = (typeof VIOLATION_SECTIONS)[number];
 
 export const VIOLATION_SECTION_LABELS: Record<ViolationSection, string> = {
-  KELAKUAN: "I. Kelakuan",
-  KERAJINAN: "II. Kerajinan",
-  KERAPIHAN: "III. Kerapihan",
+  KELAKUAN: "Kelakuan",
+  KERAJINAN: "Kerajinan",
+  KERAPIHAN: "Kerapihan",
 };
 
 export function getViolationSectionLabel(section: string | null | undefined): string {

@@ -6,7 +6,7 @@ import {
   getViolationSectionLabel,
   sortViolationSections,
 } from "@/lib/violation-sections";
-import { splitViolationName } from "@/lib/violation-name";
+import { splitViolationName, violationNameSortOrder } from "@/lib/violation-name";
 
 export type PickerViolationType = {
   id: string;
@@ -66,6 +66,8 @@ export function ViolationTypePicker({
     return [...violationTypes].sort((a, b) => {
       const sec = sortViolationSections(a.section, b.section);
       if (sec !== 0) return sec;
+      const byCode = violationNameSortOrder(a.name) - violationNameSortOrder(b.name);
+      if (byCode !== 0) return byCode;
       return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.points - b.points || a.name.localeCompare(b.name);
     });
   }, [violationTypes]);

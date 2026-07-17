@@ -12,7 +12,7 @@ import {
   getViolationSectionLabel,
   sortViolationSections,
 } from "@/lib/violation-sections";
-import { splitViolationName } from "@/lib/violation-name";
+import { splitViolationName, violationNameSortOrder } from "@/lib/violation-name";
 import { ViolationTypePicker } from "@/components/ViolationTypePicker";
 import type { Session } from "next-auth";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
@@ -124,6 +124,8 @@ export default function StudentFormClient({
     return [...violationTypes].sort((a, b) => {
       const sec = sortViolationSections(a.section, b.section);
       if (sec !== 0) return sec;
+      const byCode = violationNameSortOrder(a.name || "") - violationNameSortOrder(b.name || "");
+      if (byCode !== 0) return byCode;
       return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.points - b.points;
     });
   }, [violationTypes]);

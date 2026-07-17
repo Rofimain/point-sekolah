@@ -1,10 +1,11 @@
 import { Category } from "../generated/prisma/client";
 import type { ViolationSection } from "../lib/violation-sections";
+import { violationNameSortOrder } from "../lib/violation-name";
 
 export type { ViolationSection };
 export { VIOLATION_SECTIONS, VIOLATION_SECTION_LABELS, getViolationSectionLabel } from "../lib/violation-sections";
 
-/** Kategori bobot dari skor Pasal 15 (selaras tahapan sanksi Pasal 13). */
+/** Kategori bobot dari skor pelanggaran. */
 function cat(points: number): Category {
   if (points >= 51) return Category.BERAT;
   if (points >= 16) return Category.SEDANG;
@@ -22,8 +23,7 @@ export type Pasal15ViolationSeed = {
 };
 
 /**
- * Pasal 15 — Buku Tata Tertib Murid SMA Islam Al Azhar 1 TA 2026/2027
- * Sumber: halaman ~21–34 (I. Kelakuan, II. Kerajinan, III. Kerapihan)
+ * Master jenis pelanggaran sekolah (Kelakuan, Kerajinan, Kerapihan).
  */
 export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
   // ─── I. KELAKUAN ─────────────────────────────────────────
@@ -59,7 +59,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
     name: "Mengaktifkan/menggunakan HP atau earphone milik teman saat KBM/kegiatan shalat",
     section: "KELAKUAN",
     points: 0,
-    description: "Barang milik pelanggar disita sesuai Pasal 16 ayat 3",
+    description: "Barang milik pelanggar disita sesuai ketentuan sekolah",
     sortOrder: 4,
   },
   {
@@ -90,7 +90,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
   {
     id: "vt-p15-008",
     code: "8",
-    name: "Merusak barang milik sekolah, guru, teman, atau karyawan di lingkungan kampus Al-Azhar Kebayoran Baru",
+    name: "Merusak barang milik sekolah, guru, teman, atau karyawan di lingkungan sekolah",
     section: "KELAKUAN",
     points: 25,
     description: "Berkewajiban mengganti",
@@ -123,7 +123,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
   {
     id: "vt-p15-012a",
     code: "12A",
-    name: "Membawa rokok/vape/liquid/korek api dan sejenisnya di lingkungan kampus Al-Azhar Kebayoran Baru",
+    name: "Membawa rokok/vape/liquid/korek api dan sejenisnya di lingkungan sekolah",
     section: "KELAKUAN",
     points: 20,
     description: "Barang disita, tidak dikembalikan",
@@ -132,7 +132,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
   {
     id: "vt-p15-012b",
     code: "12B",
-    name: "Merokok/menggunakan vape dan sejenisnya di lingkungan kampus Al-Azhar Kebayoran Baru",
+    name: "Merokok/menggunakan vape dan sejenisnya di lingkungan sekolah",
     section: "KELAKUAN",
     points: 30,
     description: "Barang disita; skorsing 1 hari; berakumulasi 3× perjanjian di atas materai Rp10.000",
@@ -141,7 +141,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
   {
     id: "vt-p15-013",
     code: "13",
-    name: "Membawa barang yang mengganggu KBM dan belum diatur dalam pasal lain",
+    name: "Membawa barang yang mengganggu KBM dan belum diatur dalam ketentuan lain",
     section: "KELAKUAN",
     points: 5,
     description: "Barang disita, tidak dikembalikan",
@@ -265,7 +265,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
     name: "Terlibat bullying verbal/fisik (individu/kelompok, langsung/virtual) di dalam maupun di luar sekolah",
     section: "KELAKUAN",
     points: 75,
-    description: "Berakumulasi 2× dikembalikan kepada orang tua (mempertimbangkan Pasal 76C & 80 UU No.35/2014)",
+    description: "Berakumulasi 2× dikembalikan kepada orang tua",
     sortOrder: 28,
   },
   {
@@ -316,7 +316,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
   {
     id: "vt-p15-031",
     code: "31",
-    name: "Menjadi provokator perkelahian sesama murid SMAI Al-Azhar 1",
+    name: "Menjadi provokator perkelahian sesama murid sekolah",
     section: "KELAKUAN",
     points: 51,
     description: "Berakumulasi 2× dikembalikan ke orang tua",
@@ -334,7 +334,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
   {
     id: "vt-p15-033",
     code: "33",
-    name: "Membiarkan terjadinya perkelahian sesama murid SMAI Al-Azhar 1",
+    name: "Membiarkan terjadinya perkelahian sesama murid sekolah",
     section: "KELAKUAN",
     points: 25,
     sortOrder: 36,
@@ -342,7 +342,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
   {
     id: "vt-p15-034a",
     code: "34A",
-    name: "Berkelahi, menyerang, atau mengeroyok sesama murid Al-Azhar",
+    name: "Berkelahi, menyerang, atau mengeroyok sesama murid sekolah",
     section: "KELAKUAN",
     points: 75,
     description: "Berakumulasi 2× dikembalikan ke orang tua",
@@ -351,7 +351,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
   {
     id: "vt-p15-034b",
     code: "34B",
-    name: "Berkelahi antar murid SMAI Al-Azhar 1 dengan melibatkan sekolah lain",
+    name: "Berkelahi antar murid sekolah dengan melibatkan sekolah lain",
     section: "KELAKUAN",
     points: 105,
     description: "Langsung dikembalikan ke orang tua murid",
@@ -506,7 +506,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
     name: "Terlibat membentuk organisasi terlarang di luar OSIS/geng, makrab, atau sejenisnya",
     section: "KELAKUAN",
     points: 50,
-    description: "Berakumulasi 2× perjanjian di atas materai Rp10.000 (mempertimbangkan Pasal 76C & 80 UU No.35/2014)",
+    description: "Berakumulasi 2× perjanjian di atas materai Rp10.000",
     sortOrder: 55,
   },
   {
@@ -923,14 +923,15 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
 );
 
 export function pasal15ToCreateInput(v: Pasal15ViolationSeed) {
+  const name = v.name;
   return {
     id: v.id,
-    name: v.name,
+    name,
     section: v.section,
     category: cat(v.points),
     points: v.points,
     description: v.description ?? null,
-    sortOrder: v.sortOrder,
+    sortOrder: violationNameSortOrder(name) || v.sortOrder,
     active: true,
   };
 }

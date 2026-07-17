@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AUTO_REMISI_PERCENT,
@@ -12,6 +12,7 @@ import {
   resolveManualRemisiPercent,
   type ManualRemisiType,
 } from "@/lib/remisi-rules";
+import { calendarTodayYmd } from "@/lib/incident-date";
 
 export type RemisiStudentRow = {
   id: string;
@@ -22,15 +23,29 @@ export type RemisiStudentRow = {
   effective: number;
 };
 
+type PreviewState = {
+  eligibleGross: number;
+  grossTotal: number;
+  effective: number;
+  percent: number | null;
+  pointsDelta: number | null;
+  effectiveAfter: number;
+};
+
 export default function RemisiClient({ students }: { students: RemisiStudentRow[] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [type, setType] = useState<ManualRemisiType>(MANUAL_REMISI_TYPE.JUARA_SEKOLAH);
-  const [customPercent, setCustomPercent] = useState("10");
+  const [customPercent, setCustomPercent] = useState("15");
+  const [customLabel, setCustomLabel] = useState("");
   const [multiplier, setMultiplier] = useState("1");
+  const [achievementYmd, setAchievementYmd] = useState(() => calendarTodayYmd());
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [preview, setPreview] = useState<PreviewState | null>(null);
+  const [previewError, setPreviewError] = useState("");
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   const filtered = useMemo(() => {
@@ -48,29 +63,103 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
 
   const selected = students.find((s) => s.id === selectedId) ?? null;
   const def = getManualRemisiDef(type);
+  const needsPercent = def?.fixedPercent == null;
+  const needsLabel = Boolean(def?.requireCustomLabel);
 
-  const preview = useMemo(() => {
-    if (!selected || !def) return null;
+  const localPercent = useMemo(() => {
     const resolved = resolveManualRemisiPercent(type, {
       customPercent: Number(customPercent),
       multiplier: Number(multiplier),
     });
-    if (!resolved.ok) return { error: resolved.error };
-    const deduct = Math.round(selected.gross * (resolved.percent / 100));
-    const pointsDelta = -Math.min(deduct, selected.effective);
-    return {
-      percent: resolved.percent,
-      pointsDelta,
-      effectiveAfter: Math.max(0, selected.effective + pointsDelta),
+    return resolved.ok ? resolved.percent : null;
+  }, [type, customPercent, multiplier]);
+
+  useEffect(() => {
+    if (!selectedId || !achievementYmd) {
+      setPreview(null);
+      setPreviewError("");
+      return;
+    }
+
+    const ctrl = new AbortController();
+    const t = window.setTimeout(async () => {
+      setPreviewLoading(true);
+      setPreviewError("");
+      try {
+        const sp = new URLSearchParams({
+          studentId: selectedId,
+          achievementYmd,
+          type,
+        });
+        if (needsPercent) sp.set("customPercent", customPercent);
+        if (def?.allowMultiplier) sp.set("multiplier", multiplier);
+        const res = await fetch(`/api/admin/manual-remisi?${sp}`, { signal: ctrl.signal });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.error || "Gagal memuat pratinjau");
+        setPreview({
+          eligibleGross: d.eligibleGross ?? 0,
+          grossTotal: d.grossTotal ?? 0,
+          effective: d.effective ?? 0,
+          percent: d.percent ?? localPercent,
+          pointsDelta: d.pointsDelta,
+          effectiveAfter: d.effectiveAfter ?? d.effective ?? 0,
+        });
+      } catch (err: unknown) {
+        if (ctrl.signal.aborted) return;
+        setPreview(null);
+        setPreviewError(err instanceof Error ? err.message : "Gagal pratinjau");
+      } finally {
+        if (!ctrl.signal.aborted) setPreviewLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      ctrl.abort();
+      window.clearTimeout(t);
     };
-  }, [selected, def, type, customPercent, multiplier]);
+  }, [
+    selectedId,
+    achievementYmd,
+    type,
+    customPercent,
+    multiplier,
+    needsPercent,
+    def?.allowMultiplier,
+    localPercent,
+  ]);
 
   async function applyManual() {
     if (!selectedId) {
       setMsg({ type: "err", text: "Pilih siswa terlebih dahulu." });
       return;
     }
-    if (!confirm("Terapkan remisi/reward ini ke siswa yang dipilih?")) return;
+    if (!achievementYmd) {
+      setMsg({ type: "err", text: "Tanggal prestasi wajib diisi." });
+      return;
+    }
+    if (needsLabel && customLabel.trim().length < 2) {
+      setMsg({ type: "err", text: "Nama jenis remisi/reward wajib diisi." });
+      return;
+    }
+    if (needsPercent) {
+      const n = Number(customPercent);
+      if (!Number.isFinite(n) || n <= 0 || n > 100) {
+        setMsg({ type: "err", text: "Persentase wajib 1–100." });
+        return;
+      }
+    }
+
+    const confirmBits = [
+      `Tanggal prestasi: ${achievementYmd}`,
+      preview ? `Basis poin (≤ tanggal): ${preview.eligibleGross}` : null,
+      localPercent != null ? `Persen: ${localPercent}%` : null,
+      preview?.pointsDelta != null ? `Potongan ≈ ${Math.abs(preview.pointsDelta)} poin` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    if (!confirm(`Terapkan remisi/reward ke siswa yang dipilih?\n\n${confirmBits}`)) return;
+
     setSaving(true);
     setMsg(null);
     try {
@@ -80,8 +169,10 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
         body: JSON.stringify({
           studentId: selectedId,
           type,
-          customPercent: def?.fixedPercent == null ? Number(customPercent) : undefined,
+          achievementYmd,
+          customPercent: needsPercent ? Number(customPercent) : undefined,
           multiplier: def?.allowMultiplier ? Number(multiplier) : undefined,
+          customLabel: needsLabel ? customLabel.trim() : undefined,
           note: note.trim() || undefined,
         }),
       });
@@ -89,7 +180,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
       if (!res.ok) throw new Error(d.error || "Gagal menerapkan");
       setMsg({
         type: "ok",
-        text: `Berhasil: ${d.studentName} −${Math.abs(d.pointsDelta)} poin (${d.percent}%). Poin efektif sekarang ${d.effectiveAfter}.`,
+        text: `Berhasil: ${d.studentName} −${Math.abs(d.pointsDelta)} poin (${d.percent}%) dari basis ${d.eligibleGross} poin (≤ ${d.achievementYmd}). Poin efektif sekarang ${d.effectiveAfter}.`,
       });
       setNote("");
       router.refresh();
@@ -134,11 +225,12 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
       >
         <div>
           <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
-            2–5. Remisi &amp; reward manual
+            2. Remisi &amp; reward manual
           </h2>
           <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Admin/Super Admin memberikan kepada siswa tertentu: juara kejuaraan, prestasi rekomendasi, hafalan, atau
-            khotib Jumat. Dihitung dari total skor pelanggaran (bruto).
+            Remisi dihitung dari poin pelanggaran dengan tanggal kejadian{" "}
+            <strong>pada/sebelum tanggal prestasi</strong>. Poin mulai hari berikutnya sampai hari ini tidak ikut
+            dihitung.
           </p>
         </div>
 
@@ -200,7 +292,17 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
           </label>
           <select
             value={type}
-            onChange={(e) => setType(e.target.value as ManualRemisiType)}
+            onChange={(e) => {
+              const next = e.target.value as ManualRemisiType;
+              setType(next);
+              const nextDef = getManualRemisiDef(next);
+              if (nextDef?.fixedPercent != null) {
+                setCustomPercent(String(nextDef.fixedPercent));
+              } else if (next === MANUAL_REMISI_TYPE.CUSTOM) {
+                setCustomPercent("10");
+              }
+              setMsg(null);
+            }}
             className="w-full rounded-lg border px-3 py-2 text-sm"
             style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
           >
@@ -217,15 +319,32 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
           )}
         </div>
 
-        {def?.fixedPercent == null && (
+        {needsLabel && (
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-              Persentase rekomendasi (%)
+              Nama jenis (manual) *
+            </label>
+            <input
+              value={customLabel}
+              onChange={(e) => setCustomLabel(e.target.value)}
+              placeholder="Mis. Juara lomba robotik / Remisi khusus OSIS"
+              className="w-full rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+            />
+          </div>
+        )}
+
+        {needsPercent && (
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+              Persentase pengurangan (%) *
             </label>
             <input
               value={customPercent}
               onChange={(e) => setCustomPercent(e.target.value)}
               inputMode="numeric"
+              min={1}
+              max={100}
               className="w-full max-w-[8rem] rounded-lg border px-3 py-2 text-sm"
               style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
             />
@@ -249,6 +368,25 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
 
         <div>
           <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            Tanggal prestasi *
+          </label>
+          <input
+            type="date"
+            value={achievementYmd}
+            onChange={(e) => setAchievementYmd(e.target.value)}
+            min="2015-01-01"
+            max={calendarTodayYmd()}
+            className="w-full max-w-xs rounded-lg border px-3 py-2 text-sm"
+            style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+          />
+          <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            Contoh: prestasi 10 Jul 2026 → yang diremisi hanya poin kejadian ≤ 10 Jul 2026. Poin 11 Jul 2026 s.d. hari
+            ini tidak termasuk.
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
             Catatan (opsional)
           </label>
           <input
@@ -260,21 +398,39 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
           />
         </div>
 
-        {preview && "error" in preview && (
-          <p className="text-xs" style={{ color: "var(--danger)" }}>
-            {preview.error}
+        {previewLoading && (
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            Menghitung pratinjau…
           </p>
         )}
-        {preview && !("error" in preview) && (
-          <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-            Pratinjau: {preview.percent}% → potong {Math.abs(preview.pointsDelta)} poin · efektif setelah ≈{" "}
-            {preview.effectiveAfter}
+        {previewError && (
+          <p className="text-xs" style={{ color: "var(--danger)" }}>
+            {previewError}
           </p>
+        )}
+        {preview && !previewLoading && (
+          <div className="rounded-lg border px-3 py-2.5 text-xs space-y-1" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>
+            <p>
+              Basis remisi (poin ≤ {achievementYmd}): <strong style={{ color: "var(--text-primary)" }}>{preview.eligibleGross}</strong>
+              {preview.grossTotal !== preview.eligibleGross ? (
+                <span style={{ color: "var(--text-muted)" }}>
+                  {" "}
+                  · bruto total {preview.grossTotal} (selisih setelah tanggal tidak dihitung)
+                </span>
+              ) : null}
+            </p>
+            {preview.percent != null && preview.pointsDelta != null ? (
+              <p>
+                Pratinjau: {preview.percent}% → potong {Math.abs(preview.pointsDelta)} poin · efektif setelah ≈{" "}
+                {preview.effectiveAfter}
+              </p>
+            ) : null}
+          </div>
         )}
 
         <button
           type="button"
-          disabled={saving || !selectedId}
+          disabled={saving || !selectedId || !achievementYmd}
           onClick={() => void applyManual()}
           className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
           style={{ background: "var(--accent)" }}

@@ -4,6 +4,7 @@ import {
   MANUAL_REMISI_TYPE,
   resolveManualRemisiPercent,
   buildManualRemisiReason,
+  parseManualRemisiReason,
 } from "../lib/remisi-rules";
 import { formatPointAdjustmentReason, QUIET_MONTH_REASON } from "../lib/point-adjustment-reason";
 
@@ -27,10 +28,38 @@ test("resolveManualRemisiPercent prestasi custom", () => {
   if (ok.ok) assert.equal(ok.percent, 20);
 });
 
+test("resolveManualRemisiPercent CUSTOM requires percent", () => {
+  const bad = resolveManualRemisiPercent(MANUAL_REMISI_TYPE.CUSTOM);
+  assert.equal(bad.ok, false);
+  const ok = resolveManualRemisiPercent(MANUAL_REMISI_TYPE.CUSTOM, { customPercent: 12 });
+  assert.equal(ok.ok, true);
+  if (ok.ok) assert.equal(ok.percent, 12);
+});
+
+test("build/parse manual remisi reason with asOf and custom label", () => {
+  const reason = buildManualRemisiReason(MANUAL_REMISI_TYPE.CUSTOM, {
+    customLabel: "Juara robotik",
+    achievementYmd: "2026-07-10",
+    note: "Juara 1",
+  });
+  const p = parseManualRemisiReason(reason);
+  assert.equal(p.code, "MANUAL_CUSTOM");
+  assert.equal(p.customLabel, "Juara robotik");
+  assert.equal(p.achievementYmd, "2026-07-10");
+  assert.equal(p.note, "Juara 1");
+  assert.match(formatPointAdjustmentReason(reason), /Juara robotik/);
+  assert.match(formatPointAdjustmentReason(reason), /2026-07-10/);
+});
+
 test("formatPointAdjustmentReason labels", () => {
   assert.match(formatPointAdjustmentReason(QUIET_MONTH_REASON), /otomatis/i);
   assert.match(
-    formatPointAdjustmentReason(buildManualRemisiReason(MANUAL_REMISI_TYPE.KHOTIB_JUMAT, "Jumat 17 Jul")),
+    formatPointAdjustmentReason(
+      buildManualRemisiReason(MANUAL_REMISI_TYPE.KHOTIB_JUMAT, {
+        achievementYmd: "2026-07-17",
+        note: "Jumat 17 Jul",
+      })
+    ),
     /khotib/i
   );
 });

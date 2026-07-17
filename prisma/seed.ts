@@ -28,7 +28,7 @@ async function main() {
     prisma.class.upsert({ where: { id: "cls-xii-ips1" }, update: {}, create: { id: "cls-xii-ips1", name: "XII IPS 1", grade: "XII", major: "IPS", year: "2025/2026" } }),
   ]);
 
-  // Pasal 15 — pelanggaran per bagian (Kelakuan / Kerajinan / Kerapihan)
+  // Jenis pelanggaran per bagian (Kelakuan / Kerajinan / Kerapihan)
   for (const v of PASAL_15_VIOLATIONS) {
     const data = pasal15ToCreateInput(v);
     await prisma.violationType.upsert({
@@ -46,9 +46,25 @@ async function main() {
     });
   }
 
-  // Nonaktifkan contoh lama (diganti Pasal 15)
+  // Hapus contoh lama jika tidak dipakai riwayat
   for (const id of ["vt-001", "vt-002", "vt-003", "vt-004", "vt-005", "vt-006", "vt-007"]) {
-    await prisma.violationType.updateMany({ where: { id }, data: { active: false } });
+    const usage = await prisma.violationRecord.count({ where: { violationTypeId: id } });
+    if (usage === 0) {
+      await prisma.violationType.deleteMany({ where: { id } });
+    } else {
+      await prisma.violationType.updateMany({ where: { id }, data: { active: false } });
+    }
+  }
+
+  // Bersihkan jenis nonaktif tanpa riwayat
+  const inactive = await prisma.violationType.findMany({
+    where: { active: false },
+    select: { id: true, _count: { select: { records: true } } },
+  });
+  for (const row of inactive) {
+    if (row._count.records === 0) {
+      await prisma.violationType.delete({ where: { id: row.id } });
+    }
   }
 
   // Super admin

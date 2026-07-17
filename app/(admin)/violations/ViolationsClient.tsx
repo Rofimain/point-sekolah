@@ -7,7 +7,7 @@ import {
   getViolationSectionLabel,
   type ViolationSection,
 } from "@/lib/violation-sections";
-import { joinViolationName, splitViolationName } from "@/lib/violation-name";
+import { joinViolationName, splitViolationName, violationNameSortOrder } from "@/lib/violation-name";
 
 const CATS = ["RINGAN", "SEDANG", "BERAT"] as const;
 const CAT_LABELS: Record<string, string> = { RINGAN: "Ringan", SEDANG: "Sedang", BERAT: "Berat" };
@@ -18,8 +18,7 @@ const COLS = {
   name: "auto",
   cat: "6.5rem",
   points: "4.25rem",
-  desc: "22%",
-  status: "5.5rem",
+  desc: "28%",
   actions: "8.75rem",
 } as const;
 
@@ -141,7 +140,15 @@ export default function ViolationsClient({
 
   async function handleDelete(id: string) {
     if (!confirm("Hapus jenis pelanggaran ini?")) return;
-    await fetch(`/api/violations/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/violations/${id}`, { method: "DELETE" });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(d.error || "Gagal menghapus");
+      return;
+    }
+    if (d.deactivated) {
+      alert("Jenis ini masih dipakai di riwayat catatan, jadi dinonaktifkan (tidak tampil di daftar aktif).");
+    }
     router.refresh();
   }
 
@@ -168,7 +175,14 @@ export default function ViolationsClient({
       ...VIOLATION_SECTIONS.filter((s) => map.has(s)),
       ...[...map.keys()].filter((k) => !(VIOLATION_SECTIONS as readonly string[]).includes(k)),
     ];
-    return keys.map((section) => ({ section, items: map.get(section)! }));
+    return keys.map((section) => ({
+      section,
+      items: [...map.get(section)!].sort((a, b) => {
+        const byCode = violationNameSortOrder(a.name || "") - violationNameSortOrder(b.name || "");
+        if (byCode !== 0) return byCode;
+        return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.points - b.points || String(a.name).localeCompare(String(b.name));
+      }),
+    }));
   }, [filtered]);
 
   const colgroup = (
@@ -178,7 +192,6 @@ export default function ViolationsClient({
       <col style={{ width: COLS.cat }} />
       <col style={{ width: COLS.points }} />
       <col style={{ width: COLS.desc }} />
-      <col style={{ width: COLS.status }} />
       {canManage ? <col style={{ width: COLS.actions }} /> : null}
     </colgroup>
   );
@@ -250,7 +263,7 @@ export default function ViolationsClient({
                     className="block text-xs font-semibold mb-1 uppercase tracking-wide"
                     style={{ color: "var(--text-secondary)" }}
                   >
-                    Bagian Pasal 15
+                    Bagian
                   </label>
                   <select
                     value={form.section}
@@ -368,9 +381,6 @@ export default function ViolationsClient({
           <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>
             Manajemen Jenis Pelanggaran
           </h1>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Pasal 15 — Kelakuan, Kerajinan, dan Kerapihan
-          </p>
         </div>
         {canManage && (
           <button
@@ -493,7 +503,7 @@ export default function ViolationsClient({
                 {colgroup}
                 <thead>
                   <tr style={{ background: "var(--bg-primary)" }}>
-                    {["No", "Nama Pelanggaran", "Kategori", "Poin", "Keterangan", "Status", ...(canManage ? ["Aksi"] : [])].map(
+                    {["No", "Nama Pelanggaran", "Kategori", "Poin", "Keterangan", ...(canManage ? ["Aksi"] : [])].map(
                       (h) => (
                         <th
                           key={h}
@@ -513,7 +523,7 @@ export default function ViolationsClient({
                       <tr
                         key={v.id}
                         className="border-t"
-                        style={{ borderColor: "var(--border)", opacity: v.active ? 1 : 0.5 }}
+                        style={{ borderColor: "var(--border)" }}
                       >
                         <td
                           className="px-3 py-3 text-xs font-semibold tabular-nums whitespace-nowrap align-top"
@@ -550,17 +560,6 @@ export default function ViolationsClient({
                         </td>
                         <td className="px-3 py-3 text-xs align-top break-words" style={{ color: "var(--text-muted)" }}>
                           {v.description || "—"}
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <span
-                            className="px-2 py-0.5 rounded text-[10px] font-semibold"
-                            style={{
-                              background: v.active ? "var(--success-bg)" : "var(--bg-tertiary)",
-                              color: v.active ? "var(--success)" : "var(--text-muted)",
-                            }}
-                          >
-                            {v.active ? "Aktif" : "Nonaktif"}
-                          </span>
                         </td>
                         {canManage && (
                           <td className="px-3 py-3 align-top">
