@@ -6,7 +6,7 @@ export type PrintTemplateSeed = {
 };
 
 /** Naikkan versi ini bila layout default template diubah (satu kali sync ke DB). */
-export const PRINT_TEMPLATES_LAYOUT_VERSION = "2";
+export const PRINT_TEMPLATES_LAYOUT_VERSION = "3";
 
 export const PRINT_PLACEHOLDERS: { key: string; label: string }[] = [
   { key: "nama", label: "Nama siswa" },
@@ -58,40 +58,40 @@ export function sortPrintTemplates<T extends { sortOrder: number; title: string 
   return [...rows].sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title, "id"));
 }
 
-/** Blok tanda tangan kanan (surat resmi satu penandatangan). */
-function ttdRight(role: string, name: string): string {
-  return [
-    `${"".padStart(42)}${role}`,
-    "",
-    "",
-    "",
-    `${"".padStart(42)}${name}`,
-  ].join("\n");
+/** Lebar baris cetak (monospace) untuk penataan kolom tanda tangan. */
+const TTD_LINE_WIDTH = 72;
+const TTD_SIGN_LINE = "_______________";
+const TTD_GAP = ["", "", "", ""]; // ruang bubuh tanda tangan
+
+/** Satu penandatangan: rata kiri. */
+function ttdOne(role: string, name: string): string {
+  return [role, ...TTD_GAP, name].join("\n");
 }
 
-/** Dua kolom kiri–kanan. */
-function ttdTwoCol(leftRole: string, rightRole: string, leftName = "_______________", rightName = "_______________"): string {
-  const L = 34;
-  const pad = (s: string) => s.padEnd(L, " ").slice(0, L);
-  return [
-    `${pad(leftRole)}${rightRole}`,
-    "",
-    "",
-    "",
-    `${pad(leftName)}${rightName}`,
-  ].join("\n");
+/**
+ * Susun kolom-kolom tanda tangan berjarak seimbang selebar TTD_LINE_WIDTH.
+ * Kolom pertama menempel kiri, sisanya diberi jarak merata.
+ */
+function ttdColumns(cols: { role: string; name?: string }[]): string {
+  const n = cols.length;
+  const colWidth = Math.floor(TTD_LINE_WIDTH / n);
+  const cell = (text: string, isLast: boolean) => (isLast ? text : text.padEnd(colWidth, " "));
+  const roleLine = cols.map((c, i) => cell(c.role, i === n - 1)).join("");
+  const nameLine = cols.map((c, i) => cell(c.name ?? TTD_SIGN_LINE, i === n - 1)).join("");
+  return [roleLine, ...TTD_GAP, nameLine].join("\n");
 }
 
-/** Tiga kolom. */
-function ttdThreeCol(a: string, b: string, c: string, aLine = "_______________", bLine = "_______________________", cLine = "_______________________"): string {
-  const L = 24;
-  const pad = (s: string) => s.padEnd(L, " ").slice(0, L);
-  return [
-    `${pad(a)}${pad(b)}${c}`,
-    "",
-    "",
-    `${pad(aLine)}${pad(bLine)}${cLine}`,
-  ].join("\n");
+/** Dua penandatangan: kiri dan kanan seimbang. */
+function ttdTwo(leftRole: string, rightRole: string, leftName = TTD_SIGN_LINE, rightName = TTD_SIGN_LINE): string {
+  return ttdColumns([
+    { role: leftRole, name: leftName },
+    { role: rightRole, name: rightName },
+  ]);
+}
+
+/** Tiga penandatangan: terbagi rata. */
+function ttdThree(a: string, b: string, c: string): string {
+  return ttdColumns([{ role: a }, { role: b }, { role: c }]);
 }
 
 export const DEFAULT_PRINT_TEMPLATES: PrintTemplateSeed[] = [
@@ -123,7 +123,7 @@ Demikian Surat Peringatan 1 (SP 1) ini dibuat agar menjadi perhatian dan perbaik
 
 Wassalamualaikum Wr.Wb.
 
-${ttdRight("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
+${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
   },
   {
     slug: "sp2",
@@ -153,7 +153,7 @@ Demikian surat Peringatan Ke-2 (SP 2) ini dibuat agar menjadi perhatian dan perb
 
 Wassalamualaikum wr.wb.
 
-${ttdRight("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
+${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
   },
   {
     slug: "sp3",
@@ -186,7 +186,7 @@ Demikian Surat Peringatan ke-3 (SP 3) ini dibuat agar diperhatikan dan wajib dip
 
 Wassalamu'alaikum Warrohmatullohi Wabarokaatuh.
 
-${ttdRight("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
+${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
   },
   {
     slug: "info-poin",
@@ -216,12 +216,7 @@ Demikian surat informasi dari kami, atas perhatian Bapak/Ibu kami ucapkan terima
 Billahit Taufiq Walhidayah
 Wassalamu 'alaikum Wr. Wb.
 
-Kepala {{sekolah}}                     Mengetahui
-                                       Orangtua Murid
-
-
-
-{{kepala_sekolah}}                     ................................
+${ttdTwo("Kepala {{sekolah}}", "Orangtua Murid", "{{kepala_sekolah}}", "................................")}
 
 Catatan : Surat ini dikembalikan ke sekolah setelah ditandatangani oleh orangtua murid paling lambat 2 hari sejak tanggal pemberian surat.`,
   },
@@ -256,7 +251,7 @@ Demikian surat ini kami sampaikan, atas perhatian dan kesediaan Bapak/Ibu untuk 
 Billahit Taufiq Walhidayah
 Wassalamu 'alaikum Wr. Wb.
 
-${ttdRight("Kepala {{sekolah}}", "{{kepala_sekolah}}")}
+${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}
 
 Catatan :
 Harap hadir sesuai dengan waktu yang telah ditentukan.`,
@@ -287,14 +282,13 @@ Demikianlah surat perjanjian ini saya buat dengan penuh kesadaran dan kesungguha
 
 {{tanggal}}
 
-          Menyaksikan,
-${ttdThreeCol("Wali kelas", "Orangtua/wali murid", "saya yang berjanji")}
+Menyaksikan,
+${ttdThree("Wali kelas", "Orangtua/wali murid", "saya yang berjanji")}
 
 Materai Rp. 10.000,-
 
-                    Mengetahui,
-
-${ttdThreeCol("Kepala {{sekolah}}", "Korbid Tanse", "Bimb. Konseling")}`,
+Mengetahui,
+${ttdThree("Kepala {{sekolah}}", "Korbid Tanse", "Bimb. Konseling")}`,
   },
   {
     slug: "skorsing",
@@ -327,13 +321,9 @@ Demikianlah surat pemberitahuan ini. Atas perhatian bapak/ibu kami ucapkan terim
 Billahit Taufiq Walhidayah
 Wassalamu'alaikum Wr.Wb
 
-${ttdTwoCol("Ketahanan Sekolah", "Wali Kelas")}
+${ttdTwo("Ketahanan Sekolah", "Wali Kelas")}
 
-                                          Mengetahui
-                                          Kepala {{sekolah}}
-
-
-
-                                          {{kepala_sekolah}}`,
+Mengetahui,
+${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
   },
 ];
