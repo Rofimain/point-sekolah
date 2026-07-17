@@ -180,7 +180,7 @@ telah melakukan akumulasi pelanggaran tata tertib sekolah berupa:
 
 Total point yang terakumulasi = {{poin}}
 
-Surat peringatan ke-3 (ketiga) ini diberikan sebagai peringatan terakhir yang wajib diperhatikan dan dipatuhi/ditaati. Apabila di kemudian hari dimulai dari tanggal diterbitkan surat SP-3 ini, terjadi perbuatan pelanggaran tata tertib lagi baik pada jenis pelanggaran yang sama maupun berbeda maka sanksi yang diberikan berupa dikembalikan ke orang tua atau dikeluarkan dari {{sekolah}}.
+Surat peringatan ke-3 (ketiga) ini diberikan sebagai peringatan terakhir yang wajib diperhatikan dan dipatuhi/ditaati. Apabila di kemudian hari dimulai dari tanggal diterbitkan surat SP-3 ini, terjadi perbuatan pelanggaran tata tertib lagi baik pada pasal yang sama maupun pada pasal berbeda maka sanksi yang diberikan berupa dikembalikan ke orang tua atau dikeluarkan dari {{sekolah}}.
 
 Demikian Surat Peringatan ke-3 (SP 3) ini dibuat agar diperhatikan dan wajib dipatuhi/taati.
 
