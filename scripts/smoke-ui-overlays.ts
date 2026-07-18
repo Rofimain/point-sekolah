@@ -77,6 +77,11 @@ const bell = read("components/staff/StaffSubmissionBell.tsx");
 assert(bell.includes("createPortal"), "Notification bell panel uses createPortal");
 assert(bell.includes("getBoundingClientRect"), "Notification bell clamps panel to viewport");
 assert(bell.includes("Z_INDEX.dropdown"), "Notification bell uses dropdown z-index");
+assert(bell.includes("visualViewport"), "Notification bell respects visualViewport (iOS)");
+assert(bell.includes("orientationchange"), "Notification bell repositions on orientation change");
+assert(bell.includes("useLayoutEffect"), "Notification bell places panel before paint");
+assert(!/useState<CSSProperties>/.test(bell) && !/panelStyle/.test(bell), "Notification bell has no legacy panelStyle state");
+assert((bell.match(/createPortal\(/g) || []).length === 1, "Notification bell has single createPortal call");
 
 const globals = read("app/globals.css");
 assert(globals.includes("font-size: 16px !important"), "iOS anti-zoom input rule present");

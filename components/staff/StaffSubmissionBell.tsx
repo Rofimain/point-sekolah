@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -15,6 +15,18 @@ import { Z_INDEX } from "@/lib/ui-layers";
 import UserAvatar from "@/components/ui/UserAvatar";
 
 export type { StudentSubmissionNotification };
+
+const PANEL_MARGIN = 12;
+const PANEL_GAP = 6;
+const PANEL_MAX_WIDTH_PX = 22 * 16; // 22rem
+/** Cadangan tinggi minimum agar panel tidak menempel ujung bawah layar. */
+const PANEL_BOTTOM_RESERVE = 120;
+
+type PanelBox = {
+  top: number;
+  left: number;
+  width: number;
+};
 
 function sheetDetails(it: StudentSubmissionNotification) {
   return [
@@ -41,6 +53,30 @@ function studentPhoto(it: StudentSubmissionNotification) {
   );
 }
 
+function readViewport() {
+  const vv = typeof window !== "undefined" ? window.visualViewport : null;
+  return {
+    width: vv?.width ?? window.innerWidth,
+    height: vv?.height ?? window.innerHeight,
+    offsetLeft: vv?.offsetLeft ?? 0,
+    offsetTop: vv?.offsetTop ?? 0,
+  };
+}
+
+function computePanelBox(button: HTMLElement): PanelBox {
+  const rect = button.getBoundingClientRect();
+  const { width: vw, height: vh, offsetLeft, offsetTop } = readViewport();
+  const width = Math.min(PANEL_MAX_WIDTH_PX, vw - PANEL_MARGIN * 2);
+  const minLeft = offsetLeft + PANEL_MARGIN;
+  const maxLeft = offsetLeft + vw - PANEL_MARGIN - width;
+  // Prefer align ke tepi kanan tombol, lalu clamp agar tidak keluar kiri/kanan.
+  const left = Math.max(minLeft, Math.min(rect.right - width, maxLeft));
+  const preferredTop = rect.bottom + PANEL_GAP;
+  const maxTop = offsetTop + vh - PANEL_MARGIN - PANEL_BOTTOM_RESERVE;
+  const top = Math.max(offsetTop + PANEL_MARGIN, Math.min(preferredTop, maxTop));
+  return { top, left, width };
+}
+
 export function StaffSubmissionBell() {
   const router = useRouter();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -48,52 +84,50 @@ export function StaffSubmissionBell() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [sheetItem, setSheetItem] = useState<StudentSubmissionNotification | null>(null);
-  const [panelStyle, setPanelStyle] = useState<CSSProperties>({});
+  /** null sampai posisi dihitung — mencegah flash di (0,0) sebelum layout. */
+  const [panelBox, setPanelBox] = useState<PanelBox | null>(null);
   const { items, readSet, readReady, unreadCount, markRead } = useStaffSubmissionNotifications();
 
   useEffect(() => setMounted(true), []);
 
-  function placePanel() {
+  const updatePanelPosition = useCallback(() => {
     const btn = buttonRef.current;
-    if (!btn || typeof window === "undefined") return;
-    const rect = btn.getBoundingClientRect();
-    const margin = 12;
-    const gap = 6;
-    const maxWidth = Math.min(22 * 16, window.innerWidth - margin * 2);
-    // Prefer align to button right edge, but keep fully inside viewport.
-    let left = rect.right - maxWidth;
-    left = Math.max(margin, Math.min(left, window.innerWidth - margin - maxWidth));
-    const top = Math.min(rect.bottom + gap, window.innerHeight - margin - 120);
-    setPanelStyle({
-      position: "fixed",
-      top,
-      left,
-      width: maxWidth,
-      zIndex: Z_INDEX.dropdown,
-      maxHeight: "min(70dvh, 24rem)",
-    });
-  }
+    if (!btn) return;
+    setPanelBox(computePanelBox(btn));
+  }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    placePanel();
-    function onDoc(e: MouseEvent) {
+  useLayoutEffect(() => {
+    if (!open) {
+      setPanelBox(null);
+      return;
+    }
+    updatePanelPosition();
+
+    function onPointerDown(e: PointerEvent) {
       const t = e.target as Node;
       if (buttonRef.current?.contains(t) || panelRef.current?.contains(t)) return;
       setOpen(false);
     }
     function onReposition() {
-      placePanel();
+      updatePanelPosition();
     }
-    document.addEventListener("mousedown", onDoc);
+
+    document.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("resize", onReposition);
+    window.addEventListener("orientationchange", onReposition);
     window.addEventListener("scroll", onReposition, true);
+    window.visualViewport?.addEventListener("resize", onReposition);
+    window.visualViewport?.addEventListener("scroll", onReposition);
+
     return () => {
-      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("resize", onReposition);
+      window.removeEventListener("orientationchange", onReposition);
       window.removeEventListener("scroll", onReposition, true);
+      window.visualViewport?.removeEventListener("resize", onReposition);
+      window.visualViewport?.removeEventListener("scroll", onReposition);
     };
-  }, [open]);
+  }, [open, updatePanelPosition]);
 
   function handlePick(it: StudentSubmissionNotification) {
     markRead(it.id);
@@ -101,83 +135,7 @@ export function StaffSubmissionBell() {
     setOpen(false);
   }
 
-  const panel =
-    open && mounted
-      ? createPortal(
-          <div
-            ref={panelRef}
-            className="overflow-hidden rounded-xl border shadow-lg"
-            style={{
-              ...panelStyle,
-              background: "var(--bg-secondary)",
-              borderColor: "var(--border)",
-            }}
-            role="dialog"
-            aria-label="Daftar catatan pelanggaran hari ini"
-          >
-            <div
-              className="flex items-center justify-between gap-2 border-b px-3 py-2.5"
-              style={{ borderColor: "var(--border)" }}
-            >
-              <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-                Catatan hari ini
-              </span>
-              <Link
-                href="/notifications"
-                className="inline-flex min-h-11 shrink-0 items-center text-xs font-semibold text-blue-600 hover:underline touch-manipulation"
-                onClick={() => setOpen(false)}
-              >
-                Buka halaman
-              </Link>
-            </div>
-            <ul className="max-h-[min(56dvh,20rem)] overflow-y-auto overscroll-contain p-1.5">
-              {items.length === 0 ? (
-                <li className="px-2 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                  Belum ada catatan pelanggaran hari ini.
-                </li>
-              ) : (
-                items.map((it) => {
-                  const isRead = readSet.has(it.id);
-                  return (
-                    <li key={it.id}>
-                      <button
-                        type="button"
-                        className="flex w-full gap-2.5 rounded-lg px-2.5 py-2.5 text-left text-sm transition hover:opacity-95"
-                        style={{
-                          background: isRead ? "transparent" : "rgba(59, 130, 246, 0.08)",
-                          color: "var(--text-primary)",
-                        }}
-                        onClick={() => handlePick(it)}
-                      >
-                        <UserAvatar
-                          name={it.studentName}
-                          userId={it.studentId}
-                          photoPresent={it.studentPhotoPresent}
-                          size="lg"
-                          rounded="lg"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate font-semibold">{it.studentName}</span>
-                          <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--text-muted)" }}>
-                            {it.violationName} · {it.points} poin
-                          </span>
-                          <span className="mt-0.5 block truncate text-[11px]" style={{ color: "var(--text-muted)" }}>
-                            {notificationSourceLabel(it)} · {formatInputDateTime(it.createdAt)}
-                          </span>
-                        </span>
-                        {!isRead ? (
-                          <span className="shrink-0 self-center text-[10px] font-medium uppercase text-blue-500">Baru</span>
-                        ) : null}
-                      </button>
-                    </li>
-                  );
-                })
-              )}
-            </ul>
-          </div>,
-          document.body
-        )
-      : null;
+  const showPanel = mounted && open && panelBox != null;
 
   return (
     <>
@@ -205,7 +163,91 @@ export function StaffSubmissionBell() {
         </button>
       </div>
 
-      {panel}
+      {showPanel
+        ? createPortal(
+            <div
+              ref={panelRef}
+              className="overflow-hidden rounded-xl border shadow-lg"
+              style={{
+                position: "fixed",
+                top: panelBox.top,
+                left: panelBox.left,
+                width: panelBox.width,
+                // Z_INDEX.dropdown (70) > TopBar (60) — lihat lib/ui-layers.ts
+                zIndex: Z_INDEX.dropdown,
+                maxHeight: "min(70dvh, 24rem)",
+                background: "var(--bg-secondary)",
+                borderColor: "var(--border)",
+              }}
+              role="dialog"
+              aria-label="Daftar catatan pelanggaran hari ini"
+            >
+              <div
+                className="flex items-center justify-between gap-2 border-b px-3 py-2.5"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <span
+                  className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Catatan hari ini
+                </span>
+                <Link
+                  href="/notifications"
+                  className="inline-flex min-h-11 shrink-0 items-center text-xs font-semibold text-blue-600 hover:underline touch-manipulation"
+                  onClick={() => setOpen(false)}
+                >
+                  Buka halaman
+                </Link>
+              </div>
+              <ul className="max-h-[min(56dvh,20rem)] overflow-y-auto overscroll-contain p-1.5">
+                {items.length === 0 ? (
+                  <li className="px-2 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                    Belum ada catatan pelanggaran hari ini.
+                  </li>
+                ) : (
+                  items.map((it) => {
+                    const isRead = readSet.has(it.id);
+                    return (
+                      <li key={it.id}>
+                        <button
+                          type="button"
+                          className="flex w-full gap-2.5 rounded-lg px-2.5 py-2.5 text-left text-sm transition hover:opacity-95"
+                          style={{
+                            background: isRead ? "transparent" : "rgba(59, 130, 246, 0.08)",
+                            color: "var(--text-primary)",
+                          }}
+                          onClick={() => handlePick(it)}
+                        >
+                          <UserAvatar
+                            name={it.studentName}
+                            userId={it.studentId}
+                            photoPresent={it.studentPhotoPresent}
+                            size="lg"
+                            rounded="lg"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-semibold">{it.studentName}</span>
+                            <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--text-muted)" }}>
+                              {it.violationName} · {it.points} poin
+                            </span>
+                            <span className="mt-0.5 block truncate text-[11px]" style={{ color: "var(--text-muted)" }}>
+                              {notificationSourceLabel(it)} · {formatInputDateTime(it.createdAt)}
+                            </span>
+                          </span>
+                          {!isRead ? (
+                            <span className="shrink-0 self-center text-[10px] font-medium uppercase text-blue-500">Baru</span>
+                          ) : null}
+                        </button>
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+            </div>,
+            document.body
+          )
+        : null}
 
       <QrisStyleSuccessSheet
         open={sheetItem != null}
@@ -222,7 +264,7 @@ export function StaffSubmissionBell() {
         afterPrimaryActions={
           <button
             type="button"
-            className="w-full rounded-xl border py-2.5 text-[14px] font-semibold transition hover:opacity-90 active:scale-[0.99] motion-reduce:transition-none"
+            className="min-h-11 w-full rounded-xl border py-2.5 text-[14px] font-semibold transition hover:opacity-90 active:scale-[0.99] motion-reduce:transition-none"
             style={{
               borderColor: "var(--border)",
               background: "var(--bg-primary)",
