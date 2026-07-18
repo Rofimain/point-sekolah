@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getRoleLabel } from "@/lib/utils";
@@ -11,6 +12,7 @@ import {
   isProbablyImageFile,
 } from "@/lib/compress-image-client";
 import UserAvatar from "@/components/ui/UserAvatar";
+import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
 
 const ROLES = ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN"] as const;
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
@@ -83,6 +85,14 @@ export default function UsersClient({
   const [photoDraft, setPhotoDraft] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!modal) return;
+    return lockAppScroll();
+  }, [modal]);
 
   useEffect(() => {
     setSearch(searchParams.search || "");
@@ -415,7 +425,7 @@ export default function UsersClient({
                 type="button"
                 disabled={loading}
                 onClick={() => void bulkSetActive(true)}
-                className="px-2.5 py-1 rounded border text-[11px] font-medium disabled:opacity-60"
+                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium disabled:opacity-60"
                 style={{ borderColor: "var(--success)", color: "var(--success)", background: "var(--success-bg)" }}
               >
                 Aktifkan
@@ -424,7 +434,7 @@ export default function UsersClient({
                 type="button"
                 disabled={loading}
                 onClick={() => void bulkSetActive(false)}
-                className="px-2.5 py-1 rounded border text-[11px] font-medium disabled:opacity-60"
+                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium disabled:opacity-60"
                 style={{ borderColor: "var(--warning)", color: "var(--warning)", background: "var(--warning-bg)" }}
               >
                 Nonaktifkan
@@ -433,7 +443,7 @@ export default function UsersClient({
                 type="button"
                 disabled={loading || !canBulkDeleteStudents}
                 onClick={() => void bulkDeleteStudents()}
-                className="px-2.5 py-1 rounded border text-[11px] font-medium disabled:opacity-60"
+                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium disabled:opacity-60"
                 style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
                 title={!canBulkDeleteStudents ? "Bulk delete hanya untuk akun siswa" : undefined}
               >
@@ -443,7 +453,7 @@ export default function UsersClient({
                 type="button"
                 disabled={loading}
                 onClick={() => void bulkCopyParentTelegramLinks()}
-                className="px-2.5 py-1 rounded border text-[11px] font-medium disabled:opacity-60"
+                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium disabled:opacity-60"
                 style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--accent-light)" }}
                 title="Buat token baru & salin nama + tautan (hanya baris siswa). Tempel ke Excel."
               >
@@ -453,7 +463,7 @@ export default function UsersClient({
                 type="button"
                 disabled={loading}
                 onClick={() => setSelectedIds(new Set())}
-                className="px-2.5 py-1 rounded border text-[11px] disabled:opacity-60"
+                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-60"
                 style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
               >
                 Clear
@@ -576,10 +586,15 @@ export default function UsersClient({
       </div>
 
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px]">
-            <thead><tr style={{ background: "var(--bg-primary)" }}>
-              <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+        {users.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+            Tidak ada pengguna
+          </div>
+        ) : (
+          <>
+            {/* Mobile: select-all bar + cards */}
+            <div className="flex items-center gap-2 border-b px-4 py-2 md:hidden" style={{ borderColor: "var(--border)" }}>
+              <label className="inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center">
                 <input
                   type="checkbox"
                   checked={allOnPageSelected}
@@ -589,117 +604,267 @@ export default function UsersClient({
                   }}
                   onChange={toggleSelectAllOnPage}
                   aria-label="Pilih semua di halaman"
+                  className="h-4 w-4"
                 />
-              </th>
-              {["Nama", "Email", "Role", metaColumnLabel, "Ortu (Telegram)", "Status", "Aksi"].map((h) => (
-                <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
-              ))}
-            </tr></thead>
-            <tbody>
+              </label>
+              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                Pilih semua di halaman
+              </span>
+            </div>
+            <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
               {users.map((u: any) => (
-                <tr key={u.id} className="border-t" style={{ borderColor: "var(--border)", opacity: u.active ? 1 : 0.6 }}>
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(u.id)}
-                      disabled={!canModifyUser(viewerRole, u.role)}
-                      onChange={() => toggleSelectOne(u.id)}
-                      aria-label={`Pilih ${u.name}`}
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <UserAvatar
-                        name={u.name}
-                        userId={u.id}
-                        photoPresent={!!u.photoPresent}
-                        cacheKey={u.updatedAt ? String(u.updatedAt) : undefined}
-                        size="sm"
+                <li
+                  key={u.id}
+                  className="space-y-2.5 px-4 py-3"
+                  style={{ opacity: u.active ? 1 : 0.6 }}
+                >
+                  <div className="flex items-start gap-3">
+                    <label className="inline-flex min-h-11 min-w-11 shrink-0 cursor-pointer touch-manipulation items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(u.id)}
+                        disabled={!canModifyUser(viewerRole, u.role)}
+                        onChange={() => toggleSelectOne(u.id)}
+                        aria-label={`Pilih ${u.name}`}
+                        className="h-4 w-4"
                       />
-                      <span className="text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>{u.name}</span>
+                    </label>
+                    <UserAvatar
+                      name={u.name}
+                      userId={u.id}
+                      photoPresent={!!u.photoPresent}
+                      cacheKey={u.updatedAt ? String(u.updatedAt) : undefined}
+                      size="md"
+                      rounded="lg"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold break-words" style={{ color: "var(--text-primary)" }}>
+                          {u.name}
+                        </span>
+                        <RoleBadge role={u.role} />
+                        <span
+                          className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                          style={{
+                            background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)",
+                            color: u.active ? "var(--success)" : "var(--text-muted)",
+                          }}
+                        >
+                          {u.active ? "Aktif" : "Nonaktif"}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 break-all text-[11px]" style={{ color: "var(--text-muted)" }}>
+                        {u.email}
+                      </div>
+                      <div className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>
+                        {metaColumnLabel}: {kelasAtauNip(u)}
+                      </div>
+                      {u.role === "STUDENT" ? (
+                        <div className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                          Ortu: {telegramOrtuTableCell(u)}
+                        </div>
+                      ) : null}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-[11px]" style={{ color: "var(--text-muted)" }}>{u.email}</td>
-                  <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
-                  <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>{kelasAtauNip(u)}</td>
-                  <td
-                    className="px-4 py-3 max-w-[11rem] truncate text-[11px]"
-                    style={{ color: "var(--text-muted)" }}
-                    title={
-                      u.role === "STUDENT" && u.parentTelegram?.trim()
-                        ? `Chat ID: ${u.parentTelegram}`
-                        : u.role === "STUDENT" && u.ortuTelegramStatus === "pending"
-                          ? "Belum terhubung — kirim tautan ortu dari tombol Salin tautan"
-                          : undefined
-                    }
-                  >
-                    {telegramOrtuTableCell(u)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)", color: u.active ? "var(--success)" : "var(--text-muted)" }}>{u.active ? "Aktif" : "Nonaktif"}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      <button
-                        disabled={
-                          !canModifyUser(viewerRole, u.role) &&
-                          !(viewerRole === "ADMIN" && u.id === viewerId)
-                        }
-                        onClick={() => openEdit(u)}
-                        className="px-2.5 py-1 rounded border text-[11px] disabled:opacity-50"
-                        style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        disabled={
-                          !canModifyUser(viewerRole, u.role) ||
-                          (u.role === "SUPER_ADMIN" && u.active && activeSuperAdminCount <= 1)
-                        }
-                        onClick={() => toggleActive(u.id, u.active)}
-                        className="px-2.5 py-1 rounded border text-[11px] disabled:opacity-50"
-                        style={{ borderColor: "var(--border)", color: u.active ? "var(--warning)" : "var(--success)", background: u.active ? "var(--warning-bg)" : "var(--success-bg)" }}
-                        title={
-                          u.role === "SUPER_ADMIN" && u.active && activeSuperAdminCount <= 1
-                            ? "Aktifkan Super Admin lain dulu — harus ada minimal 1 Super Admin aktif"
-                            : undefined
-                        }
-                      >
-                        {u.active ? "Blokir" : "Aktifkan"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={
-                          !canDeleteUser(viewerRole, u.role) ||
-                          (u.role === "SUPER_ADMIN" && superAdminTotal <= 1)
-                        }
-                        onClick={() => handleDelete(u.id, u.name)}
-                        className="px-2.5 py-1 rounded border text-[11px] disabled:opacity-50"
-                        style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
-                        title={
-                          !canDeleteUser(viewerRole, u.role)
-                            ? "Admin tidak boleh menghapus akun Admin atau Super Admin"
-                            : u.role === "SUPER_ADMIN" && superAdminTotal <= 1
-                            ? "Tidak boleh menghapus satu-satunya akun Super Admin"
-                            : undefined
-                        }
-                      >
-                        Hapus
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      disabled={
+                        !canModifyUser(viewerRole, u.role) &&
+                        !(viewerRole === "ADMIN" && u.id === viewerId)
+                      }
+                      onClick={() => openEdit(u)}
+                      className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
+                      style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
+                        !canModifyUser(viewerRole, u.role) ||
+                        (u.role === "SUPER_ADMIN" && u.active && activeSuperAdminCount <= 1)
+                      }
+                      onClick={() => toggleActive(u.id, u.active)}
+                      className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
+                      style={{
+                        borderColor: "var(--border)",
+                        color: u.active ? "var(--warning)" : "var(--success)",
+                        background: u.active ? "var(--warning-bg)" : "var(--success-bg)",
+                      }}
+                    >
+                      {u.active ? "Blokir" : "Aktifkan"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
+                        !canDeleteUser(viewerRole, u.role) ||
+                        (u.role === "SUPER_ADMIN" && superAdminTotal <= 1)
+                      }
+                      onClick={() => handleDelete(u.id, u.name)}
+                      className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
+                      style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </li>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </ul>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[720px]">
+                <thead>
+                  <tr style={{ background: "var(--bg-primary)" }}>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                      <label className="inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={allOnPageSelected}
+                          ref={(el) => {
+                            if (!el) return;
+                            el.indeterminate = !allOnPageSelected && someOnPageSelected;
+                          }}
+                          onChange={toggleSelectAllOnPage}
+                          aria-label="Pilih semua di halaman"
+                        />
+                      </label>
+                    </th>
+                    {["Nama", "Email", "Role", metaColumnLabel, "Ortu (Telegram)", "Status", "Aksi"].map((h) => (
+                      <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u: any) => (
+                    <tr key={u.id} className="border-t" style={{ borderColor: "var(--border)", opacity: u.active ? 1 : 0.6 }}>
+                      <td className="px-4 py-3">
+                        <label className="inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(u.id)}
+                            disabled={!canModifyUser(viewerRole, u.role)}
+                            onChange={() => toggleSelectOne(u.id)}
+                            aria-label={`Pilih ${u.name}`}
+                          />
+                        </label>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <UserAvatar
+                            name={u.name}
+                            userId={u.id}
+                            photoPresent={!!u.photoPresent}
+                            cacheKey={u.updatedAt ? String(u.updatedAt) : undefined}
+                            size="sm"
+                          />
+                          <span className="text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
+                            {u.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                        {u.email}
+                      </td>
+                      <td className="px-4 py-3">
+                        <RoleBadge role={u.role} />
+                      </td>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                        {kelasAtauNip(u)}
+                      </td>
+                      <td
+                        className="px-4 py-3 max-w-[11rem] truncate text-[11px]"
+                        style={{ color: "var(--text-muted)" }}
+                        title={
+                          u.role === "STUDENT" && u.parentTelegram?.trim()
+                            ? `Chat ID: ${u.parentTelegram}`
+                            : u.role === "STUDENT" && u.ortuTelegramStatus === "pending"
+                              ? "Belum terhubung — kirim tautan ortu dari tombol Salin tautan"
+                              : undefined
+                        }
+                      >
+                        {telegramOrtuTableCell(u)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                          style={{
+                            background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)",
+                            color: u.active ? "var(--success)" : "var(--text-muted)",
+                          }}
+                        >
+                          {u.active ? "Aktif" : "Nonaktif"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1.5">
+                          <button
+                            disabled={
+                              !canModifyUser(viewerRole, u.role) &&
+                              !(viewerRole === "ADMIN" && u.id === viewerId)
+                            }
+                            onClick={() => openEdit(u)}
+                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
+                            style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            disabled={
+                              !canModifyUser(viewerRole, u.role) ||
+                              (u.role === "SUPER_ADMIN" && u.active && activeSuperAdminCount <= 1)
+                            }
+                            onClick={() => toggleActive(u.id, u.active)}
+                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
+                            style={{
+                              borderColor: "var(--border)",
+                              color: u.active ? "var(--warning)" : "var(--success)",
+                              background: u.active ? "var(--warning-bg)" : "var(--success-bg)",
+                            }}
+                            title={
+                              u.role === "SUPER_ADMIN" && u.active && activeSuperAdminCount <= 1
+                                ? "Aktifkan Super Admin lain dulu — harus ada minimal 1 Super Admin aktif"
+                                : undefined
+                            }
+                          >
+                            {u.active ? "Blokir" : "Aktifkan"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={
+                              !canDeleteUser(viewerRole, u.role) ||
+                              (u.role === "SUPER_ADMIN" && superAdminTotal <= 1)
+                            }
+                            onClick={() => handleDelete(u.id, u.name)}
+                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
+                            style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
+                            title={
+                              !canDeleteUser(viewerRole, u.role)
+                                ? "Admin tidak boleh menghapus akun Admin atau Super Admin"
+                                : u.role === "SUPER_ADMIN" && superAdminTotal <= 1
+                                  ? "Tidak boleh menghapus satu-satunya akun Super Admin"
+                                  : undefined
+                            }
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
         {totalPages > 1 && (
           <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
             <span className="text-xs" style={{ color: "var(--text-muted)" }}>Halaman {page} dari {totalPages} · {total} pengguna</span>
             <div className="flex flex-wrap gap-1">
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map(p => (
-                <button key={p} onClick={() => { const sp = new URLSearchParams(searchParams); sp.set("page", String(p)); router.push(`${pathname}?${sp.toString()}`); }} className="w-7 h-7 rounded text-xs" style={{ background: p === page ? "var(--accent)" : "var(--bg-primary)", color: p === page ? "white" : "var(--text-secondary)", border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}` }}>{p}</button>
+                <button key={p} onClick={() => { const sp = new URLSearchParams(searchParams); sp.set("page", String(p)); router.push(`${pathname}?${sp.toString()}`); }} className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs" style={{ background: p === page ? "var(--accent)" : "var(--bg-primary)", color: p === page ? "white" : "var(--text-secondary)", border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}` }}>{p}</button>
               ))}
             </div>
           </div>
@@ -707,9 +872,10 @@ export default function UsersClient({
       </div>
 
       {/* Modal */}
-      {modal && (
+      {modal && mounted
+        ? createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
           onClick={() => setModal(null)}
         >
           <div
@@ -746,7 +912,7 @@ export default function UsersClient({
                         type="button"
                         disabled={photoBusy || loading}
                         onClick={() => setPhotoDraft("")}
-                        className="px-2.5 py-1 rounded border text-[11px]"
+                        className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
                         style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
                       >
                         Hapus foto
@@ -757,7 +923,7 @@ export default function UsersClient({
                         type="button"
                         disabled={photoBusy || loading}
                         onClick={() => setPhotoDraft(null)}
-                        className="px-2.5 py-1 rounded border text-[11px]"
+                        className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
                         style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
                       >
                         Batalkan perubahan foto
@@ -889,8 +1055,10 @@ export default function UsersClient({
               <button onClick={handleSave} disabled={loading} className="px-4 py-2 rounded-lg text-sm text-white disabled:opacity-60" style={{ background: "var(--accent)" }}>Simpan</button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }

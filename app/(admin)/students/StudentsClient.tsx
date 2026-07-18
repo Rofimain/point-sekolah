@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
@@ -13,6 +14,7 @@ import {
   compressImageToDataUrl,
   isProbablyImageFile,
 } from "@/lib/compress-image-client";
+import { lockAppScroll, Z_MODAL_CLASS, Z_MODAL_ELEVATED_CLASS } from "@/lib/ui-layers";
 
 const GRADES = ["X", "XI", "XII"] as const;
 
@@ -113,6 +115,14 @@ export default function StudentsClient({
   const [classMajor, setClassMajor] = useState("");
   const [classYear, setClassYear] = useState(suggestedYear);
   const [deletingClassId, setDeletingClassId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!classModalOpen && !tab) return;
+    return lockAppScroll();
+  }, [classModalOpen, tab]);
 
   useEffect(() => {
     setSearch(searchParams.search || "");
@@ -519,7 +529,66 @@ export default function StudentsClient({
           )}
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px]">
+          {students.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+              {selectedClass
+                ? `Belum ada siswa di kelas ${selectedClass.name}.`
+                : "Belum ada siswa di halaman ini."}
+            </div>
+          ) : (
+            <>
+              <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
+                {students.map((u) => (
+                  <li
+                    key={u.id}
+                    className="flex items-start gap-3 px-4 py-3"
+                    style={{ opacity: u.active ? 1 : 0.55 }}
+                  >
+                    <UserAvatar
+                      name={u.name}
+                      userId={u.id}
+                      photoPresent={!!u.photoPresent}
+                      size="md"
+                      rounded="lg"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold break-words" style={{ color: "var(--text-primary)" }}>
+                          {u.name}
+                        </span>
+                        <span
+                          className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                          style={{
+                            background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)",
+                            color: u.active ? "var(--success)" : "var(--text-muted)",
+                          }}
+                        >
+                          {u.active ? "Aktif" : "Nonaktif"}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 font-mono text-[11px]" style={{ color: "var(--text-secondary)" }}>
+                        NISN: {u.nisn || "—"}
+                      </div>
+                      {!selectedClass ? (
+                        <div className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                          {u.class?.name ?? "—"}
+                        </div>
+                      ) : null}
+                      <div className="mt-0.5 break-all text-[11px]" style={{ color: "var(--text-muted)" }}>
+                        {u.email}
+                      </div>
+                      <Link
+                        href={`/students/${u.id}/cetak`}
+                        className="mt-2 inline-flex min-h-11 touch-manipulation items-center text-xs font-semibold hover:underline"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        Info poin
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <table className="hidden w-full min-w-[520px] md:table">
             <thead>
               <tr style={{ background: "var(--bg-primary)" }}>
                 {(selectedClass
@@ -537,16 +606,7 @@ export default function StudentsClient({
               </tr>
             </thead>
             <tbody>
-              {students.length === 0 ? (
-                <tr>
-                  <td colSpan={selectedClass ? 5 : 6} className="px-4 py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                    {selectedClass
-                      ? `Belum ada siswa di kelas ${selectedClass.name}.`
-                      : "Belum ada siswa di halaman ini."}
-                  </td>
-                </tr>
-              ) : (
-                students.map((u) => (
+                {students.map((u) => (
                   <tr key={u.id} className="border-t" style={{ borderColor: "var(--border)", opacity: u.active ? 1 : 0.55 }}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -587,17 +647,18 @@ export default function StudentsClient({
                     <td className="px-4 py-3 whitespace-nowrap">
                       <Link
                         href={`/students/${u.id}/cetak`}
-                        className="text-[11px] font-semibold hover:underline"
+                        className="inline-flex min-h-11 items-center text-xs font-semibold hover:underline touch-manipulation"
                         style={{ color: "var(--accent)" }}
                       >
                         Info poin
                       </Link>
                     </td>
                   </tr>
-                ))
-              )}
+                ))}
             </tbody>
           </table>
+            </>
+          )}
         </div>
         {totalPages > 1 && (
           <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
@@ -614,7 +675,7 @@ export default function StudentsClient({
                     sp.set("page", String(p));
                     router.push(`${pathname}?${sp.toString()}`);
                   }}
-                  className="w-7 h-7 rounded text-xs"
+                  className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs"
                   style={{
                     background: p === page ? "var(--accent)" : "var(--bg-primary)",
                     color: p === page ? "white" : "var(--text-secondary)",
@@ -630,9 +691,10 @@ export default function StudentsClient({
       </div>
       </div>
 
-      {classModalOpen && (
+      {classModalOpen && mounted
+        ? createPortal(
         <div
-          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          className={`fixed inset-0 ${Z_MODAL_ELEVATED_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
           onClick={() => setClassModalOpen(false)}
         >
           <form
@@ -722,12 +784,15 @@ export default function StudentsClient({
               </button>
             </div>
           </form>
-        </div>
-      )}
+        </div>,
+            document.body
+          )
+        : null}
 
-      {tab === "single" && (
+      {tab === "single" && mounted
+        ? createPortal(
         <div
-          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="student-add-title"
@@ -881,12 +946,15 @@ export default function StudentsClient({
           </button>
             </form>
           </div>
-        </div>
-      )}
+        </div>,
+            document.body
+          )
+        : null}
 
-      {tab === "bulk" && (
+      {tab === "bulk" && mounted
+        ? createPortal(
         <div
-          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="bulk-import-title"
@@ -1053,12 +1121,15 @@ export default function StudentsClient({
             </div>
           )}
           </div>
-        </div>
-      )}
+        </div>,
+            document.body
+          )
+        : null}
 
-      {tab === "kelas" && (
+      {tab === "kelas" && mounted
+        ? createPortal(
         <div
-          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="class-list-title"
@@ -1105,8 +1176,8 @@ export default function StudentsClient({
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-sheet-bottom pt-2 sm:px-6">
           <div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
-            <div className="max-h-[min(55vh,24rem)] overflow-auto">
-              <table className="w-full">
+            <div className="max-h-[min(55dvh,24rem)] overflow-x-auto overflow-y-auto">
+              <table className="w-full min-w-[560px]">
                 <thead>
                   <tr style={{ background: "var(--bg-secondary)" }}>
                     {["Nama kelas", "Angkatan", "Jurusan", "Tahun ajaran", "Jumlah siswa", "Aksi"].map((h) => (
@@ -1155,7 +1226,7 @@ export default function StudentsClient({
                             type="button"
                             disabled={deletingClassId === c.id}
                             onClick={() => deleteClassRow(c.id, c.name, c._count.students)}
-                            className="touch-manipulation rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold disabled:opacity-50"
+                            className="touch-manipulation rounded-lg border px-3 py-2.5 text-[11px] font-semibold min-h-11 disabled:opacity-50"
                             style={{
                               borderColor: "var(--danger)",
                               color: "var(--danger)",
@@ -1174,8 +1245,10 @@ export default function StudentsClient({
           </div>
           </div>
           </div>
-        </div>
-      )}
+        </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }

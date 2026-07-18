@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/hea
 import { calendarTodayYmd, dateToYmdInput } from "@/lib/incident-date";
 import { EvidencePreviewModal } from "@/components/records/EvidencePreviewModal";
 import { EvidenceMultiUploader } from "@/components/records/EvidenceMultiUploader";
+import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
 
 const SESSION_SLOTS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 
@@ -84,6 +86,14 @@ export default function RecordsClient({
     details: QrisSuccessDetail[];
     receiptRecordId?: string;
   } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!editModal && !addModal) return;
+    return lockAppScroll();
+  }, [editModal, addModal]);
 
   useEffect(() => {
     setSearch(searchParams.search || "");
@@ -431,43 +441,243 @@ export default function RecordsClient({
       </div>
 
       <div className="panel-flush">
-        <div className="overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0">
-          <table className="w-full min-w-[800px]">
-            <thead><tr style={{ background: "color-mix(in srgb, var(--bg-primary) 75%, var(--accent-light))" }}>
-              {["Nama Siswa","Kelas","Pelanggaran","Tanggal","Poin","Total Poin","Status","Bukti","Aksi"].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
-              ))}
-            </tr></thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                    Tidak ada data
-                  </td>
-                </tr>
-              ) : (
-                rows.map((row) => {
-                  if (row.type === "placeholder") {
-                    const s = row.student;
-                    const totalPts = totalPointsMap[s.id] || 0;
+        {rows.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+            Tidak ada data
+          </div>
+        ) : (
+          <>
+            {/* Dual layout: card (md:hidden) + table (md+) — aksi memakai handler yang sama; jaga sinkron saat edit. */}
+            {/* Mobile cards */}
+            <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
+              {rows.map((row) => {
+                if (row.type === "placeholder") {
+                  const s = row.student;
+                  const totalPts = totalPointsMap[s.id] || 0;
+                  return (
+                    <li key={`ph-${s.id}`} className="space-y-2.5 px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold break-words" style={{ color: "var(--text-primary)" }}>
+                            {s.name}
+                          </div>
+                          <div className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                            {s.class?.name || "—"}
+                          </div>
+                          <div className="mt-1 text-xs italic" style={{ color: "var(--text-muted)" }}>
+                            Belum ada catatan
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <PointBadge points={totalPts} />
+                          <StatusBadge points={totalPts} />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAddStudentId(s.id);
+                            setAddVtId("");
+                            setAddNotes("");
+                            setAddSession("");
+                            setAddEvidenceImages([]);
+                            setAddSignatureText("");
+                            setAddIncidentDate(calendarTodayYmd());
+                            setAddModal(true);
+                          }}
+                          className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                          style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                        >
+                          + Catatan
+                        </button>
+                      </div>
+                    </li>
+                  );
+                }
+                const r = row.record;
+                const totalPts = totalPointsMap[r.studentId] || 0;
+                return (
+                  <li key={r.id} className="space-y-2.5 px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold break-words" style={{ color: "var(--text-primary)" }}>
+                          {r.student.name}
+                        </div>
+                        <div className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                          {r.student.class?.name || "—"} · {formatDate(r.date)}
+                        </div>
+                        <div className="mt-1 text-xs leading-snug break-words" style={{ color: "var(--text-secondary)" }}>
+                          {r.violationType.name}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            Catatan
+                          </span>
+                          <PointBadge points={r.points} />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            Total
+                          </span>
+                          <PointBadge points={totalPts} />
+                        </div>
+                        <StatusBadge points={totalPts} />
+                      </div>
+                    </div>
+                    {r.evidenceImagePresent ? (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewRecordId(r.id)}
+                        className="min-h-11 touch-manipulation text-left text-xs font-semibold hover:underline"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        Lihat foto bukti
+                      </button>
+                    ) : null}
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => openReceiptSheetForRecord(r)}
+                        className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium"
+                        style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                      >
+                        Bukti
+                      </button>
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditModal(r);
+                            setEditPoints(r.points);
+                            setEditNotes(r.notes || "");
+                            setEditVtId(r.violationTypeId);
+                            setEditIncidentDate(dateToYmdInput(r.date));
+                            setEditEvidenceImages([]);
+                          }}
+                          className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                          style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(r.id)}
+                          className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                          style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
+                        >
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* md+: table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr style={{ background: "color-mix(in srgb, var(--bg-primary) 75%, var(--accent-light))" }}>
+                    {["Nama Siswa", "Kelas", "Pelanggaran", "Tanggal", "Poin", "Total Poin", "Status", "Bukti", "Aksi"].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => {
+                    if (row.type === "placeholder") {
+                      const s = row.student;
+                      const totalPts = totalPointsMap[s.id] || 0;
+                      return (
+                        <tr key={`ph-${s.id}`} className="border-t" style={{ borderColor: "var(--border)" }}>
+                          <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
+                            {s.name}
+                          </td>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                            {s.class?.name || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-xs italic" style={{ color: "var(--text-muted)" }}>
+                            Belum ada catatan
+                          </td>
+                          <td className="px-4 py-3 text-xs" style={{ color: "var(--text-muted)" }}>
+                            —
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                              —
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <PointBadge points={totalPts} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge points={totalPts} />
+                          </td>
+                          <td className="px-4 py-3 text-xs" style={{ color: "var(--text-muted)" }}>
+                            —
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <button
+                                type="button"
+                                disabled
+                                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium opacity-60 cursor-not-allowed"
+                                style={{ borderColor: "var(--border)", color: "var(--text-muted)", background: "var(--bg-primary)" }}
+                              >
+                                Bukti
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAddStudentId(s.id);
+                                  setAddVtId("");
+                                  setAddNotes("");
+                                  setAddSession("");
+                                  setAddEvidenceImages([]);
+                                  setAddSignatureText("");
+                                  setAddIncidentDate(calendarTodayYmd());
+                                  setAddModal(true);
+                                }}
+                                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                                style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                              >
+                                + Catatan
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                    const r = row.record;
+                    const totalPts = totalPointsMap[r.studentId] || 0;
                     return (
-                      <tr key={`ph-${s.id}`} className="border-t" style={{ borderColor: "var(--border)" }}>
+                      <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
                         <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
-                          {s.name}
+                          {r.student.name}
                         </td>
                         <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
-                          {s.class?.name || "—"}
+                          {r.student.class?.name || "—"}
                         </td>
-                        <td className="px-4 py-3 text-xs italic" style={{ color: "var(--text-muted)" }}>
-                          Belum ada catatan
+                        <td className="px-4 py-3 text-xs" style={{ color: "var(--text-secondary)", maxWidth: 160 }}>
+                          <span className="line-clamp-1">{r.violationType.name}</span>
                         </td>
-                        <td className="px-4 py-3 text-xs" style={{ color: "var(--text-muted)" }}>
-                          —
+                        <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                          {formatDate(r.date)}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                            —
-                          </span>
+                          <PointBadge points={r.points} />
                         </td>
                         <td className="px-4 py-3">
                           <PointBadge points={totalPts} />
@@ -475,130 +685,75 @@ export default function RecordsClient({
                         <td className="px-4 py-3">
                           <StatusBadge points={totalPts} />
                         </td>
-                        <td className="px-4 py-3 text-xs" style={{ color: "var(--text-muted)" }}>
-                          —
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                          <button
-                            type="button"
-                            disabled
-                            className="px-2.5 py-1 rounded border text-[11px] font-medium opacity-60 cursor-not-allowed"
-                            style={{ borderColor: "var(--border)", color: "var(--text-muted)", background: "var(--bg-primary)" }}
-                          >
-                            Bukti
-                          </button>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {r.evidenceImagePresent ? (
                             <button
                               type="button"
-                              onClick={() => {
-                                setAddStudentId(s.id);
-                                setAddVtId("");
-                                setAddNotes("");
-                                setAddSession("");
-                                setAddEvidenceImages([]);
-                                setAddSignatureText("");
-                                setAddIncidentDate(calendarTodayYmd());
-                                setAddModal(true);
-                              }}
-                              className="px-2.5 py-1 rounded border text-[11px]"
-                              style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                              onClick={() => setPreviewRecordId(r.id)}
+                              className="inline-flex min-h-11 items-center text-xs font-semibold underline-offset-2 hover:underline touch-manipulation"
+                              style={{ color: "var(--accent)" }}
                             >
-                              + Catatan
+                              Lihat foto
                             </button>
+                          ) : (
+                            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                              —
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openReceiptSheetForRecord(r)}
+                              className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium"
+                              style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                            >
+                              Bukti
+                            </button>
+                            {canManage && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditModal(r);
+                                  setEditPoints(r.points);
+                                  setEditNotes(r.notes || "");
+                                  setEditVtId(r.violationTypeId);
+                                  setEditIncidentDate(dateToYmdInput(r.date));
+                                  setEditEvidenceImages([]);
+                                }}
+                                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                                style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                              >
+                                Edit
+                              </button>
+                            )}
+                            {canManage && (
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(r.id)}
+                                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                                style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
+                              >
+                                Hapus
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
                     );
-                  }
-                  const r = row.record;
-                  const totalPts = totalPointsMap[r.studentId] || 0;
-                  return (
-                    <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                      <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
-                        {r.student.name}
-                      </td>
-                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
-                        {r.student.class?.name || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs" style={{ color: "var(--text-secondary)", maxWidth: 160 }}>
-                        <span className="line-clamp-1">{r.violationType.name}</span>
-                      </td>
-                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
-                        {formatDate(r.date)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <PointBadge points={r.points} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <PointBadge points={totalPts} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge points={totalPts} />
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {r.evidenceImagePresent ? (
-                          <button
-                            type="button"
-                            onClick={() => setPreviewRecordId(r.id)}
-                            className="text-[11px] font-semibold underline-offset-2 hover:underline"
-                            style={{ color: "var(--accent)" }}
-                          >
-                            Lihat foto
-                          </button>
-                        ) : (
-                          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                            —
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => openReceiptSheetForRecord(r)}
-                            className="px-2.5 py-1 rounded border text-[11px] font-medium"
-                            style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg-primary)" }}
-                          >
-                            Bukti
-                          </button>
-                          {canManage && <button
-                            type="button"
-                            onClick={() => {
-                              setEditModal(r);
-                              setEditPoints(r.points);
-                              setEditNotes(r.notes || "");
-                              setEditVtId(r.violationTypeId);
-                              setEditIncidentDate(dateToYmdInput(r.date));
-                              setEditEvidenceImages([]);
-                            }}
-                            className="px-2.5 py-1 rounded border text-[11px]"
-                            style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
-                          >
-                            Edit
-                          </button>}
-                          {canManage && <button
-                            type="button"
-                            onClick={() => handleDelete(r.id)}
-                            className="px-2.5 py-1 rounded border text-[11px]"
-                            style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
-                          >
-                            Hapus
-                          </button>}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
         {totalPages > 1 && (
           <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
             <span className="text-xs" style={{ color: "var(--text-muted)" }}>Halaman {page} dari {totalPages}</span>
             <div className="flex flex-wrap gap-1">
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map(p => (
-                <button key={p} onClick={() => { const sp = new URLSearchParams(searchParams); sp.set("page", String(p)); router.push(`${pathname}?${sp.toString()}`); }} className="w-7 h-7 rounded text-xs" style={{ background: p === page ? "var(--accent)" : "var(--bg-primary)", color: p === page ? "white" : "var(--text-secondary)", border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}` }}>{p}</button>
+                <button key={p} onClick={() => { const sp = new URLSearchParams(searchParams); sp.set("page", String(p)); router.push(`${pathname}?${sp.toString()}`); }} className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs" style={{ background: p === page ? "var(--accent)" : "var(--bg-primary)", color: p === page ? "white" : "var(--text-secondary)", border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}` }}>{p}</button>
               ))}
             </div>
           </div>
@@ -606,9 +761,10 @@ export default function RecordsClient({
       </div>
 
       {/* Edit Modal */}
-      {canManage && editModal && (
+      {canManage && editModal && mounted
+        ? createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
           onClick={() => setEditModal(null)}
         >
           <div
@@ -681,17 +837,20 @@ export default function RecordsClient({
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setEditModal(null)} className="px-4 py-2 rounded-lg border text-sm" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>Batal</button>
-              <button onClick={handleEdit} disabled={loading} className="px-4 py-2 rounded-lg text-sm text-white disabled:opacity-60" style={{ background: "var(--accent)" }}>Simpan</button>
+              <button onClick={() => setEditModal(null)} className="min-h-11 touch-manipulation px-4 py-2.5 rounded-lg border text-sm" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>Batal</button>
+              <button onClick={handleEdit} disabled={loading} className="min-h-11 touch-manipulation px-4 py-2.5 rounded-lg text-sm text-white disabled:opacity-60" style={{ background: "var(--accent)" }}>Simpan</button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+            document.body
+          )
+        : null}
 
       {/* Add Modal */}
-      {addModal && (
+      {addModal && mounted
+        ? createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/55 p-0 sm:items-center sm:p-4"
+          className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center overflow-y-auto bg-black/55 p-0 sm:items-center sm:p-4`}
           onClick={() => {
             setAddModal(false);
           }}
@@ -839,8 +998,10 @@ export default function RecordsClient({
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }

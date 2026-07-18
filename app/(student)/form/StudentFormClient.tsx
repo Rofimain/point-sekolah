@@ -233,7 +233,7 @@ export default function StudentFormClient({
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh]" style={{ background: "var(--bg-primary)" }}>
+    <div className="min-h-[100dvh]" style={{ background: "var(--bg-primary)" }}>
       {previewRecordId ? (
         <EvidencePreviewModal recordId={previewRecordId} onClose={() => setPreviewRecordId(null)} />
       ) : null}
@@ -261,8 +261,9 @@ export default function StudentFormClient({
           />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-serif text-white truncate sm:text-base">{session.user.name}</div>
-            <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
-              {studentClass || "Kelas tidak ditetapkan"} {studentNisn ? `· NISN: ${studentNisn}` : ""}
+            <div className="mt-0.5 break-words text-xs leading-snug" style={{ color: "rgba(255,255,255,0.5)" }}>
+              {studentClass || "Kelas tidak ditetapkan"}
+              {studentNisn ? ` · NISN: ${studentNisn}` : ""}
             </div>
           </div>
           <div className="text-right shrink-0">
@@ -405,11 +406,11 @@ export default function StudentFormClient({
                             {code || "—"}
                           </span>
                           <div className="min-w-0">
-                            <div className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                            <div className="text-xs font-medium break-words" style={{ color: "var(--text-primary)" }}>
                               {title || v.name}
                             </div>
                             {v.description && (
-                              <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                              <div className="text-[10px] mt-0.5 break-words" style={{ color: "var(--text-muted)" }}>
                                 {v.description}
                               </div>
                             )}
@@ -572,7 +573,7 @@ export default function StudentFormClient({
                       setSignatureText("");
                       setIncidentDate(calendarTodayYmd());
                     }}
-                    className="px-4 py-2 rounded-lg border text-sm"
+                    className="min-h-11 touch-manipulation px-4 py-2.5 rounded-lg border text-sm"
                     style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
                   >
                     Batal
@@ -580,7 +581,7 @@ export default function StudentFormClient({
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-5 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
+                    className="min-h-11 touch-manipulation px-5 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
                     style={{ background: "var(--accent)" }}
                   >
                     {loading ? "Mengirim..." : "Kirim laporan"}
@@ -600,67 +601,110 @@ export default function StudentFormClient({
                   Belum ada catatan pelanggaran
                 </div>
               ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr style={{ background: "var(--bg-primary)" }}>
-                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
-                        Tanggal
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
-                        Pelanggaran
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
-                        Poin
-                      </th>
-                      <th
-                        className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase hidden sm:table-cell"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        Ket.
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
-                        Laporan
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <>
+                  {/* Mobile: stacked cards — avoids clipped table columns */}
+                  <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
                     {records.map((r: any) => (
-                      <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                        <td className="px-4 py-3 text-xs" style={{ color: "var(--text-secondary)" }}>
-                          {formatDate(r.date)}
-                        </td>
-                        <td className="px-4 py-3 text-xs" style={{ color: "var(--text-primary)" }}>
-                          {r.violationType.name}
-                        </td>
-                        <td className="px-4 py-3">
-                          <PointBadge points={r.points} />
-                        </td>
-                        <td className="px-4 py-3 text-xs hidden sm:table-cell" style={{ color: "var(--text-muted)" }}>
-                          {r.notes || "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-col items-start gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setPreviewRecordId(r.id)}
-                              className="text-[11px] font-semibold hover:underline"
-                              style={{ color: "var(--accent)" }}
-                            >
-                              Lihat detail{r.evidenceImagePresent ? " / foto" : ""}
-                            </button>
-                            <a
-                              href={`/api/records/${encodeURIComponent(r.id)}/evidence-pdf`}
-                              className="text-[11px] font-semibold hover:underline"
-                              style={{ color: "var(--success)" }}
-                            >
-                              Unduh PDF
-                            </a>
+                      <li key={r.id} className="px-4 py-3 space-y-2" style={{ borderColor: "var(--border)" }}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[11px] tabular-nums" style={{ color: "var(--text-muted)" }}>
+                              {formatDate(r.date)}
+                            </div>
+                            <div className="mt-0.5 text-xs leading-snug break-words" style={{ color: "var(--text-primary)" }}>
+                              {r.violationType.name}
+                            </div>
+                            {r.notes ? (
+                              <div className="mt-1 text-[11px] leading-snug break-words" style={{ color: "var(--text-muted)" }}>
+                                {r.notes}
+                              </div>
+                            ) : null}
                           </div>
-                        </td>
-                      </tr>
+                          <PointBadge points={r.points} />
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewRecordId(r.id)}
+                            className="min-h-11 touch-manipulation py-2 text-xs font-semibold hover:underline"
+                            style={{ color: "var(--accent)" }}
+                          >
+                            Lihat detail{r.evidenceImagePresent ? " / foto" : ""}
+                          </button>
+                          <a
+                            href={`/api/records/${encodeURIComponent(r.id)}/evidence-pdf`}
+                            className="inline-flex min-h-11 touch-manipulation items-center py-2 text-xs font-semibold hover:underline"
+                            style={{ color: "var(--success)" }}
+                          >
+                            Unduh PDF
+                          </a>
+                        </div>
+                      </li>
                     ))}
-                  </tbody>
-                </table>
+                  </ul>
+
+                  {/* sm+: scrollable table */}
+                  <div className="hidden overflow-x-auto md:block">
+                    <table className="w-full min-w-[520px]">
+                      <thead>
+                        <tr style={{ background: "var(--bg-primary)" }}>
+                          <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                            Tanggal
+                          </th>
+                          <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
+                            Pelanggaran
+                          </th>
+                          <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                            Poin
+                          </th>
+                          <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                            Ket.
+                          </th>
+                          <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                            Laporan
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {records.map((r: any) => (
+                          <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                            <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                              {formatDate(r.date)}
+                            </td>
+                            <td className="px-4 py-3 text-xs max-w-[16rem] break-words" style={{ color: "var(--text-primary)" }}>
+                              {r.violationType.name}
+                            </td>
+                            <td className="px-4 py-3">
+                              <PointBadge points={r.points} />
+                            </td>
+                            <td className="px-4 py-3 text-xs max-w-[10rem] break-words" style={{ color: "var(--text-muted)" }}>
+                              {r.notes || "—"}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col items-start gap-1.5 whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewRecordId(r.id)}
+                                  className="inline-flex min-h-11 items-center text-xs font-semibold hover:underline touch-manipulation"
+                                  style={{ color: "var(--accent)" }}
+                                >
+                                  Lihat detail{r.evidenceImagePresent ? " / foto" : ""}
+                                </button>
+                                <a
+                                  href={`/api/records/${encodeURIComponent(r.id)}/evidence-pdf`}
+                                  className="inline-flex min-h-11 items-center text-xs font-semibold hover:underline touch-manipulation"
+                                  style={{ color: "var(--success)" }}
+                                >
+                                  Unduh PDF
+                                </a>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
 
@@ -682,59 +726,76 @@ export default function StudentFormClient({
                   Belum ada remisi atau penyesuaian poin yang tercatat.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[340px]">
-                    <thead>
-                      <tr style={{ background: "var(--bg-primary)" }}>
-                        <th
-                          className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          Tanggal
-                        </th>
-                        <th
-                          className="px-4 py-2.5 text-right text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          Δ Poin
-                        </th>
-                        <th
-                          className="px-4 py-2.5 text-right text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap hidden sm:table-cell"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          Total bruto saat itu
-                        </th>
-                        <th
-                          className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase min-w-[8rem]"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          Keterangan
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pointAdjustments.map((a) => (
-                        <tr key={a.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                <>
+                  <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
+                    {pointAdjustments.map((a) => (
+                      <li key={a.id} className="px-4 py-3 space-y-1.5" style={{ borderColor: "var(--border)" }}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1 text-[11px] tabular-nums" style={{ color: "var(--text-muted)" }}>
                             {formatInputDateTime(a.createdAt)}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <AdjustmentDelta delta={a.pointsDelta} />
-                          </td>
-                          <td className="px-4 py-3 text-xs text-right tabular-nums hidden sm:table-cell" style={{ color: "var(--text-muted)" }}>
-                            {a.grossTotalBefore}
-                          </td>
-                          <td className="px-4 py-3 text-xs leading-snug" style={{ color: "var(--text-primary)" }}>
-                            <span className="block">{formatPointAdjustmentReason(a.reason)}</span>
-                            <span className="mt-0.5 block text-[10px] sm:hidden" style={{ color: "var(--text-muted)" }}>
-                              Total bruto saat itu: {a.grossTotalBefore}
-                            </span>
-                          </td>
+                          </div>
+                          <AdjustmentDelta delta={a.pointsDelta} />
+                        </div>
+                        <div className="text-xs leading-snug break-words" style={{ color: "var(--text-primary)" }}>
+                          {formatPointAdjustmentReason(a.reason)}
+                        </div>
+                        <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                          Total bruto saat itu: {a.grossTotalBefore}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="hidden overflow-x-auto md:block">
+                    <table className="w-full min-w-[420px]">
+                      <thead>
+                        <tr style={{ background: "var(--bg-primary)" }}>
+                          <th
+                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            Tanggal
+                          </th>
+                          <th
+                            className="px-4 py-2.5 text-right text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            Δ Poin
+                          </th>
+                          <th
+                            className="px-4 py-2.5 text-right text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            Total bruto saat itu
+                          </th>
+                          <th
+                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase min-w-[8rem]"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            Keterangan
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {pointAdjustments.map((a) => (
+                          <tr key={a.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                            <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                              {formatInputDateTime(a.createdAt)}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <AdjustmentDelta delta={a.pointsDelta} />
+                            </td>
+                            <td className="px-4 py-3 text-xs text-right tabular-nums" style={{ color: "var(--text-muted)" }}>
+                              {a.grossTotalBefore}
+                            </td>
+                            <td className="px-4 py-3 text-xs leading-snug break-words" style={{ color: "var(--text-primary)" }}>
+                              {formatPointAdjustmentReason(a.reason)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </>

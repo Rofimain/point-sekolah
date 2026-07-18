@@ -201,7 +201,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
             <button
               type="button"
               onClick={() => setAdding((v) => !v)}
-              className="rounded-md border px-2 py-1 text-[11px] font-semibold"
+              className="min-h-11 touch-manipulation rounded-md border px-3 py-2 text-[11px] font-semibold"
               style={{ borderColor: "var(--accent-border)", color: "var(--accent)", background: "var(--accent-light)" }}
             >
               + Tambah
@@ -235,7 +235,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                   type="button"
                   disabled={saving}
                   onClick={() => void createTemplate()}
-                  className="rounded-md px-2 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+                  className="min-h-11 flex-1 touch-manipulation rounded-md px-3 py-2 text-[11px] font-semibold text-white disabled:opacity-50"
                   style={{ background: "var(--accent)" }}
                 >
                   Buat
@@ -247,7 +247,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                     setNewTitle("");
                     setCopyFromId("");
                   }}
-                  className="rounded-md border px-2 py-1.5 text-[11px] font-semibold"
+                  className="min-h-11 flex-1 touch-manipulation rounded-md border px-3 py-2 text-[11px] font-semibold"
                   style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
                 >
                   Batal
@@ -262,7 +262,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                 <button
                   type="button"
                   onClick={() => selectTemplate(t)}
-                  className="w-full rounded-lg px-2.5 py-2 text-left text-xs transition"
+                  className="w-full min-h-11 touch-manipulation rounded-lg px-2.5 py-2.5 text-left text-xs transition"
                   style={{
                     background: t.id === selectedId ? "var(--accent-light)" : "transparent",
                     color: t.id === selectedId ? "var(--accent)" : "var(--text-primary)",

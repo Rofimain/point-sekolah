@@ -132,7 +132,7 @@ export function AddRecordStudentPicker({
             background: "var(--bg-secondary)",
             borderColor: "var(--border)",
             boxShadow: "0 16px 48px var(--shadow)",
-            maxHeight: "min(22rem, 70vh)",
+            maxHeight: "min(22rem, 70dvh)",
           }}
         >
           <div className="p-2 border-b" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>

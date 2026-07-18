@@ -35,7 +35,7 @@ export default function StudentLoginPage() {
 
   return (
     <div
-      className="flex min-h-screen min-h-[100dvh] flex-col items-center justify-center px-4 pt-10 pb-safe-bottom"
+      className="flex min-h-[100dvh] flex-col items-center justify-center px-4 pt-10 pb-safe-bottom"
       style={{ background: "var(--bg-primary)" }}
     >
       <div className="panel w-full max-w-sm rounded-2xl border p-5 sm:p-8" style={{ borderColor: "var(--border)" }}>

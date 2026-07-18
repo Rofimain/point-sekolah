@@ -108,7 +108,7 @@ function SimpleNavLink({
       )}
     >
       <IconBox>{icon}</IconBox>
-      <span className="truncate text-[12px] font-semibold tracking-tight">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-[12px] font-semibold tracking-tight">{label}</span>
     </Link>
   );
 }

@@ -217,9 +217,9 @@ export default async function DashboardPage() {
           ) : (
             <div className="space-y-2">
               {topViolations.map((v) => (
-                <div key={v.name} className="flex justify-between items-center py-1.5 border-b" style={{ borderColor: "var(--border)" }}>
-                  <span className="text-xs truncate mr-2" style={{ color: "var(--text-secondary)" }}>{v.name}</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap" style={{ background: "var(--warning-bg)", color: "var(--warning)" }}>{v.count} kasus</span>
+                <div key={v.name} className="flex min-w-0 items-center justify-between gap-2 py-1.5 border-b" style={{ borderColor: "var(--border)" }}>
+                  <span className="min-w-0 flex-1 truncate text-xs" style={{ color: "var(--text-secondary)" }}>{v.name}</span>
+                  <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap" style={{ background: "var(--warning-bg)", color: "var(--warning)" }}>{v.count} kasus</span>
                 </div>
               ))}
             </div>

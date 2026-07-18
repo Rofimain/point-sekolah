@@ -64,16 +64,32 @@
     border-color: var(--border);
   }
 
+  html {
+    overflow-x: clip;
+  }
+
   body {
+    overflow-x: clip;
     background-color: var(--bg-primary);
     background-image:
       radial-gradient(ellipse 120% 80% at 100% -20%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 55%),
       radial-gradient(ellipse 90% 60% at -10% 40%, var(--gold-soft), transparent 50%);
-    background-attachment: fixed;
+    background-attachment: scroll;
     color: var(--text-primary);
     font-family: var(--font-sans), system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media (min-width: 1024px) {
+    body {
+      background-attachment: fixed;
+    }
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
   }
 
   .font-serif {
@@ -91,6 +107,18 @@
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+}
+
+/* Cegah zoom otomatis Safari iOS pada input < 16px.
+ * Tradeoff: di viewport < 640px, utility text-xs/text-sm pada input/select/textarea
+ * diganti ke 16px. Label di sekitarnya tetap kecil; hanya field yang membesar.
+ * Jangan hapus tanpa alternatif anti-zoom iOS. */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }
 
@@ -139,7 +167,7 @@
 
   .admin-chrome-body {
     height: calc(100dvh - 3.5rem);
-    max-height: calc(100vh - 3.5rem);
+    max-height: calc(100dvh - 3.5rem);
   }
 }
 

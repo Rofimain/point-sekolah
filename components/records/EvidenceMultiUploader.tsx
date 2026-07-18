@@ -100,21 +100,22 @@ export function EvidenceMultiUploader({
           {images.map((src, index) => (
             <div
               key={`${index}-${src.slice(0, 32)}`}
-              className="relative overflow-hidden rounded-lg border"
+              className="relative rounded-lg border"
               style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
             >
-              <img src={src} alt={`Bukti ${index + 1}`} className="aspect-square w-full object-cover" />
-              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-black/55 px-1.5 py-1">
-                <span className="text-[10px] font-medium text-white">{index + 1}</span>
-                <button
-                  type="button"
-                  disabled={disabled || busy}
-                  onClick={() => removeAt(index)}
-                  className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-white hover:bg-white/20"
-                >
-                  Hapus
-                </button>
-              </div>
+              <img src={src} alt={`Bukti ${index + 1}`} className="aspect-square w-full rounded-lg object-cover" />
+              <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                {index + 1}
+              </span>
+              <button
+                type="button"
+                disabled={disabled || busy}
+                onClick={() => removeAt(index)}
+                className="absolute right-1 top-1 inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center rounded-lg bg-black/65 text-xs font-semibold text-white hover:bg-black/80 disabled:opacity-50"
+                aria-label={`Hapus foto bukti ${index + 1}`}
+              >
+                Hapus
+              </button>
             </div>
           ))}
         </div>

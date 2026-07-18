@@ -8,6 +8,7 @@ import {
   type ViolationSection,
 } from "@/lib/violation-sections";
 import { joinViolationName, splitViolationName, violationNameSortOrder } from "@/lib/violation-name";
+import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
 
 const CATS = ["RINGAN", "SEDANG", "BERAT"] as const;
 const CAT_LABELS: Record<string, string> = { RINGAN: "Ringan", SEDANG: "Sedang", BERAT: "Berat" };
@@ -86,11 +87,7 @@ export default function ViolationsClient({
 
   useEffect(() => {
     if (!modal) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return lockAppScroll();
   }, [modal]);
 
   function openAdd() {
@@ -200,7 +197,7 @@ export default function ViolationsClient({
     canManage && modal && portalReady
       ? createPortal(
           <div
-            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+            className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
             style={{ top: 0, left: 0, right: 0, bottom: 0 }}
             onClick={() => setModal(null)}
           >
@@ -498,7 +495,79 @@ export default function ViolationsClient({
             >
               {getViolationSectionLabel(section)} · {items.length} jenis
             </div>
-            <div className="overflow-x-auto">
+            <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
+              {items.map((v) => {
+                const { code, title } = splitViolationName(v.name || "");
+                return (
+                  <li key={v.id} className="space-y-2 px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[11px] font-semibold tabular-nums" style={{ color: "var(--text-muted)" }}>
+                            {code || "—"}
+                          </span>
+                          <CatBadge cat={v.category} />
+                        </div>
+                        <div className="mt-1 text-sm font-medium leading-snug break-words" style={{ color: "var(--text-primary)" }}>
+                          {title || v.name}
+                        </div>
+                        {v.description ? (
+                          <div className="mt-1 text-[11px] leading-snug break-words" style={{ color: "var(--text-muted)" }}>
+                            {v.description}
+                          </div>
+                        ) : null}
+                      </div>
+                      <span
+                        className="inline-flex shrink-0 items-center justify-center min-w-9 h-6 px-1.5 rounded-full text-xs font-bold"
+                        style={{
+                          background:
+                            v.points >= 51
+                              ? "var(--danger-bg)"
+                              : v.points >= 16
+                                ? "var(--warning-bg)"
+                                : "var(--success-bg)",
+                          color:
+                            v.points >= 51
+                              ? "var(--danger)"
+                              : v.points >= 16
+                                ? "var(--warning)"
+                                : "var(--success)",
+                        }}
+                      >
+                        {v.points}
+                      </span>
+                    </div>
+                    {canManage ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          onClick={() => openEdit(v)}
+                          className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                          style={{
+                            borderColor: "var(--border)",
+                            color: "var(--text-secondary)",
+                            background: "var(--bg-primary)",
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(v.id)}
+                          className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                          style={{
+                            background: "var(--danger-bg)",
+                            color: "var(--danger)",
+                            borderColor: "var(--danger)",
+                          }}
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full table-fixed min-w-[920px]">
                 {colgroup}
                 <thead>
@@ -566,7 +635,7 @@ export default function ViolationsClient({
                             <div className="flex flex-wrap gap-1.5">
                               <button
                                 onClick={() => openEdit(v)}
-                                className="px-2.5 py-1 rounded border text-[11px]"
+                                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
                                 style={{
                                   borderColor: "var(--border)",
                                   color: "var(--text-secondary)",
@@ -577,7 +646,7 @@ export default function ViolationsClient({
                               </button>
                               <button
                                 onClick={() => handleDelete(v.id)}
-                                className="px-2.5 py-1 rounded border text-[11px]"
+                                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
                                 style={{
                                   background: "var(--danger-bg)",
                                   color: "var(--danger)",

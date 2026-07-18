@@ -7,6 +7,7 @@ import { AdminSidebar, type SidebarClass } from "@/components/layouts/AdminSideb
 import { StaffSubmissionBell } from "@/components/staff/StaffSubmissionBell";
 import { StaffSubmissionNotificationsProvider } from "@/lib/use-staff-submission-notifications";
 import { cn } from "@/lib/utils";
+import { lockAppScroll } from "@/lib/ui-layers";
 
 function SidebarSkeleton() {
   return <div className="h-full min-h-[120px] w-full animate-pulse bg-white/5" aria-hidden />;
@@ -26,9 +27,14 @@ export default function AdminChrome({
     setNavOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!navOpen) return;
+    return lockAppScroll();
+  }, [navOpen]);
+
   return (
     <StaffSubmissionNotificationsProvider>
-      <div className="flex min-h-screen min-h-[100dvh] flex-col print:block print:h-auto print:min-h-0" style={{ background: "transparent" }}>
+      <div className="flex min-h-[100dvh] flex-col print:block print:h-auto print:min-h-0" style={{ background: "transparent" }}>
         <div className="no-print print-hide">
           <TopBar
             adminNav={{ open: navOpen, onToggle: () => setNavOpen((v) => !v) }}
@@ -72,7 +78,10 @@ export default function AdminChrome({
               </Suspense>
             </div>
           </div>
-          <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-pb-safe-bottom px-3 pt-5 pb-safe-bottom motion-safe:animate-fade-up sm:px-6 sm:pt-6 lg:px-8 print:overflow-visible print:p-0 print:pb-0">
+          <main
+            id="admin-main-scroll"
+            className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-pb-safe-bottom px-3 pt-5 pb-safe-bottom motion-safe:animate-fade-up sm:px-6 sm:pt-6 lg:px-8 print:overflow-visible print:p-0 print:pb-0"
+          >
             {children}
           </main>
         </div>

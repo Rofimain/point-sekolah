@@ -210,7 +210,7 @@ export function ViolationTypePicker({
             </button>
           </div>
 
-          <div ref={listRef} className="max-h-64 overflow-y-auto overscroll-contain py-1">
+          <div ref={listRef} className="max-h-[min(16rem,50dvh)] overflow-y-auto overscroll-contain py-1">
             {value ? (
               <button
                 type="button"

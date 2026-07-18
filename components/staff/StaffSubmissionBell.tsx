@@ -63,10 +63,11 @@ export function StaffSubmissionBell() {
       <div className="relative shrink-0" ref={panelRef}>
         <button
           type="button"
-          className="relative flex h-9 w-9 touch-manipulation items-center justify-center rounded-lg border text-sm transition-colors hover:opacity-80 sm:h-8 sm:w-8"
+          className="relative flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg border text-sm transition-colors hover:opacity-80"
           style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
           aria-expanded={open}
           aria-haspopup="dialog"
+          aria-label="Laporan dari siswa"
           title="Laporan dari siswa"
           onClick={() => setOpen((v) => !v)}
         >
@@ -83,7 +84,8 @@ export function StaffSubmissionBell() {
 
         {open ? (
           <div
-            className="absolute right-0 top-[calc(100%+6px)] z-[70] w-[min(100vw-1.5rem,22rem)] max-h-[min(70vh,24rem)] overflow-hidden rounded-xl border shadow-lg"
+            className="absolute right-0 top-[calc(100%+6px)] z-[70] w-[min(100vw-1.5rem,22rem)] max-h-[min(70dvh,24rem)] overflow-hidden rounded-xl border shadow-lg"
+            /* z-[70] = Z_INDEX.dropdown — lihat lib/ui-layers.ts */
             style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
             role="dialog"
             aria-label="Daftar laporan dari siswa"
@@ -97,13 +99,13 @@ export function StaffSubmissionBell() {
               </span>
               <Link
                 href="/notifications"
-                className="text-[11px] font-semibold text-blue-600 hover:underline"
+                className="inline-flex min-h-11 items-center text-xs font-semibold text-blue-600 hover:underline touch-manipulation"
                 onClick={() => setOpen(false)}
               >
                 Buka halaman
               </Link>
             </div>
-            <ul className="max-h-[min(56vh,20rem)] overflow-y-auto overscroll-contain p-1.5">
+            <ul className="max-h-[min(56dvh,20rem)] overflow-y-auto overscroll-contain p-1.5">
               {items.length === 0 ? (
                 <li className="px-2 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
                   Belum ada laporan dari portal siswa hari ini.

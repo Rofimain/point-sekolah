@@ -119,8 +119,8 @@ export function StudentPointsPrintArticle({
           {history.records.length === 0 ? (
             <p className="text-sm text-neutral-600">Tidak ada catatan pelanggaran.</p>
           ) : (
-            <div className="overflow-hidden rounded-lg border border-neutral-200">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-lg border border-neutral-200">
+              <table className="w-full min-w-[280px] text-sm">
                 <thead>
                   <tr className="bg-neutral-50">
                     <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-neutral-500">Tanggal</th>
@@ -132,7 +132,7 @@ export function StudentPointsPrintArticle({
                   {history.records.map((r) => (
                     <tr key={r.id} className="border-t border-neutral-200">
                       <td className="px-3 py-2 whitespace-nowrap">{formatDate(r.date)}</td>
-                      <td className="px-3 py-2">{r.violationName}</td>
+                      <td className="px-3 py-2 break-words">{r.violationName}</td>
                       <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.points}</td>
                     </tr>
                   ))}
@@ -147,8 +147,8 @@ export function StudentPointsPrintArticle({
           {history.adjustments.length === 0 ? (
             <p className="text-sm text-neutral-600">Tidak ada remisi atau penyesuaian poin.</p>
           ) : (
-            <div className="overflow-hidden rounded-lg border border-neutral-200">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-lg border border-neutral-200">
+              <table className="w-full min-w-[280px] text-sm">
                 <thead>
                   <tr className="bg-neutral-50">
                     <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-neutral-500">Tanggal</th>
@@ -160,7 +160,7 @@ export function StudentPointsPrintArticle({
                   {history.adjustments.map((a) => (
                     <tr key={a.id} className="border-t border-neutral-200">
                       <td className="px-3 py-2 whitespace-nowrap">{formatDate(a.createdAt)}</td>
-                      <td className="px-3 py-2">{formatPointAdjustmentReason(a.reason)}</td>
+                      <td className="px-3 py-2 break-words">{formatPointAdjustmentReason(a.reason)}</td>
                       <td className="px-3 py-2 text-right tabular-nums font-semibold">{a.pointsDelta}</td>
                     </tr>
                   ))}

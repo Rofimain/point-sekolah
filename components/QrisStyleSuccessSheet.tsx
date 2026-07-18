@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { lockAppScroll, Z_MODAL_ELEVATED_CLASS } from "@/lib/ui-layers";
 
 export type QrisSuccessDetail = { label: string; value: string };
 
 /**
- * Overlay sukses bergaya konfirmasi pembayaran QRIS (kartu, centang hijau, detail, tombol Selesai).
+ * Overlay sukses bergaya konfirmasi QRIS.
+ * Tema mengikuti CSS variables (light/dark), bukan hardcoded putih.
  */
 export function QrisStyleSuccessSheet({
   open,
@@ -32,13 +35,13 @@ export function QrisStyleSuccessSheet({
   /** Opsional: foto siswa di atas judul (notifikasi laporan). */
   headerMedia?: ReactNode;
 }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return lockAppScroll();
   }, [open]);
 
   useEffect(() => {
@@ -47,11 +50,11 @@ export function QrisStyleSuccessSheet({
     return () => window.clearTimeout(t);
   }, [open, autoCloseMs, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-end justify-center overflow-y-auto overscroll-contain p-0 sm:items-center sm:p-4"
+      className={`fixed inset-0 ${Z_MODAL_ELEVATED_CLASS} flex items-end justify-center overflow-y-auto overscroll-contain p-0 sm:items-center sm:p-4`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="qris-success-title"
@@ -64,45 +67,62 @@ export function QrisStyleSuccessSheet({
       />
 
       <div
-        className="relative z-10 my-auto w-full max-h-[min(90dvh,100%)] overflow-y-auto overscroll-contain sm:max-w-[360px] rounded-t-[1.35rem] border border-neutral-200/80 bg-white shadow-[0_-8px_40px_rgba(0,0,0,0.18)] sm:rounded-2xl sm:shadow-2xl max-sm:animate-qris-sheet sm:animate-qris-modal"
+        className="relative z-10 my-auto w-full max-h-[min(90dvh,100%)] overflow-y-auto overscroll-contain sm:max-w-[360px] rounded-t-[1.35rem] border shadow-[0_-8px_40px_rgba(0,0,0,0.18)] sm:rounded-2xl sm:shadow-2xl max-sm:animate-qris-sheet sm:animate-qris-modal"
+        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 pt-9 pb-2 text-center">
           {headerMedia ? (
             <div className="mx-auto mb-4 flex justify-center">{headerMedia}</div>
           ) : (
-            <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/35 motion-safe:animate-qris-check">
+            <div
+              className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full shadow-lg motion-safe:animate-qris-check"
+              style={{ background: "var(--success)", boxShadow: "0 10px 28px color-mix(in srgb, var(--success) 35%, transparent)" }}
+            >
               <svg className="h-9 w-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             </div>
           )}
 
-          <h2 id="qris-success-title" className="mt-5 text-[1.35rem] font-bold tracking-tight text-neutral-900">
+          <h2 id="qris-success-title" className="mt-5 text-[1.35rem] font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
             {title}
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-neutral-500">{subtitle}</p>
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            {subtitle}
+          </p>
         </div>
 
         {details.length > 0 && (
-          <div className="mx-5 mt-5 rounded-xl bg-neutral-50 px-4 py-3 text-left">
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Rincian</div>
+          <div className="mx-5 mt-5 rounded-xl px-4 py-3 text-left" style={{ background: "var(--bg-primary)" }}>
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+              Rincian
+            </div>
             <ul className="space-y-2.5">
               {details.map((row) => (
                 <li key={row.label} className="flex justify-between gap-3 text-sm">
-                  <span className="shrink-0 text-neutral-500">{row.label}</span>
-                  <span className="min-w-0 text-right font-medium text-neutral-900">{row.value}</span>
+                  <span className="shrink-0" style={{ color: "var(--text-muted)" }}>
+                    {row.label}
+                  </span>
+                  <span className="min-w-0 break-words text-right font-medium" style={{ color: "var(--text-primary)" }}>
+                    {row.value}
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
-        <div className="space-y-2.5 p-5 pt-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-6">
+        <div className="space-y-2.5 p-5 pt-6 pb-sheet-bottom sm:pb-6">
           {receiptRecordId ? (
             <a
               href={`/api/records/${encodeURIComponent(receiptRecordId)}/evidence-pdf`}
-              className="block w-full rounded-xl border-2 border-emerald-600 bg-white py-3 text-center text-[15px] font-semibold text-emerald-700 transition hover:bg-emerald-50 active:scale-[0.99] motion-reduce:transition-none"
+              className="block min-h-11 w-full rounded-xl border-2 py-3 text-center text-[15px] font-semibold transition active:scale-[0.99] motion-reduce:transition-none"
+              style={{
+                borderColor: "var(--success)",
+                background: "var(--bg-secondary)",
+                color: "var(--success)",
+              }}
             >
               Unduh bukti (.pdf)
             </a>
@@ -110,18 +130,20 @@ export function QrisStyleSuccessSheet({
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-xl bg-emerald-600 py-3.5 text-[15px] font-semibold text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-[0.99] motion-reduce:transition-none"
+            className="min-h-11 w-full touch-manipulation rounded-xl py-3.5 text-[15px] font-semibold text-white shadow-md transition active:scale-[0.99] motion-reduce:transition-none"
+            style={{ background: "var(--success)", boxShadow: "0 8px 20px color-mix(in srgb, var(--success) 25%, transparent)" }}
           >
             Selesai
           </button>
           {afterPrimaryActions ? <div className="pt-1">{afterPrimaryActions}</div> : null}
           {receiptRecordId ? (
-            <p className="pt-1 text-center text-[11px] text-neutral-400 leading-relaxed">
+            <p className="pt-1 text-center text-[11px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
               PDF dibuat secara aman dari catatan yang tersimpan dan hanya dapat diakses oleh pengguna yang berhak.
             </p>
           ) : null}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

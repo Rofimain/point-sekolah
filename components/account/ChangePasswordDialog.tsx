@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { signOut } from "next-auth/react";
+import { lockAppScroll, Z_MODAL_ELEVATED_CLASS } from "@/lib/ui-layers";
 
 export function ChangePasswordDialog({
   role,
@@ -15,6 +17,10 @@ export function ChangePasswordDialog({
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+  useEffect(() => lockAppScroll(), []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -40,24 +46,37 @@ export function ChangePasswordDialog({
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      className={`fixed inset-0 ${Z_MODAL_ELEVATED_CLASS} flex items-end justify-center overflow-y-auto overscroll-contain bg-black/55 p-0 sm:items-center sm:p-4`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="change-password-title"
+    >
       <button type="button" className="absolute inset-0" aria-label="Tutup dialog" onClick={onClose} />
       <form
         onSubmit={submit}
-        className="relative z-10 w-full max-w-md rounded-t-2xl border p-5 shadow-2xl sm:rounded-2xl"
+        className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-t-2xl border p-5 pb-sheet-bottom shadow-2xl sm:rounded-2xl sm:pb-5"
         style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 id="change-password-title" className="font-serif text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
               Ubah password
             </h2>
-            <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
+            <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
               Minimal 12 karakter. Setelah berhasil, semua sesi akun akan keluar.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg px-2 py-1 text-xs" style={{ color: "var(--text-muted)" }}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex min-h-11 min-w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg text-xs font-medium"
+            style={{ color: "var(--text-muted)" }}
+            aria-label="Tutup"
+          >
             Tutup
           </button>
         </div>
@@ -102,14 +121,15 @@ export function ChangePasswordDialog({
           </label>
         </div>
         {error ? (
-          <p className="mt-3 rounded-lg px-3 py-2 text-xs" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
+          <p className="mt-3 rounded-lg px-3 py-2 text-xs break-words" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
             {error}
           </p>
         ) : null}
-        <button type="submit" disabled={loading} className="btn-primary mt-5 w-full px-4 py-3 text-sm disabled:opacity-60">
+        <button type="submit" disabled={loading} className="btn-primary mt-5 min-h-11 w-full touch-manipulation px-4 py-3 text-sm disabled:opacity-60">
           {loading ? "Menyimpan..." : "Simpan password baru"}
         </button>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 }
