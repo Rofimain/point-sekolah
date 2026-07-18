@@ -7,7 +7,7 @@ import { isStaffRole } from "@/lib/staff-roles";
 export const dynamic = "force-dynamic";
 
 /**
- * Ringkasannya untuk polling ringan di dashboard staf: revisi berubah jika ada laporan baru dari siswa.
+ * Ringkasannya untuk polling ringan di dashboard staf: revisi berubah jika ada catatan pelanggaran baru.
  */
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -16,7 +16,6 @@ export async function GET() {
   }
 
   const latest = await prisma.violationRecord.findFirst({
-    where: { submittedByStudent: true },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,

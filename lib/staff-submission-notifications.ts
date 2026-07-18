@@ -10,12 +10,21 @@ export type StudentSubmissionNotification = {
   points: number;
   incidentDate: string;
   createdAt: string;
+  /** true = dari portal siswa; false = diinput staf (admin/guru/dll.) */
+  submittedByStudent: boolean;
+  createdByName: string | null;
 };
 
 export const STAFF_SUBMISSION_POLL_MS = 5000;
 export const STAFF_SUBMISSION_POLL_HIDDEN_MS = 45000;
 export const STAFF_SUBMISSION_NOTIFICATIONS_PATH =
   "/api/staff/student-submissions-notifications";
+
+/** Label sumber input untuk lonceng / monitoring notifikasi. */
+export function notificationSourceLabel(it: StudentSubmissionNotification): string {
+  if (it.submittedByStudent) return "Portal siswa";
+  return it.createdByName?.trim() ? `Staf · ${it.createdByName.trim()}` : "Staf";
+}
 
 /**
  * Awal hari kalender di zona sekolah (default Asia/Jakarta) sebagai Instant UTC.

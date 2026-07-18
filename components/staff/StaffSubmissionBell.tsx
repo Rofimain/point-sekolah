@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { QrisStyleSuccessSheet } from "@/components/QrisStyleSuccessSheet";
 import { useStaffSubmissionNotifications } from "@/lib/use-staff-submission-notifications";
-import type { StudentSubmissionNotification } from "@/lib/staff-submission-notifications";
+import {
+  notificationSourceLabel,
+  type StudentSubmissionNotification,
+} from "@/lib/staff-submission-notifications";
 import { formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
 import UserAvatar from "@/components/ui/UserAvatar";
 
@@ -17,6 +20,7 @@ function sheetDetails(it: StudentSubmissionNotification) {
     ...(it.classLabel ? [{ label: "Kelas", value: it.classLabel }] : []),
     { label: "Pelanggaran", value: it.violationName },
     { label: "Poin", value: String(it.points) },
+    { label: "Diinput oleh", value: notificationSourceLabel(it) },
     { label: "Tanggal kejadian", value: formatIncidentDateOnly(it.incidentDate) },
     { label: "Waktu input", value: formatInputDateTime(it.createdAt) },
   ];
@@ -67,8 +71,8 @@ export function StaffSubmissionBell() {
           style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
           aria-expanded={open}
           aria-haspopup="dialog"
-          aria-label="Laporan dari siswa"
-          title="Laporan dari siswa"
+          aria-label="Notifikasi catatan pelanggaran"
+          title="Notifikasi catatan pelanggaran"
           onClick={() => setOpen((v) => !v)}
         >
           <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -88,14 +92,14 @@ export function StaffSubmissionBell() {
             /* z-[70] = Z_INDEX.dropdown — lihat lib/ui-layers.ts */
             style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
             role="dialog"
-            aria-label="Daftar laporan dari siswa"
+            aria-label="Daftar catatan pelanggaran hari ini"
           >
             <div
               className="flex items-center justify-between gap-2 border-b px-3 py-2.5"
               style={{ borderColor: "var(--border)" }}
             >
               <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-                Laporan hari ini
+                Catatan hari ini
               </span>
               <Link
                 href="/notifications"
@@ -108,7 +112,7 @@ export function StaffSubmissionBell() {
             <ul className="max-h-[min(56dvh,20rem)] overflow-y-auto overscroll-contain p-1.5">
               {items.length === 0 ? (
                 <li className="px-2 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                  Belum ada laporan dari portal siswa hari ini.
+                  Belum ada catatan pelanggaran hari ini.
                 </li>
               ) : (
                 items.map((it) => {
@@ -136,8 +140,8 @@ export function StaffSubmissionBell() {
                           <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--text-muted)" }}>
                             {it.violationName} · {it.points} poin
                           </span>
-                          <span className="mt-0.5 block text-[11px]" style={{ color: "var(--text-muted)" }}>
-                            {formatInputDateTime(it.createdAt)}
+                          <span className="mt-0.5 block truncate text-[11px]" style={{ color: "var(--text-muted)" }}>
+                            {notificationSourceLabel(it)} · {formatInputDateTime(it.createdAt)}
                           </span>
                         </span>
                         {!isRead ? (
@@ -156,8 +160,12 @@ export function StaffSubmissionBell() {
       <QrisStyleSuccessSheet
         open={sheetItem != null}
         onClose={() => setSheetItem(null)}
-        title="Laporan diterima"
-        subtitle="Pelanggaran dari portal siswa telah masuk ke catatan."
+        title="Catatan masuk"
+        subtitle={
+          sheetItem?.submittedByStudent
+            ? "Pelanggaran dari portal siswa telah masuk ke catatan."
+            : "Pelanggaran yang diinput staf telah masuk ke catatan."
+        }
         details={sheetItem ? sheetDetails(sheetItem) : []}
         headerMedia={sheetItem ? studentPhoto(sheetItem) : null}
         receiptRecordId={sheetItem?.id}

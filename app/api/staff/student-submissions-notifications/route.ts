@@ -16,8 +16,8 @@ function classLabel(c: { grade: string; name: string; major: string } | null): s
 }
 
 /**
- * Daftar laporan dari siswa untuk lonceng + halaman monitoring.
- * Hanya hari ini (zona sekolah); otomatis kosong setelah berganti hari.
+ * Daftar catatan pelanggaran hari ini untuk lonceng + halaman monitoring.
+ * Semua sumber (portal siswa maupun input staf); otomatis kosong setelah berganti hari.
  */
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -29,7 +29,6 @@ export async function GET() {
 
   const rows = await prisma.violationRecord.findMany({
     where: {
-      submittedByStudent: true,
       createdAt: { gte: since },
     },
     orderBy: { createdAt: "desc" },
@@ -39,6 +38,8 @@ export async function GET() {
       date: true,
       createdAt: true,
       points: true,
+      submittedByStudent: true,
+      createdByName: true,
       student: {
         select: {
           id: true,
@@ -61,6 +62,8 @@ export async function GET() {
     points: r.points,
     incidentDate: r.date.toISOString(),
     createdAt: r.createdAt.toISOString(),
+    submittedByStudent: r.submittedByStudent,
+    createdByName: r.createdByName,
   }));
 
   const latest = rows[0];

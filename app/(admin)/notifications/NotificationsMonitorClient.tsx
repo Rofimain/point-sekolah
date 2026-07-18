@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { QrisStyleSuccessSheet } from "@/components/QrisStyleSuccessSheet";
 import { useStaffSubmissionNotifications } from "@/lib/use-staff-submission-notifications";
-import type { StudentSubmissionNotification } from "@/lib/staff-submission-notifications";
+import {
+  notificationSourceLabel,
+  type StudentSubmissionNotification,
+} from "@/lib/staff-submission-notifications";
 import { formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
 import UserAvatar from "@/components/ui/UserAvatar";
 
@@ -14,6 +17,7 @@ function sheetDetails(it: StudentSubmissionNotification) {
     ...(it.classLabel ? [{ label: "Kelas", value: it.classLabel }] : []),
     { label: "Pelanggaran", value: it.violationName },
     { label: "Poin", value: String(it.points) },
+    { label: "Diinput oleh", value: notificationSourceLabel(it) },
     { label: "Tanggal kejadian", value: formatIncidentDateOnly(it.incidentDate) },
     { label: "Waktu input", value: formatInputDateTime(it.createdAt) },
   ];
@@ -46,7 +50,8 @@ export default function NotificationsMonitorClient() {
             Monitoring Notifikasi
           </h1>
           <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
-            Laporan dari portal siswa hari ini · diperbarui otomatis · hilang setelah berganti hari
+            Semua catatan pelanggaran hari ini (siswa & staf) · diperbarui otomatis · hilang setelah
+            berganti hari
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -130,7 +135,7 @@ export default function NotificationsMonitorClient() {
         {visible.length === 0 ? (
           <div className="px-4 py-16 text-center text-sm" style={{ color: "var(--text-muted)" }}>
             {items.length === 0
-              ? "Belum ada laporan dari portal siswa hari ini."
+              ? "Belum ada catatan pelanggaran hari ini."
               : "Tidak ada item pada filter ini."}
           </div>
         ) : (
@@ -170,6 +175,12 @@ export default function NotificationsMonitorClient() {
                             {it.classLabel}
                           </span>
                         ) : null}
+                        <span
+                          className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                          style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}
+                        >
+                          {notificationSourceLabel(it)}
+                        </span>
                         {!isRead ? (
                           <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-600">
                             Baru
@@ -215,8 +226,12 @@ export default function NotificationsMonitorClient() {
       <QrisStyleSuccessSheet
         open={sheetItem != null}
         onClose={() => setSheetItem(null)}
-        title="Laporan diterima"
-        subtitle="Pelanggaran dari portal siswa telah masuk ke catatan."
+        title="Catatan masuk"
+        subtitle={
+          sheetItem?.submittedByStudent
+            ? "Pelanggaran dari portal siswa telah masuk ke catatan."
+            : "Pelanggaran yang diinput staf telah masuk ke catatan."
+        }
         details={sheetItem ? sheetDetails(sheetItem) : []}
         headerMedia={
           sheetItem ? (
