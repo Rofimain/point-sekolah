@@ -73,6 +73,11 @@ const student = read("app/(student)/form/StudentFormClient.tsx");
 assert(student.includes("md:hidden"), "Student history uses md card breakpoint");
 assert(student.includes("EvidencePreviewModal"), "Student form still mounts evidence preview");
 
+const bell = read("components/staff/StaffSubmissionBell.tsx");
+assert(bell.includes("createPortal"), "Notification bell panel uses createPortal");
+assert(bell.includes("getBoundingClientRect"), "Notification bell clamps panel to viewport");
+assert(bell.includes("Z_INDEX.dropdown"), "Notification bell uses dropdown z-index");
+
 const globals = read("app/globals.css");
 assert(globals.includes("font-size: 16px !important"), "iOS anti-zoom input rule present");
 assert(globals.includes("100dvh"), "admin chrome uses dvh");
