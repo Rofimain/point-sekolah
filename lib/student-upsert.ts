@@ -2,7 +2,8 @@ import type { Prisma } from "@/generated/prisma/client";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
 
-export const DEFAULT_STUDENT_PASSWORD = process.env.DEFAULT_STUDENT_PASSWORD || "Siswa@1234";
+/** Default ≥12 karakter agar lolos password policy (user lama tidak di-rehash). */
+export const DEFAULT_STUDENT_PASSWORD = process.env.DEFAULT_STUDENT_PASSWORD || "Siswa@123456";
 
 export function studentEmailFromNisn(nisn: string, domain: string): string {
   const local = nisn.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -33,6 +34,8 @@ export function buildStudentCreateInput(input: {
     parentTelegramLinkToken: newParentLinkToken(),
     class: { connect: { id: input.classId } },
     active: true,
+    status: "ACTIVE",
+    createdFrom: "MANUAL",
     photoData: hasPhoto ? input.photoData! : null,
     photoPresent: hasPhoto,
   };

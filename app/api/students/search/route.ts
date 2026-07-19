@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   const items = await prisma.user.findMany({
     where: {
       role: "STUDENT",
-      active: true,
+      status: "ACTIVE",
       OR: [
         { name: { contains: q, mode: "insensitive" } },
         { nisn: { contains: q, mode: "insensitive" } },

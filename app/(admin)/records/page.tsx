@@ -22,7 +22,7 @@ export default async function RecordsPage({
 
   const studentWhere: Prisma.UserWhereInput = {
     role: "STUDENT",
-    active: true,
+    status: "ACTIVE",
   };
   if (query.classId) studentWhere.classId = query.classId;
   if (query.grade) studentWhere.class = { grade: query.grade };
@@ -34,7 +34,7 @@ export default async function RecordsPage({
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
     prisma.violationType.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { points: "asc" }] }),
     prisma.user.findMany({
-      where: { role: "STUDENT", active: true },
+      where: { role: "STUDENT", status: "ACTIVE" },
       select: {
         id: true,
         name: true,

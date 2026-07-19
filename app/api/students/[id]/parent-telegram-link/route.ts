@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
+import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
 
 /**
  * Staff: buat / perbarui tautan ortu (token baru = tautan lama tidak berlaku).
@@ -15,10 +16,10 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
+  const bot = getTelegramBotUsername();
   if (!bot) {
     return NextResponse.json(
-      { error: "Set NEXT_PUBLIC_TELEGRAM_BOT_USERNAME (username bot tanpa @) di environment" },
+      { error: "Set TELEGRAM_BOT_USERNAME (username bot tanpa @) di ENV_FILE_CONTENT / .env" },
       { status: 400 }
     );
   }

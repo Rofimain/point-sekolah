@@ -135,7 +135,7 @@ export async function applyQuietMonthReductionForAllStudents(
   now: Date = new Date()
 ): Promise<QuietMonthApplyResult[]> {
   const students = await prisma.user.findMany({
-    where: { role: "STUDENT", active: true },
+    where: { role: "STUDENT", status: "ACTIVE" },
     select: { id: true },
   });
   const out: QuietMonthApplyResult[] = [];
@@ -150,7 +150,7 @@ export async function previewEligibleQuietMonthStudents(
   now: Date = new Date()
 ): Promise<{ id: string; name: string; lastIncidentYmd: string; daysQuiet: number }[]> {
   const students = await prisma.user.findMany({
-    where: { role: "STUDENT", active: true },
+    where: { role: "STUDENT", status: "ACTIVE" },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });

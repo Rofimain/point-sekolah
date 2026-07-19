@@ -11,6 +11,8 @@ import {
 import { canManageData } from "@/lib/staff-roles";
 import { buildParentTelegramDeepLink } from "@/lib/parent-telegram-link";
 import { parseUserPhotoInput } from "@/lib/user-photo";
+import { validateNewPassword } from "@/lib/password-policy";
+import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
 
 function staffOk(role: string | undefined) {
   return canManageData(role);
@@ -60,10 +62,11 @@ export async function POST(req: NextRequest) {
   const existingEmail = await prisma.user.findUnique({ where: { email: finalEmail } });
   if (existingEmail) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
 
-  const pwd = (password?.trim() || DEFAULT_STUDENT_PASSWORD).slice(0, 72);
-  if (pwd.length < 6) return NextResponse.json({ error: "Password minimal 6 karakter" }, { status: 400 });
+  const pwdRaw = (password?.trim() || DEFAULT_STUDENT_PASSWORD).slice(0, 72);
+  const pwdCheck = validateNewPassword(pwdRaw);
+  if (!pwdCheck.ok) return NextResponse.json({ error: pwdCheck.error }, { status: 400 });
 
-  const hashed = await bcrypt.hash(pwd, 12);
+  const hashed = await bcrypt.hash(pwdCheck.value, 12);
   let data;
   try {
     data = buildStudentCreateInput({
@@ -82,7 +85,7 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.create({ data, include: { class: true } });
   const { password: _, parentTelegramLinkToken: linkTok, photoData: __, ...safe } = user;
-  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
+  const bot = getTelegramBotUsername();
   const ortuTelegramLink =
     bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;
   return NextResponse.json({ ...safe, ortuTelegramLink }, { status: 201 });

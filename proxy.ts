@@ -36,7 +36,10 @@ export const proxy = withAuth(
       pathname.startsWith("/violations") ||
       pathname.startsWith("/users") ||
       pathname.startsWith("/settings") ||
-      pathname.startsWith("/export");
+      pathname.startsWith("/export") ||
+      pathname.startsWith("/notifications") ||
+      pathname.startsWith("/cetak-surat") ||
+      pathname.startsWith("/classes");
 
     if (needsStaffRole && (!token || !isStaffRole(token.role as string))) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
@@ -62,7 +65,10 @@ export const proxy = withAuth(
           pathname.startsWith("/violations") ||
           pathname.startsWith("/users") ||
           pathname.startsWith("/settings") ||
-          pathname.startsWith("/export")
+          pathname.startsWith("/export") ||
+          pathname.startsWith("/notifications") ||
+          pathname.startsWith("/cetak-surat") ||
+          pathname.startsWith("/classes")
         ) {
           return Boolean(token);
         }
@@ -84,5 +90,8 @@ export const config = {
     "/users/:path*",
     "/settings/:path*",
     "/export/:path*",
+    "/notifications/:path*",
+    "/cetak-surat/:path*",
+    "/classes/:path*",
   ],
 };

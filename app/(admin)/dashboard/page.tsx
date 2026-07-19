@@ -34,8 +34,8 @@ async function getDashboardData() {
     effectivePointsMap,
     ...monthCounts
   ] = await Promise.all([
-    prisma.user.count({ where: { role: "STUDENT", active: true } }),
-    prisma.user.count({ where: { role: { not: "STUDENT" }, active: true } }),
+    prisma.user.count({ where: { role: "STUDENT", status: "ACTIVE" } }),
+    prisma.user.count({ where: { role: { not: "STUDENT" }, status: "ACTIVE" } }),
     prisma.violationRecord.count({ where: { date: { gte: startOfMonth } } }),
     prisma.violationRecord.count({
       where: { date: { gte: lastMonthStart, lte: endLastMonth } },

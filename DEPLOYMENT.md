@@ -66,7 +66,7 @@ Akun contoh dari seed:
 |------|-------|----------|
 | Super Admin | admin@sman1contoh.sch.id | Admin@1234 |
 | Guru | s.rahayu@sman1contoh.sch.id | Guru@1234 |
-| Siswa | 0051234567@siswa.sman1contoh.sch.id | Siswa@1234 |
+| Siswa | 0051234567@siswa.sman1contoh.sch.id | Siswa@123456 |
 
 ---
 

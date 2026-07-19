@@ -25,8 +25,27 @@ export function TopBar({
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [revokingSessions, setRevokingSessions] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  async function revokeAllSessions() {
+    if (!session || revokingSessions) return;
+    const ok = window.confirm("Keluar dari semua perangkat? Anda perlu login ulang di sini juga.");
+    if (!ok) return;
+    setRevokingSessions(true);
+    try {
+      const response = await fetch("/api/account/sessions/revoke", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      if (!response.ok) throw new Error("Gagal");
+      await signOut({ callbackUrl: session.user.role === "STUDENT" ? "/login" : "/admin/login" });
+    } catch {
+      setRevokingSessions(false);
+      window.alert("Gagal mengeluarkan sesi. Coba lagi.");
+    }
+  }
 
   return (
     <>
@@ -125,6 +144,17 @@ export function TopBar({
                 <path d="M8 11V8a4 4 0 018 0v3" strokeLinecap="round" />
               </svg>
               <span className="sr-only sm:not-sr-only">Password</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void revokeAllSessions()}
+              disabled={revokingSessions}
+              className="hidden min-h-11 touch-manipulation items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold transition-colors hover:opacity-80 disabled:opacity-60 sm:inline-flex"
+              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+              title="Keluar dari semua perangkat"
+              aria-label="Keluar semua perangkat"
+            >
+              {revokingSessions ? "..." : "Semua sesi"}
             </button>
             <button
               type="button"

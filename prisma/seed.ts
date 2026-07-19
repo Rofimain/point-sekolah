@@ -108,7 +108,7 @@ async function main() {
   });
 
   // Students
-  const studentPwd = await bcrypt.hash("Siswa@1234", 12);
+  const studentPwd = await bcrypt.hash("Siswa@123456", 12);
   const students = [
     { email: "0051234567@siswa.sman1contoh.sch.id", name: "Ahmad Fauzan", nisn: "0051234567", classId: "cls-xii-ipa1" },
     { email: "0052345678@siswa.sman1contoh.sch.id", name: "Rizky Santoso", nisn: "0052345678", classId: "cls-xi-ips2" },
@@ -334,24 +334,30 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "piket@sman1contoh.sch.id" },
-    update: { role: Role.ADMIN, active: true },
+    update: { role: Role.ADMIN, active: true, status: "ACTIVE" },
     create: {
       email: "piket@sman1contoh.sch.id",
       name: "Bidang Pertahanan Sekolah",
       password: teacherPwd,
       role: Role.ADMIN,
       nip: "198201011990032001",
+      active: true,
+      status: "ACTIVE",
+      createdFrom: "MANUAL",
     },
   });
   await prisma.user.upsert({
     where: { email: "walas.mipa1@sman1contoh.sch.id" },
-    update: { role: Role.TEACHER, classId: null, active: true },
+    update: { role: Role.TEACHER, classId: null, active: true, status: "ACTIVE" },
     create: {
       email: "walas.mipa1@sman1contoh.sch.id",
       name: "Wali Kelas X MIPA 1",
       password: teacherPwd,
       role: Role.TEACHER,
       nip: "198303031990033001",
+      active: true,
+      status: "ACTIVE",
+      createdFrom: "MANUAL",
     },
   });
 
@@ -361,8 +367,8 @@ async function main() {
   console.log("Guru:        s.rahayu@sman1contoh.sch.id / Guru@1234");
   console.log("Admin:       piket@sman1contoh.sch.id / Guru@1234");
   console.log("Guru:        walas.mipa1@sman1contoh.sch.id / Guru@1234");
-  console.log("Siswa:       0051234567@siswa.sman1contoh.sch.id / Siswa@1234");
-  console.log("\nDemo pengurangan 25% (bulan tenang, password Siswa@1234):");
+  console.log("Siswa:       0051234567@siswa.sman1contoh.sch.id / Siswa@123456");
+  console.log("\nDemo pengurangan 25% (bulan tenang, password Siswa@123456):");
   console.log("  Ali (otomatis lewat logic): 0051111111@siswa.sman1contoh.sch.id");
   console.log("  Bima (masih ada pelanggaran baru, tanpa potongan): 0052222222@siswa.sman1contoh.sch.id");
   console.log("  Citra (potongan disimpan di seed sebagai bukti): 0053333333@siswa.sman1contoh.sch.id");

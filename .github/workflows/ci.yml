@@ -60,9 +60,8 @@ jobs:
         run: |
           docker build \
             --build-arg NEXT_PUBLIC_SCHOOL_NAME="${{ vars.NEXT_PUBLIC_SCHOOL_NAME || 'SMA ISLAM AL AZHAR 1 JAKARTA' }}" \
-            --build-arg NEXT_PUBLIC_STUDENT_DOMAIN="${{ vars.NEXT_PUBLIC_STUDENT_DOMAIN || 'siswa.sman1contoh.sch.id' }}" \
-            --build-arg NEXT_PUBLIC_STAFF_DOMAIN="${{ vars.NEXT_PUBLIC_STAFF_DOMAIN || 'sman1contoh.sch.id' }}" \
-            --build-arg NEXT_PUBLIC_TELEGRAM_BOT_USERNAME="${{ vars.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME }}" \
+            --build-arg NEXT_PUBLIC_STUDENT_DOMAIN="${{ vars.NEXT_PUBLIC_STUDENT_DOMAIN || 'smaalazhar1.sch.id' }}" \
+            --build-arg NEXT_PUBLIC_STAFF_DOMAIN="${{ vars.NEXT_PUBLIC_STAFF_DOMAIN || 'smaalazhar1.sch.id' }}" \
             --tag "point-sekolah:${GITHUB_SHA}" .
       - name: Run disposable database and application smoke tests
         env:

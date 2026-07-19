@@ -14,7 +14,7 @@ export default async function RemisiPage() {
 
   const [rows, grossMap, adjMap] = await Promise.all([
     prisma.user.findMany({
-      where: { role: "STUDENT", active: true },
+      where: { role: "STUDENT", status: "ACTIVE" },
       select: {
         id: true,
         name: true,

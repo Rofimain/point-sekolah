@@ -23,14 +23,73 @@ model User {
   class            Class?            @relation(fields: [classId], references: [id])
   records          ViolationRecord[]
   pointAdjustments PointAdjustment[]
+  /// Legacy flag — selalu di-sync dari `status` (ACTIVE ↔ true). Jangan dihapus demi kompatibilitas.
   active           Boolean           @default(true)
+  /// Lifecycle status (source of truth untuk login & filter operasional)
+  status           UserStatus        @default(ACTIVE)
+  graduatedAt      DateTime?
+  leftAt           DateTime?
+  lastAcademicYear String?
+  createdFrom      UserCreatedFrom   @default(MANUAL)
+  /// Google OAuth subject (Phase 3). Unique; null = belum linked.
+  googleSub        String?           @unique
+  authProvider     AuthProvider      @default(CREDENTIALS)
+  emailVerifiedAt  DateTime?
   authVersion      Int               @default(0)
+  /// Percobaan login gagal beruntun (di-reset saat sukses / admin reset password)
+  failedLoginCount Int               @default(0)
+  /// Kunci akun sementara setelah terlalu banyak gagal login
+  lockedUntil      DateTime?
+  lastLoginAt      DateTime?
+  passwordChangedAt DateTime?
   /// Foto profil (data URL base64 JPEG/PNG)
   photoData        String?           @db.Text
   /// Ringkas untuk UI daftar — ada foto (tanpa load kolom besar)
   photoPresent     Boolean           @default(false)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  authLoginEvents  AuthLoginEvent[]
+  lifecycleEvents  UserLifecycleEvent[]
+
+  @@index([status])
+  @@index([role, status])
+}
+
+/// Audit perubahan lifecycle / linking (bukan hard delete)
+model UserLifecycleEvent {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event      String
+  fromStatus String?
+  toStatus   String?
+  reason     String?
+  actorId    String?
+  actorName  String?
+  meta       String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([event, createdAt])
+}
+
+/// Audit percobaan login (sukses/gagal) — tanpa menyimpan password
+model AuthLoginEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// Identifier yang dicoba (email / NISN / NIP), dinormalisasi
+  identifier String?
+  provider   String
+  success    Boolean
+  reason     String?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([ip, createdAt])
 }
 
 enum Role {
@@ -38,6 +97,26 @@ enum Role {
   TEACHER
   ADMIN
   SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  LEFT
+  SUSPENDED
+}
+
+enum AuthProvider {
+  CREDENTIALS
+  GOOGLE
+  BOTH
+}
+
+enum UserCreatedFrom {
+  MANUAL
+  ACADEMIC_IMPORT
+  GOOGLE_LINK
 }
 
 model Class {

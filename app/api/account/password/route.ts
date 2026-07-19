@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { clearPasswordAttempts, passwordAttemptStatus, recordFailedPasswordAttempt } from "@/lib/account-rate-limit";
 import { validateNewPassword } from "@/lib/password-policy";
+import { canUserLogin } from "@/lib/user-status";
 
 function isSameOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
@@ -50,9 +51,11 @@ export async function PATCH(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { password: true, active: true },
+    select: { password: true, status: true },
   });
-  const currentIsValid = Boolean(user?.active) && (await bcrypt.compare(currentPassword, user?.password ?? ""));
+  const currentIsValid =
+    Boolean(user && canUserLogin(user.status)) &&
+    (await bcrypt.compare(currentPassword, user?.password ?? ""));
   if (!currentIsValid) {
     recordFailedPasswordAttempt(session.user.id);
     return NextResponse.json({ error: "Password saat ini tidak benar." }, { status: 400 });
@@ -61,7 +64,13 @@ export async function PATCH(request: NextRequest) {
   const password = await bcrypt.hash(next.value, 12);
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { password, authVersion: { increment: 1 } },
+    data: {
+      password,
+      authVersion: { increment: 1 },
+      passwordChangedAt: new Date(),
+      failedLoginCount: 0,
+      lockedUntil: null,
+    },
   });
   clearPasswordAttempts(session.user.id);
   return NextResponse.json(

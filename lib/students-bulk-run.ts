@@ -6,6 +6,7 @@ import {
   studentEmailFromNisn,
 } from "@/lib/student-upsert";
 import { parseUserPhotoInput } from "@/lib/user-photo";
+import { validateNewPassword } from "@/lib/password-policy";
 
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
 
@@ -50,11 +51,12 @@ export async function runBulkStudentImport(
   }
 
   const classes = await prisma.class.findMany();
-  const pwdDefault = (opts?.defaultPassword?.trim() || DEFAULT_STUDENT_PASSWORD).slice(0, 72);
-  if (pwdDefault.length < 6) {
-    throw new Error("Password default minimal 6 karakter");
+  const pwdDefaultRaw = (opts?.defaultPassword?.trim() || DEFAULT_STUDENT_PASSWORD).slice(0, 72);
+  const pwdDefaultCheck = validateNewPassword(pwdDefaultRaw);
+  if (!pwdDefaultCheck.ok) {
+    throw new Error(pwdDefaultCheck.error);
   }
-  const hashedDefault = await bcrypt.hash(pwdDefault, 12);
+  const hashedDefault = await bcrypt.hash(pwdDefaultCheck.value, 12);
 
   const errors: { row: number; message: string }[] = [];
   let created = 0;
@@ -112,12 +114,13 @@ export async function runBulkStudentImport(
       }
 
       const pwdRow = r.password?.trim();
-      const pwd = (pwdRow || pwdDefault).slice(0, 72);
-      if (pwd.length < 6) {
-        errors.push({ row: rowNum, message: "Password minimal 6 karakter" });
+      const pwd = (pwdRow || pwdDefaultCheck.value).slice(0, 72);
+      const pwdCheck = validateNewPassword(pwd);
+      if (!pwdCheck.ok) {
+        errors.push({ row: rowNum, message: pwdCheck.error });
         continue;
       }
-      const hashed = pwdRow ? await bcrypt.hash(pwd, 12) : hashedDefault;
+      const hashed = pwdRow ? await bcrypt.hash(pwdCheck.value, 12) : hashedDefault;
 
       let photoData: string | null = null;
       let photoPresent = false;

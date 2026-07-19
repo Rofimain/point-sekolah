@@ -13,6 +13,7 @@ import {
 } from "@/lib/compress-image-client";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
+import { USER_STATUS_LABEL } from "@/lib/user-status";
 
 const ROLES = ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN"] as const;
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
@@ -54,10 +55,63 @@ function telegramOrtuTableCell(u: {
   return "—";
 }
 
+function statusBadgeLabel(u: { status?: string; active?: boolean }) {
+  if (u.status && u.status in USER_STATUS_LABEL) {
+    return USER_STATUS_LABEL[u.status as keyof typeof USER_STATUS_LABEL];
+  }
+  return u.active ? "Aktif" : "Nonaktif";
+}
+
+function statusBadgeActive(u: { status?: string; active?: boolean }) {
+  return u.status ? u.status === "ACTIVE" : Boolean(u.active);
+}
+
+function isSchoolEmailDomain(email: string) {
+  const host = email.split("@")[1]?.toLowerCase() || "";
+  return host === STUDENT_DOMAIN.toLowerCase() || host === STAFF_DOMAIN.toLowerCase();
+}
+
+function GoogleLinkBadge({ u }: { u: { googleSub?: string | null; email?: string; authProvider?: string } }) {
+  const linked = Boolean(u.googleSub);
+  const domainOk = isSchoolEmailDomain(u.email || "");
+  if (linked) {
+    return (
+      <span
+        className="px-2 py-0.5 rounded text-[10px] font-semibold"
+        style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+        title="Akun Google terhubung"
+      >
+        Google ✓
+      </span>
+    );
+  }
+  if (!domainOk) {
+    return (
+      <span
+        className="px-2 py-0.5 rounded text-[10px] font-semibold"
+        style={{ background: "var(--warning-bg)", color: "var(--warning)" }}
+        title={`Email di luar @${STAFF_DOMAIN} — Google login tidak bisa`}
+      >
+        Domain ✗
+      </span>
+    );
+  }
+  return (
+    <span
+      className="px-2 py-0.5 rounded text-[10px] font-semibold"
+      style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)" }}
+      title="Belum link Google — user login Google sekali untuk menghubungkan"
+    >
+      Belum link
+    </span>
+  );
+}
+
 function kelasAtauNip(u: { role: string; class?: { name: string } | null; nisn?: string | null; nip?: string | null }) {
   if (u.role === "STUDENT") return u.class?.name || "—";
   return u.nip?.trim() || "—";
 }
+
 
 export default function UsersClient({
   users,
@@ -193,11 +247,11 @@ export default function UsersClient({
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Hapus user "${name}"? Semua catatan pelanggaran juga akan terhapus.`)) return;
+    if (!confirm(`Nonaktifkan user "${name}" (status Keluar)?\nAkun tidak bisa login; histori pelanggaran tetap tersimpan.`)) return;
     const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      toast.error(data.error || "Gagal menghapus");
+      toast.error(data.error || "Gagal menonaktifkan");
       return;
     }
     router.refresh();
@@ -266,6 +320,48 @@ export default function UsersClient({
       return;
     }
     router.refresh();
+  }
+
+  async function unlinkGoogle(id: string, name: string) {
+    if (
+      !confirm(
+        `Putus tautan Google untuk "${name}"?\nUser bisa login password seperti biasa.\nUntuk relink: user login Google lagi (email harus sama).`
+      )
+    ) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(id)}/google-link`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal unlink Google");
+      toast.success("Tautan Google diputus.");
+      router.refresh();
+    } catch (e: any) {
+      toast.error(e?.message || "Gagal unlink Google");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function runGoogleReadinessAudit() {
+    setLoading(true);
+    try {
+      const sp = new URLSearchParams();
+      if ((searchParams.role || "").trim()) sp.set("role", searchParams.role!.trim());
+      const res = await fetch(`/api/users/google-readiness?${sp.toString()}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal audit");
+      const s = data.summary || {};
+      toast.message("Audit kesiapan Google", {
+        description: `Total ${s.total ?? 0} · Linked ${s.linked ?? 0} · Siap belum link ${s.domainOkUnlinked ?? 0} · Domain salah ${s.domainBad ?? 0} · Non-ACTIVE ${s.inactiveBlocked ?? 0}`,
+        duration: 10_000,
+      });
+    } catch (e: any) {
+      toast.error(e?.message || "Gagal audit Google");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const selectedUsers = useMemo(() => {
@@ -373,7 +469,7 @@ export default function UsersClient({
     }
     const ids = Array.from(selectedIds);
     const confirmText = window.prompt(
-      `Anda akan menghapus ${ids.length} akun siswa.\nSemua catatan pelanggaran juga akan terhapus.\n\nKetik HAPUS untuk lanjut:`
+      `Anda akan menandai ${ids.length} akun siswa sebagai Keluar (soft delete).\nHistori pelanggaran tetap tersimpan; akun tidak bisa login.\n\nKetik HAPUS untuk lanjut:`
     );
     if (confirmText !== "HAPUS") return;
     setLoading(true);
@@ -384,12 +480,12 @@ export default function UsersClient({
         body: JSON.stringify({ ids }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Gagal menghapus");
-      toast.success(`Berhasil menghapus ${data.count ?? ids.length} akun siswa.`);
+      if (!res.ok) throw new Error(data.error || "Gagal menonaktifkan");
+      toast.success(`Berhasil menandai ${data.count ?? ids.length} akun siswa sebagai Keluar.`);
       setSelectedIds(new Set());
       router.refresh();
     } catch (e: any) {
-      toast.error(e?.message || "Gagal menghapus");
+      toast.error(e?.message || "Gagal menonaktifkan");
     } finally {
       setLoading(false);
     }
@@ -473,6 +569,16 @@ export default function UsersClient({
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <button
             type="button"
+            disabled={loading}
+            onClick={() => void runGoogleReadinessAudit()}
+            className="w-full shrink-0 touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-1.5"
+            style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+            title="Ringkasan kesiapan Google login (tanpa ubah data)"
+          >
+            Audit Google
+          </button>
+          <button
+            type="button"
             disabled={exportingTelLinks}
             onClick={() => void downloadTelegramLinksExcel()}
             className="w-full shrink-0 touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-1.5"
@@ -554,7 +660,7 @@ export default function UsersClient({
                 const classObj = classes.find((c: any) => c.id === classId);
                 const label = classObj ? `${classObj.grade} ${classObj.name} ${classObj.major}` : "kelas terpilih";
                 const confirmText = window.prompt(
-                  `Anda akan menghapus SEMUA akun siswa di ${label}.\nSemua catatan pelanggaran mereka juga akan terhapus.\n\nKetik HAPUS untuk lanjut:`
+                  `Anda akan menandai SEMUA akun siswa di ${label} sebagai Keluar (soft delete).\nHistori pelanggaran tetap tersimpan; akun tidak bisa login.\n\nKetik HAPUS untuk lanjut:`
                 );
                 if (confirmText !== "HAPUS") return;
                 setLoading(true);
@@ -565,12 +671,12 @@ export default function UsersClient({
                     body: JSON.stringify({ classId }),
                   });
                   const data = await res.json().catch(() => ({}));
-                  if (!res.ok) throw new Error(data.error || "Gagal menghapus");
-                  toast.success(`Berhasil menghapus ${data.count ?? 0} akun siswa di ${label}.`);
+                  if (!res.ok) throw new Error(data.error || "Gagal menonaktifkan");
+                  toast.success(`Berhasil menandai ${data.count ?? 0} akun siswa di ${label} sebagai Keluar.`);
                   setSelectedIds(new Set());
                   router.refresh();
                 } catch (e: any) {
-                  toast.error(e?.message || "Gagal menghapus");
+                  toast.error(e?.message || "Gagal menonaktifkan");
                 } finally {
                   setLoading(false);
                 }
@@ -646,12 +752,13 @@ export default function UsersClient({
                         <span
                           className="px-2 py-0.5 rounded text-[10px] font-semibold"
                           style={{
-                            background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)",
-                            color: u.active ? "var(--success)" : "var(--text-muted)",
+                            background: statusBadgeActive(u) ? "var(--success-bg)" : "var(--bg-tertiary)",
+                            color: statusBadgeActive(u) ? "var(--success)" : "var(--text-muted)",
                           }}
                         >
-                          {u.active ? "Aktif" : "Nonaktif"}
+                          {statusBadgeLabel(u)}
                         </span>
+                        <GoogleLinkBadge u={u} />
                       </div>
                       <div className="mt-0.5 break-all text-[11px]" style={{ color: "var(--text-muted)" }}>
                         {u.email}
@@ -697,6 +804,20 @@ export default function UsersClient({
                     <button
                       type="button"
                       disabled={
+                        loading ||
+                        !u.googleSub ||
+                        (!canModifyUser(viewerRole, u.role) && !(viewerRole === "ADMIN" && u.id === viewerId))
+                      }
+                      onClick={() => void unlinkGoogle(u.id, u.name)}
+                      className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
+                      style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                      title={u.googleSub ? "Putus tautan Google (relink = login Google lagi)" : "Belum terhubung Google"}
+                    >
+                      Unlink Google
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
                         !canDeleteUser(viewerRole, u.role) ||
                         (u.role === "SUPER_ADMIN" && superAdminTotal <= 1)
                       }
@@ -729,7 +850,7 @@ export default function UsersClient({
                         />
                       </label>
                     </th>
-                    {["Nama", "Email", "Role", metaColumnLabel, "Ortu (Telegram)", "Status", "Aksi"].map((h) => (
+                    {["Nama", "Email", "Role", metaColumnLabel, "Ortu (Telegram)", "Status", "Google", "Aksi"].map((h) => (
                       <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
                         {h}
                       </th>
@@ -790,12 +911,15 @@ export default function UsersClient({
                         <span
                           className="px-2 py-0.5 rounded text-[10px] font-semibold"
                           style={{
-                            background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)",
-                            color: u.active ? "var(--success)" : "var(--text-muted)",
+                            background: statusBadgeActive(u) ? "var(--success-bg)" : "var(--bg-tertiary)",
+                            color: statusBadgeActive(u) ? "var(--success)" : "var(--text-muted)",
                           }}
                         >
-                          {u.active ? "Aktif" : "Nonaktif"}
+                          {statusBadgeLabel(u)}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <GoogleLinkBadge u={u} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1.5">
@@ -830,6 +954,20 @@ export default function UsersClient({
                             }
                           >
                             {u.active ? "Blokir" : "Aktifkan"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={
+                              loading ||
+                              !u.googleSub ||
+                              (!canModifyUser(viewerRole, u.role) && !(viewerRole === "ADMIN" && u.id === viewerId))
+                            }
+                            onClick={() => void unlinkGoogle(u.id, u.name)}
+                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
+                            style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                            title={u.googleSub ? "Putus tautan Google (relink = login Google lagi)" : "Belum terhubung Google"}
+                          >
+                            Unlink
                           </button>
                           <button
                             type="button"

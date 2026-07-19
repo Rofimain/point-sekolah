@@ -6,6 +6,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import ExcelJS from "exceljs";
 import { buildParentTelegramDeepLink } from "@/lib/parent-telegram-link";
+import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
 
 const MAX_ROWS = 15_000;
 
@@ -19,10 +20,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
+  const bot = getTelegramBotUsername();
   if (!bot) {
     return NextResponse.json(
-      { error: "Set NEXT_PUBLIC_TELEGRAM_BOT_USERNAME di server untuk membuat tautan." },
+      { error: "Set TELEGRAM_BOT_USERNAME di ENV_FILE_CONTENT / .env untuk membuat tautan." },
       { status: 400 }
     );
   }

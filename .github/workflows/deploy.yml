@@ -69,10 +69,15 @@ jobs:
           push: false
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           build-args: |
-            NEXT_PUBLIC_SCHOOL_NAME=${{ vars.NEXT_PUBLIC_SCHOOL_NAME || 'SMA ISLAM AL AZHAR 1 JAKARTA' }}
-            NEXT_PUBLIC_STUDENT_DOMAIN=${{ vars.NEXT_PUBLIC_STUDENT_DOMAIN || 'siswa.sman1contoh.sch.id' }}
-            NEXT_PUBLIC_STAFF_DOMAIN=${{ vars.NEXT_PUBLIC_STAFF_DOMAIN || 'sman1contoh.sch.id' }}
-            NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=${{ vars.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME }}
+            NEXT_PUBLIC_SCHOOL_NAME=${{ vars.NEXT_PUBLIC_SCHOOL_NAME || 'SMA Islam Al-Azhar 1 Jakarta' }}
+            NEXT_PUBLIC_SCHOOL_SHORT=${{ vars.NEXT_PUBLIC_SCHOOL_SHORT || 'Al-Azhar 1' }}
+            NEXT_PUBLIC_SCHOOL_NAME_SHORT=${{ vars.NEXT_PUBLIC_SCHOOL_NAME_SHORT || 'SMA Islam Al Azhar 1' }}
+            NEXT_PUBLIC_STUDENT_DOMAIN=${{ vars.NEXT_PUBLIC_STUDENT_DOMAIN || 'smaalazhar1.sch.id' }}
+            NEXT_PUBLIC_STAFF_DOMAIN=${{ vars.NEXT_PUBLIC_STAFF_DOMAIN || 'smaalazhar1.sch.id' }}
+            NEXT_PUBLIC_CRITICAL_POINTS=${{ vars.NEXT_PUBLIC_CRITICAL_POINTS || '75' }}
+            NEXT_PUBLIC_WARNING_POINTS=${{ vars.NEXT_PUBLIC_WARNING_POINTS || '50' }}
+            NEXT_PUBLIC_HEAVY_VIOLATION_POINTS=${{ vars.NEXT_PUBLIC_HEAVY_VIOLATION_POINTS || '20' }}
+            NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=${{ vars.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED || 'true' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Smoke test exact image

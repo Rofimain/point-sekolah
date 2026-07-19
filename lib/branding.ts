@@ -5,4 +5,6 @@ export const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME?.trim() || "SMA I
  * Hindari wrap di kolom tanda tangan 3 kolom.
  */
 export const SCHOOL_NAME_SHORT =
-  process.env.NEXT_PUBLIC_SCHOOL_NAME_SHORT?.trim() || "SMA Islam Al Azhar 1";
+  process.env.NEXT_PUBLIC_SCHOOL_NAME_SHORT?.trim() ||
+  process.env.NEXT_PUBLIC_SCHOOL_SHORT?.trim() ||
+  "SMA Islam Al Azhar 1";

@@ -8,6 +8,11 @@ import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-te
 import { LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 import { canManageData, isAdminRole } from "@/lib/staff-roles";
 import { parseUserPhotoInput } from "@/lib/user-photo";
+import { validateNewPassword } from "@/lib/password-policy";
+import { ACTIVE_USER_WHERE, lifecycleFieldsForStatus, statusFromActiveToggle } from "@/lib/user-status";
+import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
+import { softDeleteStudentsByClassId, softDeleteUsersByIds } from "@/lib/user-soft-delete";
+import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 
@@ -20,15 +25,19 @@ export async function POST(req: NextRequest) {
   if (!role || !VALID_ROLES.has(String(role))) {
     return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
   }
+  const nextPassword = validateNewPassword(password);
+  if (!nextPassword.ok) return NextResponse.json({ error: nextPassword.error }, { status: 400 });
   const photo = parseUserPhotoInput(photoData);
   if ("error" in photo) return NextResponse.json({ error: photo.error }, { status: 400 });
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
-  const hashed = await bcrypt.hash(password, 12);
+  const hashed = await bcrypt.hash(nextPassword.value, 12);
   const r = role as Role;
   if (isAdminRole(session.user.role) && r === "SUPER_ADMIN") {
     return NextResponse.json({ error: "Admin tidak boleh membuat akun Super Admin." }, { status: 403 });
   }
+  const wantActive = active ?? true;
+  const statusFields = lifecycleFieldsForStatus(statusFromActiveToggle(Boolean(wantActive)));
   const user = await prisma.user.create({
     data: {
       name,
@@ -40,13 +49,22 @@ export async function POST(req: NextRequest) {
       classId: r === "STUDENT" ? classId || null : null,
       parentTelegram: null,
       parentTelegramLinkToken: r === "STUDENT" ? newParentLinkToken() : null,
-      active: active ?? true,
+      ...statusFields,
+      createdFrom: "MANUAL",
+      passwordChangedAt: new Date(),
       photoData: photo.photoData,
       photoPresent: photo.photoPresent,
     },
   });
+  await recordUserLifecycleEvent({
+    userId: user.id,
+    event: "USER_CREATED",
+    toStatus: user.status,
+    reason: "manual_create",
+    actor: { id: session.user.id, name: session.user.name },
+  });
   const { password: _, parentTelegramLinkToken: linkTok, photoData: __, ...safe } = user;
-  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
+  const bot = getTelegramBotUsername();
   const ortuTelegramLink =
     r === "STUDENT" && bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;
   return NextResponse.json({ ...safe, ortuTelegramLink }, { status: 201 });
@@ -64,10 +82,12 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "active wajib diisi" }, { status: 400 });
   }
   const active = Boolean(body.active);
+  const nextStatus = statusFromActiveToggle(active);
+  const statusFields = lifecycleFieldsForStatus(nextStatus);
 
   const targets = await prisma.user.findMany({
     where: { id: { in: ids } },
-    select: { role: true, active: true },
+    select: { id: true, role: true, status: true, active: true },
   });
   if (isAdminRole(session.user.role) && targets.some((t) => t.role === "ADMIN" || t.role === "SUPER_ADMIN")) {
     return NextResponse.json(
@@ -77,9 +97,11 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (!active) {
-    const saActiveInBatch = targets.filter((t) => t.role === "SUPER_ADMIN" && t.active).length;
+    const saActiveInBatch = targets.filter((t) => t.role === "SUPER_ADMIN" && t.status === "ACTIVE").length;
     if (saActiveInBatch > 0) {
-      const totalActiveSa = await prisma.user.count({ where: { role: "SUPER_ADMIN", active: true } });
+      const totalActiveSa = await prisma.user.count({
+        where: { role: "SUPER_ADMIN", ...ACTIVE_USER_WHERE },
+      });
       if (totalActiveSa - saActiveInBatch < 1) {
         return NextResponse.json({ error: LAST_ACTIVE_SA_MSG }, { status: 400 });
       }
@@ -88,8 +110,24 @@ export async function PATCH(req: NextRequest) {
 
   const res = await prisma.user.updateMany({
     where: { id: { in: ids } },
-    data: { active },
+    data: statusFields,
   });
+
+  await Promise.all(
+    targets
+      .filter((t) => t.status !== nextStatus)
+      .map((t) =>
+        recordUserLifecycleEvent({
+          userId: t.id,
+          event: active ? "USER_ACTIVATED" : "USER_DEACTIVATED",
+          fromStatus: t.status,
+          toStatus: nextStatus,
+          reason: "bulk_active_toggle",
+          actor: { id: session.user.id, name: session.user.name },
+        })
+      )
+  );
+
   return NextResponse.json({ ok: true, count: res.count });
 }
 
@@ -102,9 +140,15 @@ export async function DELETE(req: NextRequest) {
   const ids = Array.isArray(body?.ids) ? body.ids.filter((x: unknown) => typeof x === "string" && x.trim()) : [];
   if (!classId && ids.length < 1) return NextResponse.json({ error: "ids atau classId wajib diisi" }, { status: 400 });
 
+  const actor = { id: session.user.id, name: session.user.name };
+
   if (classId) {
-    const res = await prisma.user.deleteMany({ where: { role: "STUDENT", classId } });
-    return NextResponse.json({ ok: true, count: res.count });
+    const count = await softDeleteStudentsByClassId({
+      classId,
+      actor,
+      reason: "bulk_delete_by_class",
+    });
+    return NextResponse.json({ ok: true, count, softDeleted: true });
   }
 
   const found = await prisma.user.findMany({
@@ -120,6 +164,10 @@ export async function DELETE(req: NextRequest) {
     );
   }
 
-  const res = await prisma.user.deleteMany({ where: { id: { in: ids } } });
-  return NextResponse.json({ ok: true, count: res.count });
+  const count = await softDeleteUsersByIds({
+    ids: found.map((u) => u.id),
+    actor,
+    reason: "bulk_delete_students",
+  });
+  return NextResponse.json({ ok: true, count, softDeleted: true });
 }

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { canManageData } from "@/lib/staff-roles";
 import { prisma } from "@/lib/prisma";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
+import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
 
 const MAX_IDS = 300;
 
@@ -24,10 +25,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
+  const bot = getTelegramBotUsername();
   if (!bot) {
     return NextResponse.json(
-      { error: "Set NEXT_PUBLIC_TELEGRAM_BOT_USERNAME (username bot tanpa @) di server." },
+      { error: "Set TELEGRAM_BOT_USERNAME (username bot tanpa @) di ENV_FILE_CONTENT / .env" },
       { status: 400 }
     );
   }

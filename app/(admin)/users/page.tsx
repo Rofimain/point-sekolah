@@ -41,6 +41,9 @@ export default async function UsersPage({
         parentTelegram: true,
         classId: true,
         active: true,
+        status: true,
+        googleSub: true,
+        authProvider: true,
         photoPresent: true,
         createdAt: true,
         updatedAt: true,
@@ -50,8 +53,8 @@ export default async function UsersPage({
     }),
     prisma.user.count({ where }),
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
-    prisma.user.count({ where: { role: "SUPER_ADMIN" } }),
-    prisma.user.count({ where: { role: "SUPER_ADMIN", active: true } }),
+    prisma.user.count({ where: { role: "SUPER_ADMIN", status: { not: "LEFT" } } }),
+    prisma.user.count({ where: { role: "SUPER_ADMIN", status: "ACTIVE" } }),
   ]);
 
   const users = rawUsers.map(({ parentTelegramLinkToken, ...u }) => ({
