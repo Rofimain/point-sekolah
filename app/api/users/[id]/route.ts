@@ -12,6 +12,7 @@ import { ACTIVE_USER_WHERE, lifecycleFieldsForStatus, statusFromActiveToggle } f
 import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
 import { softDeleteUser } from "@/lib/user-soft-delete";
 import { recordDataAccessLog } from "@/lib/access-log";
+import { normalizeEmail } from "@/lib/normalize-email";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 const VALID_STATUSES = new Set<string>(Object.values(UserStatus));
@@ -77,7 +78,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const updateData: Record<string, unknown> = {};
   if (body.name) updateData.name = body.name;
-  if (body.email) updateData.email = body.email;
+  if (body.email) {
+    const email = normalizeEmail(String(body.email));
+    if (!email.includes("@")) return NextResponse.json({ error: "Format email tidak valid" }, { status: 400 });
+    const taken = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" }, deletedAt: null, id: { not: id } },
+      select: { id: true },
+    });
+    if (taken) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
+    updateData.email = email;
+  }
   if (body.password) {
     const nextPassword = validateNewPassword(body.password);
     if (!nextPassword.ok) return NextResponse.json({ error: nextPassword.error }, { status: 400 });

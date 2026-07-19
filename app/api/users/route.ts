@@ -13,6 +13,7 @@ import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
 import { softDeleteStudentsByClassId, softDeleteUsersByIds } from "@/lib/user-soft-delete";
 import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
 import { recordDataAccessLog } from "@/lib/access-log";
+import { normalizeEmail } from "@/lib/normalize-email";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 
@@ -21,20 +22,22 @@ export async function POST(req: NextRequest) {
   if (isAuthFail(auth)) return auth.response;
   const { session } = auth;
   const body = await req.json();
-  const { name, email, password, role, nisn, nip, classId, active, photoData, jabatan } = body;
-  if (!name || !email || !password) return NextResponse.json({ error: "Nama, email, password wajib" }, { status: 400 });
+  const { name, email: emailRaw, password, role, nisn, nip, classId, active, photoData, jabatan } = body;
+  if (!name || !emailRaw || !password) return NextResponse.json({ error: "Nama, email, password wajib" }, { status: 400 });
   if (!role || !VALID_ROLES.has(String(role))) {
     return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
   }
   if (!canCreateUserWithRole(session.user.role, String(role))) {
     return NextResponse.json({ error: "Anda tidak boleh membuat akun dengan role tersebut." }, { status: 403 });
   }
+  const email = normalizeEmail(String(emailRaw));
+  if (!email.includes("@")) return NextResponse.json({ error: "Format email tidak valid" }, { status: 400 });
   const nextPassword = validateNewPassword(password);
   if (!nextPassword.ok) return NextResponse.json({ error: nextPassword.error }, { status: 400 });
   const photo = parseUserPhotoInput(photoData);
   if ("error" in photo) return NextResponse.json({ error: photo.error }, { status: 400 });
   const existing = await prisma.user.findFirst({
-    where: { email, deletedAt: null },
+    where: { email: { equals: email, mode: "insensitive" }, deletedAt: null },
   });
   if (existing) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
   const hashed = await bcrypt.hash(nextPassword.value, 12);

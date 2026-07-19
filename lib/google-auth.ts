@@ -93,8 +93,8 @@ export async function resolveAndLinkGoogleUser(input: {
     return { ok: false, code: "DOMAIN_NOT_ALLOWED" };
   }
 
-  const byEmail = await prisma.user.findUnique({
-    where: { email },
+  const byEmail = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: "insensitive" } },
     include: { class: true },
   });
 

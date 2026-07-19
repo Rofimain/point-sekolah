@@ -64,8 +64,8 @@ async function authorizeCredentials(portal: AuthPortal, credentials: Record<"ema
   const identifier = normalizeIdentifier(credentials.email);
 
   const user = identifier.includes("@")
-    ? await prisma.user.findUnique({
-        where: { email: identifier },
+    ? await prisma.user.findFirst({
+        where: { email: { equals: identifier, mode: "insensitive" } },
         include: { class: true },
       })
     : await prisma.user.findFirst({

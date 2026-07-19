@@ -29,6 +29,8 @@ export function isDefaultStudentPasswordConfigError(e: unknown): boolean {
 /** @deprecated Gunakan resolveDefaultStudentPassword() — nilai di-resolve saat dipanggil. */
 export const DEFAULT_STUDENT_PASSWORD = process.env.DEFAULT_STUDENT_PASSWORD?.trim() || "Siswa@123456";
 
+import { normalizeEmail } from "@/lib/normalize-email";
+
 export function studentEmailFromNisn(nisn: string, domain: string): string {
   const local = nisn
     .trim()
@@ -39,7 +41,7 @@ export function studentEmailFromNisn(nisn: string, domain: string): string {
 }
 
 export function normalizeStudentEmail(raw: string): string {
-  return raw.trim().toLowerCase();
+  return normalizeEmail(raw);
 }
 
 export function isValidEmailShape(email: string): boolean {
