@@ -1,17 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
-import {
-  buildManualRemisiReason,
-  getManualRemisiDef,
-  resolveManualRemisiPercent,
-  type ManualRemisiType,
-} from "@/lib/remisi-rules";
+import { buildManualRemisiReason, resolveManualRemisiPercent } from "@/lib/remisi-rules";
 import { parseIncidentDateYmd } from "@/lib/incident-date";
 
 export type ManualRemisiApplyResult = {
   studentId: string;
   studentName: string;
-  type: ManualRemisiType;
   percent: number;
   /** Skor pelanggaran dengan tanggal kejadian ≤ tanggal prestasi. */
   eligibleGross: number;
@@ -19,6 +13,7 @@ export type ManualRemisiApplyResult = {
   pointsDelta: number;
   effectiveAfter: number;
   achievementYmd: string;
+  customLabel: string;
   reason: string;
 };
 
@@ -44,26 +39,18 @@ export async function getGrossPointsOnOrBefore(
 
 export async function applyManualRemisiForStudent(input: {
   studentId: string;
-  type: ManualRemisiType;
   /** YYYY-MM-DD — remisi hanya dari poin kejadian ≤ tanggal ini. */
   achievementYmd: string;
-  customPercent?: number;
-  multiplier?: number;
-  customLabel?: string;
+  customPercent: number;
+  customLabel: string;
   note?: string;
 }): Promise<{ ok: true; result: ManualRemisiApplyResult } | { ok: false; error: string }> {
-  const def = getManualRemisiDef(input.type);
-  if (!def) return { ok: false, error: "Jenis remisi/reward tidak dikenal" };
-
-  const customLabel = input.customLabel?.trim() ?? "";
-  if (def.requireCustomLabel && customLabel.length < 2) {
+  const customLabel = input.customLabel.trim();
+  if (customLabel.length < 2) {
     return { ok: false, error: "Nama jenis remisi/reward wajib diisi (minimal 2 karakter)" };
   }
 
-  const resolved = resolveManualRemisiPercent(input.type, {
-    customPercent: input.customPercent,
-    multiplier: input.multiplier,
-  });
+  const resolved = resolveManualRemisiPercent(input.customPercent);
   if (!resolved.ok) return resolved;
 
   const student = await prisma.user.findFirst({
@@ -94,9 +81,9 @@ export async function applyManualRemisiForStudent(input: {
   }
 
   const pointsDelta = -Math.min(deduct, effective);
-  const reason = buildManualRemisiReason(input.type, {
+  const reason = buildManualRemisiReason({
     note: input.note,
-    customLabel: def.requireCustomLabel ? customLabel : undefined,
+    customLabel,
     achievementYmd: input.achievementYmd,
   });
 
@@ -123,13 +110,13 @@ export async function applyManualRemisiForStudent(input: {
     result: {
       studentId: student.id,
       studentName: student.name,
-      type: input.type,
       percent: resolved.percent,
       eligibleGross,
       grossTotalBefore: gross,
       pointsDelta,
       effectiveAfter: after.effective,
       achievementYmd: input.achievementYmd,
+      customLabel,
       reason,
     },
   };

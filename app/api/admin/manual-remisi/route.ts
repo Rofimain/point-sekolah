@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { applyManualRemisiForStudent, getGrossPointsOnOrBefore } from "@/lib/manual-remisi";
-import {
-  MANUAL_REMISI_TYPE,
-  getManualRemisiDef,
-  resolveManualRemisiPercent,
-  type ManualRemisiType,
-} from "@/lib/remisi-rules";
+import { resolveManualRemisiPercent } from "@/lib/remisi-rules";
 import { getEffectivePointsBreakdown } from "@/lib/student-effective-points";
 import { calendarTodayYmd } from "@/lib/incident-date";
 import { recordDataAccessLog } from "@/lib/access-log";
-
-const VALID_TYPES = new Set<string>(Object.values(MANUAL_REMISI_TYPE));
 
 /** Pratinjau: skor eligible sampai tanggal prestasi + potongan. */
 export async function GET(req: NextRequest) {
@@ -21,7 +14,6 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const studentId = (sp.get("studentId") || "").trim();
   const achievementYmd = (sp.get("achievementYmd") || "").trim();
-  const type = (sp.get("type") || "").trim();
   if (!studentId || !achievementYmd) {
     return NextResponse.json({ error: "studentId dan achievementYmd wajib" }, { status: 400 });
   }
@@ -33,13 +25,9 @@ export async function GET(req: NextRequest) {
 
   let percent: number | null = null;
   let pointsDelta: number | null = null;
-  if (type && VALID_TYPES.has(type)) {
-    const customPercent = sp.get("customPercent");
-    const multiplier = sp.get("multiplier");
-    const resolved = resolveManualRemisiPercent(type as ManualRemisiType, {
-      customPercent: customPercent != null && customPercent !== "" ? Number(customPercent) : undefined,
-      multiplier: multiplier != null && multiplier !== "" ? Number(multiplier) : undefined,
-    });
+  const customPercent = sp.get("customPercent");
+  if (customPercent != null && customPercent !== "") {
+    const resolved = resolveManualRemisiPercent(Number(customPercent));
     if (resolved.ok) {
       percent = resolved.percent;
       const deduct = Math.round(scoped.eligibleGross * (resolved.percent / 100));
@@ -70,37 +58,30 @@ export async function POST(req: NextRequest) {
   }
 
   const studentId = typeof body.studentId === "string" ? body.studentId.trim() : "";
-  const type = typeof body.type === "string" ? body.type.trim() : "";
   const achievementYmd = typeof body.achievementYmd === "string" ? body.achievementYmd.trim() : "";
+  const customLabel = typeof body.customLabel === "string" ? body.customLabel.trim() : "";
+  const customPercent =
+    body.customPercent != null && body.customPercent !== "" ? Number(body.customPercent) : NaN;
+  const note = typeof body.note === "string" ? body.note : undefined;
 
   if (!studentId) return NextResponse.json({ error: "Siswa wajib dipilih" }, { status: 400 });
-  if (!VALID_TYPES.has(type)) {
-    return NextResponse.json({ error: "Jenis remisi/reward tidak valid" }, { status: 400 });
-  }
   if (!achievementYmd) {
     return NextResponse.json({ error: "Tanggal prestasi wajib diisi" }, { status: 400 });
   }
   if (achievementYmd > calendarTodayYmd()) {
     return NextResponse.json({ error: "Tanggal prestasi tidak boleh di masa depan" }, { status: 400 });
   }
-
-  const def = getManualRemisiDef(type);
-  const customPercent =
-    body.customPercent != null && body.customPercent !== "" ? Number(body.customPercent) : undefined;
-  const multiplier = body.multiplier != null && body.multiplier !== "" ? Number(body.multiplier) : undefined;
-  const note = typeof body.note === "string" ? body.note : undefined;
-  const customLabel = typeof body.customLabel === "string" ? body.customLabel : undefined;
-
-  if (def?.fixedPercent == null && (customPercent == null || !Number.isFinite(customPercent))) {
+  if (customLabel.length < 2) {
+    return NextResponse.json({ error: "Nama jenis remisi/reward wajib diisi" }, { status: 400 });
+  }
+  if (!Number.isFinite(customPercent)) {
     return NextResponse.json({ error: "Persentase pengurangan wajib diisi" }, { status: 400 });
   }
 
   const applied = await applyManualRemisiForStudent({
     studentId,
-    type: type as ManualRemisiType,
     achievementYmd,
     customPercent,
-    multiplier,
     customLabel,
     note,
   });
@@ -112,10 +93,15 @@ export async function POST(req: NextRequest) {
   await recordDataAccessLog({
     session,
     action: "REMISI_MANUAL",
-    summary: `Remisi manual ${type} untuk siswa ${studentId}`,
+    summary: `Remisi manual "${customLabel}" (${applied.result.percent}%) untuk siswa ${studentId}`,
     targetType: "User",
     targetId: studentId,
-    meta: { type, achievementYmd, pointsDelta: applied.result.pointsDelta },
+    meta: {
+      customLabel,
+      achievementYmd,
+      percent: applied.result.percent,
+      pointsDelta: applied.result.pointsDelta,
+    },
   });
 
   return NextResponse.json({ ok: true, ...applied.result });
