@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nama bagian minimal 2 karakter" }, { status: 400 });
   }
 
-  let id = (body.id?.trim() || slugifyBagianId(label)).toUpperCase();
+  const id = (body.id?.trim() || slugifyBagianId(label)).toUpperCase();
   if (!/^[A-Z0-9_]{2,40}$/.test(id)) {
     return NextResponse.json(
       { error: "Kode bagian hanya huruf/angka/underscore (2–40 karakter)" },
