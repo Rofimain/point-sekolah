@@ -27,7 +27,7 @@ function headerIndex(headerCells: string[], keys: string[]): number {
 /**
  * Parse teks dari Excel (tab) atau CSV (koma).
  * Mendukung baris judul: nama, email, kelas, nisn, password (nama_kelas / class_name / id_kelas).
- * Baris valid: ada nama + (email atau nisn untuk email otomatis).
+ * Baris valid: ada email atau (nama + nisn untuk email otomatis).
  */
 export function parseStudentBulkPaste(raw: string): ParsedBulkStudent[] {
   const lines = raw
@@ -108,7 +108,7 @@ export function parseStudentBulkPaste(raw: string): ParsedBulkStudent[] {
       }
     }
 
-    if (name && (email || nisn)) {
+    if (email || (name && nisn) || (name && email)) {
       out.push({
         name,
         nisn: nisn || undefined,

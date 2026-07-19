@@ -82,7 +82,7 @@ export function resolveStudentEmail(opts: {
 export function buildStudentCreateInput(input: {
   name: string;
   nisn?: string | null;
-  classId: string;
+  classId?: string | null;
   email: string;
   hashedPassword: string;
   parentTelegram?: string | null;
@@ -93,6 +93,7 @@ export function buildStudentCreateInput(input: {
   if (!tg.ok) throw new Error(tg.error);
   const hasPhoto = Boolean(input.photoPresent && input.photoData);
   const nisn = input.nisn?.trim() || null;
+  const classId = input.classId?.trim() || null;
   return {
     name: input.name.trim(),
     email: input.email.toLowerCase().trim(),
@@ -101,7 +102,7 @@ export function buildStudentCreateInput(input: {
     nisn,
     parentTelegram: tg.value,
     parentTelegramLinkToken: newParentLinkToken(),
-    class: { connect: { id: input.classId } },
+    ...(classId ? { class: { connect: { id: classId } } } : {}),
     active: true,
     status: "ACTIVE",
     createdFrom: "MANUAL",

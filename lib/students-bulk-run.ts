@@ -9,6 +9,7 @@ import {
 import { getStudentEmailDomain } from "@/lib/school-config";
 import { parseUserPhotoInput } from "@/lib/user-photo";
 import { validateNewPassword } from "@/lib/password-policy";
+import { displayNameFromEmail, isBulkStudentEmailAllowed } from "@/lib/student-bulk-email";
 
 export type BulkStudentRow = {
   name: string;
@@ -16,7 +17,7 @@ export type BulkStudentRow = {
   nisn?: string;
   classId?: string;
   className?: string;
-  /** Wajib untuk login (atau kosong + NISN untuk email otomatis). */
+  /** Kunci upsert: email domain sekolah (atau kosong + NISN → email otomatis). */
   email?: string;
   password?: string;
   /** Data-URL JPEG/PNG untuk foto profil (opsional). */
@@ -25,6 +26,7 @@ export type BulkStudentRow = {
 
 export type BulkImportResult = {
   created: number;
+  updated: number;
   failed: number;
   errors: { row: number; message: string }[];
   truncatedErrors: boolean;
@@ -35,6 +37,27 @@ export type BulkImportResult = {
 const BULK_TELEGRAM_ORTU_NOTE =
   "Setiap siswa mendapat token tautan Telegram otomatis. Super Admin: Manajemen Pengguna → siswa → Salin tautan Telegram ortu; kirim ke ortu. Ortu buka link lalu Start — webhook menyimpan chat ID.";
 
+function resolveClassId(
+  r: BulkStudentRow,
+  classes: { id: string; name: string }[]
+): { ok: true; classId: string | null } | { ok: false; error: string } {
+  let classId = r.classId?.trim() || "";
+  const cn = r.className?.trim();
+  if (!classId && cn) {
+    const found = classes.find((c) => c.name.toLowerCase() === cn.toLowerCase());
+    if (!found) return { ok: false, error: `Kelas "${cn}" tidak ditemukan` };
+    classId = found.id;
+  }
+  if (!classId) return { ok: true, classId: null };
+  if (!classes.some((c) => c.id === classId)) return { ok: false, error: "ID kelas tidak valid" };
+  return { ok: true, classId };
+}
+
+/**
+ * Bulk siswa: upsert by email.
+ * - Email baru (domain sekolah) → create (nama boleh dari email; kelas opsional).
+ * - Email sudah ada → update field yang diisi (kelas, nama, NISN, foto, password).
+ */
 export async function runBulkStudentImport(
   rows: BulkStudentRow[],
   opts?: { defaultPassword?: string }
@@ -42,6 +65,7 @@ export async function runBulkStudentImport(
   if (rows.length === 0) {
     return {
       created: 0,
+      updated: 0,
       failed: 0,
       errors: [],
       truncatedErrors: false,
@@ -52,7 +76,7 @@ export async function runBulkStudentImport(
     throw new Error("Maksimal 500 baris per unggahan");
   }
 
-  const classes = await prisma.class.findMany();
+  const classes = await prisma.class.findMany({ select: { id: true, name: true } });
   let pwdDefaultRaw: string;
   try {
     pwdDefaultRaw = (opts?.defaultPassword?.trim() || resolveDefaultStudentPassword()).slice(0, 72);
@@ -67,50 +91,27 @@ export async function runBulkStudentImport(
   const hashedDefault = await bcrypt.hash(pwdDefaultCheck.value, 12);
 
   const existingUsers = await prisma.user.findMany({
-    select: { email: true, nisn: true },
+    where: { role: "STUDENT", deletedAt: null },
+    select: { id: true, email: true, nisn: true },
   });
-  const usedEmails = new Set(existingUsers.map((u) => u.email.toLowerCase()));
-  const usedNisn = new Set(existingUsers.map((u) => u.nisn).filter((n): n is string => Boolean(n)));
+  const byEmail = new Map(existingUsers.map((u) => [u.email.toLowerCase(), u]));
+  const byNisn = new Map(
+    existingUsers.filter((u) => u.nisn).map((u) => [u.nisn as string, u] as const)
+  );
+  /** Email/NISN yang dipakai baris sebelumnya dalam batch yang sama (create). */
+  const batchEmails = new Set<string>();
+  const batchNisn = new Set<string>();
 
   const errors: { row: number; message: string }[] = [];
   let created = 0;
+  let updated = 0;
 
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     const rowNum = i + 1;
     try {
-      const name = r.name?.trim();
+      const nameRaw = r.name?.trim() || "";
       const nisn = r.nisn?.trim() || "";
-      if (!name) {
-        errors.push({ row: rowNum, message: "Nama kosong" });
-        continue;
-      }
-
-      let classId = r.classId?.trim();
-      const cn = r.className?.trim();
-      if (!classId && cn) {
-        const found = classes.find((c) => c.name.toLowerCase() === cn.toLowerCase());
-        if (!found) {
-          errors.push({ row: rowNum, message: `Kelas "${cn}" tidak ditemukan` });
-          continue;
-        }
-        classId = found.id;
-      }
-      if (!classId) {
-        errors.push({ row: rowNum, message: "Kelas wajib (kolom nama_kelas atau id_kelas)" });
-        continue;
-      }
-      if (!classes.some((c) => c.id === classId)) {
-        errors.push({ row: rowNum, message: "ID kelas tidak valid" });
-        continue;
-      }
-
-      if (nisn) {
-        if (usedNisn.has(nisn)) {
-          errors.push({ row: rowNum, message: "NISN sudah terdaftar" });
-          continue;
-        }
-      }
 
       const emailResolved = resolveStudentEmail({
         email: r.email,
@@ -123,22 +124,23 @@ export async function runBulkStudentImport(
       }
       const email = emailResolved.email;
 
-      if (usedEmails.has(email.toLowerCase())) {
-        errors.push({ row: rowNum, message: `Email ${email} sudah dipakai` });
+      if (!isBulkStudentEmailAllowed(email)) {
+        errors.push({
+          row: rowNum,
+          message: `Email harus memakai domain sekolah (${getStudentEmailDomain()})`,
+        });
         continue;
       }
 
-      const pwdRow = r.password?.trim();
-      const pwd = (pwdRow || pwdDefaultCheck.value).slice(0, 72);
-      const pwdCheck = validateNewPassword(pwd);
-      if (!pwdCheck.ok) {
-        errors.push({ row: rowNum, message: pwdCheck.error });
+      const classResolved = resolveClassId(r, classes);
+      if (!classResolved.ok) {
+        errors.push({ row: rowNum, message: classResolved.error });
         continue;
       }
-      const hashed = pwdRow ? await bcrypt.hash(pwdCheck.value, 12) : hashedDefault;
+      const classId = classResolved.classId;
 
-      let photoData: string | null = null;
-      let photoPresent = false;
+      let photoData: string | null | undefined;
+      let photoPresent: boolean | undefined;
       if (r.photoData?.trim()) {
         const photo = parseUserPhotoInput(r.photoData);
         if ("error" in photo) {
@@ -149,19 +151,93 @@ export async function runBulkStudentImport(
         photoPresent = photo.photoPresent;
       }
 
-      await prisma.user.create({
+      const existing = byEmail.get(email.toLowerCase());
+
+      if (existing) {
+        if (nisn) {
+          const nisnOwner = byNisn.get(nisn);
+          if (nisnOwner && nisnOwner.id !== existing.id) {
+            errors.push({ row: rowNum, message: `NISN ${nisn} sudah dipakai siswa lain` });
+            continue;
+          }
+        }
+
+        const data: Record<string, unknown> = {};
+        if (nameRaw) data.name = nameRaw;
+        if (classId) data.classId = classId;
+        if (nisn) data.nisn = nisn;
+        if (photoPresent && photoData) {
+          data.photoData = photoData;
+          data.photoPresent = true;
+        }
+
+        const pwdRow = r.password?.trim();
+        if (pwdRow) {
+          const pwdCheck = validateNewPassword(pwdRow.slice(0, 72));
+          if (!pwdCheck.ok) {
+            errors.push({ row: rowNum, message: pwdCheck.error });
+            continue;
+          }
+          data.password = await bcrypt.hash(pwdCheck.value, 12);
+          data.passwordChangedAt = null;
+          data.authVersion = { increment: 1 };
+          data.failedLoginCount = 0;
+          data.lockedUntil = null;
+        }
+
+        if (Object.keys(data).length === 0) {
+          // Email cocok tapi tidak ada field untuk diubah — anggap sukses (no-op update)
+          updated++;
+          continue;
+        }
+
+        await prisma.user.update({ where: { id: existing.id }, data });
+        if (nisn) {
+          if (existing.nisn) byNisn.delete(existing.nisn);
+          byNisn.set(nisn, { ...existing, nisn });
+        }
+        updated++;
+        continue;
+      }
+
+      // —— Create ——
+      if (batchEmails.has(email.toLowerCase())) {
+        errors.push({ row: rowNum, message: `Email ${email} duplikat di file yang sama` });
+        continue;
+      }
+      if (nisn && (byNisn.has(nisn) || batchNisn.has(nisn))) {
+        errors.push({ row: rowNum, message: "NISN sudah terdaftar" });
+        continue;
+      }
+
+      const name = nameRaw || displayNameFromEmail(email);
+      const pwdRow = r.password?.trim();
+      const pwd = (pwdRow || pwdDefaultCheck.value).slice(0, 72);
+      const pwdCheck = validateNewPassword(pwd);
+      if (!pwdCheck.ok) {
+        errors.push({ row: rowNum, message: pwdCheck.error });
+        continue;
+      }
+      const hashed = pwdRow ? await bcrypt.hash(pwdCheck.value, 12) : hashedDefault;
+
+      const createdUser = await prisma.user.create({
         data: buildStudentCreateInput({
           name,
           nisn: nisn || null,
           classId,
           email,
           hashedPassword: hashed,
-          photoData,
-          photoPresent,
+          photoData: photoData ?? null,
+          photoPresent: photoPresent ?? false,
         }),
+        select: { id: true, email: true, nisn: true },
       });
-      usedEmails.add(email.toLowerCase());
-      if (nisn) usedNisn.add(nisn);
+      byEmail.set(email.toLowerCase(), createdUser);
+      batchEmails.add(email.toLowerCase());
+      if (createdUser.nisn) {
+        byNisn.set(createdUser.nisn, createdUser);
+        batchNisn.add(createdUser.nisn);
+      }
       created++;
     } catch (e: unknown) {
       console.error("[students-bulk-run] row", rowNum, e);
@@ -171,6 +247,7 @@ export async function runBulkStudentImport(
 
   return {
     created,
+    updated,
     failed: errors.length,
     errors: errors.slice(0, 50),
     truncatedErrors: errors.length > 50,

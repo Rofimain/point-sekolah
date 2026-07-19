@@ -137,6 +137,7 @@ export default function StudentsClient({
   const [bulkDefaultPwd, setBulkDefaultPwd] = useState("");
   const [bulkResult, setBulkResult] = useState<{
     created: number;
+    updated?: number;
     failed: number;
     errors: { row: number; message: string }[];
     truncatedErrors?: boolean;
@@ -356,6 +357,7 @@ export default function StudentsClient({
       if (!res.ok) throw new Error(data.error || "Impor file gagal");
       setBulkResult({
         created: data.created,
+        updated: data.updated ?? 0,
         failed: data.failed,
         errors: data.errors || [],
         truncatedErrors: data.truncatedErrors,
@@ -365,10 +367,10 @@ export default function StudentsClient({
         photoErrors: data.photoErrors,
       });
       setMsg({
-        type: data.failed ? "err" : "ok",
-        text: `File: ${data.created} siswa ditambahkan${data.failed ? `, ${data.failed} baris gagal.` : "."}${
-          data.photosAttached ? ` Foto terpasang: ${data.photosAttached}.` : ""
-        }`,
+        type: data.failed && !data.created && !data.updated ? "err" : "ok",
+        text: `File: ${data.created ?? 0} ditambah, ${data.updated ?? 0} diperbarui${
+          data.failed ? `, ${data.failed} baris gagal.` : "."
+        }${data.photosAttached ? ` Foto terpasang: ${data.photosAttached}.` : ""}`,
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
       if (!data.failed) setTabQuery(null);
@@ -434,14 +436,17 @@ export default function StudentsClient({
       if (!res.ok) throw new Error(data.error || "Impor gagal");
       setBulkResult({
         created: data.created,
+        updated: data.updated ?? 0,
         failed: data.failed,
         errors: data.errors || [],
         truncatedErrors: data.truncatedErrors,
         telegramOrtuNote: data.telegramOrtuNote,
       });
       setMsg({
-        type: data.failed ? "err" : "ok",
-        text: `Selesai: ${data.created} siswa ditambahkan${data.failed ? `, ${data.failed} baris gagal.` : "."}`,
+        type: data.failed && !data.created && !data.updated ? "err" : "ok",
+        text: `Selesai: ${data.created ?? 0} ditambah, ${data.updated ?? 0} diperbarui${
+          data.failed ? `, ${data.failed} baris gagal.` : "."
+        }`,
       });
       setBulkText("");
       if (!data.failed) setTabQuery(null);
@@ -1202,12 +1207,11 @@ export default function StudentsClient({
                     <p className="mt-1 max-w-xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
                       Unggah <strong style={{ color: "var(--text-secondary)" }}>.xlsx</strong> atau paket{" "}
                       <strong style={{ color: "var(--text-secondary)" }}>.zip</strong> (Excel + folder{" "}
-                      <code className="text-[10px]">foto/</code>). Nama file foto ={" "}
-                      <strong style={{ color: "var(--text-secondary)" }}>nama siswa</strong> (boleh disingkat/inisial)
-                      atau NISN. Kolom wajib: <code className="text-[10px]">nama</code>,{" "}
-                      <code className="text-[10px]">email</code>, <code className="text-[10px]">nama_kelas</code>.
-                      Opsional: <code className="text-[10px]">nisn</code>, <code className="text-[10px]">password</code>
-                      . Login memakai email. Telegram ortu diisi setelah impor via Manajemen Pengguna.
+                      <code className="text-[10px]">foto/</code>). Kunci:{" "}
+                      <strong style={{ color: "var(--text-secondary)" }}>email domain sekolah</strong> — baris baru
+                      dibuat, email yang sudah ada di-<strong style={{ color: "var(--text-secondary)" }}>update</strong>{" "}
+                      (kelas/nama/NISN/foto). Nama & kelas opsional saat create (nama bisa dari email). Telegram ortu
+                      diisi setelah impor via Manajemen Pengguna.
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -1453,7 +1457,7 @@ export default function StudentsClient({
                     </div>
                   )}
 
-                {bulkResult && bulkResult.created > 0 && bulkResult.telegramOrtuNote && (
+                {bulkResult && (bulkResult.created > 0 || (bulkResult.updated ?? 0) > 0) && bulkResult.telegramOrtuNote && (
                   <div
                     className="mt-4 rounded-xl border p-3 text-[11px] leading-relaxed"
                     style={{
