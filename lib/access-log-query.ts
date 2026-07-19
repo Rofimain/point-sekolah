@@ -1,5 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { AccessLogCategory, AccessLogPortal } from "@/generated/prisma/client";
+import {
+  accessLogScopeWindow,
+  parseAccessLogScope,
+  type AccessLogScope,
+} from "@/lib/access-log-retention";
 
 export type AccessLogQuery = {
   from?: string | null;
@@ -8,6 +13,7 @@ export type AccessLogQuery = {
   portal?: string | null;
   action?: string | null;
   q?: string | null;
+  scope?: AccessLogScope;
   page?: number;
   perPage?: number;
 };
@@ -23,27 +29,53 @@ export function parseAccessLogQuery(sp: URLSearchParams): AccessLogQuery {
     portal: sp.get("portal"),
     action: sp.get("action"),
     q: sp.get("q"),
+    scope: parseAccessLogScope(sp.get("scope")),
     page,
     perPage,
   };
 }
 
-export function buildAccessLogWhere(q: AccessLogQuery): Prisma.AccessLogWhereInput {
+function parseDayStart(raw: string): Date | null {
+  const d = new Date(raw.trim());
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function parseDayEnd(raw: string): Date | null {
+  const d = new Date(raw.trim());
+  if (Number.isNaN(d.getTime())) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+export function buildAccessLogWhere(q: AccessLogQuery, now = new Date()): Prisma.AccessLogWhereInput {
   const where: Prisma.AccessLogWhereInput = {};
   const and: Prisma.AccessLogWhereInput[] = [];
+  const scope = q.scope ?? "active";
+  const window = accessLogScopeWindow(scope, now);
+
+  let gte = window.gte;
+  let lte: Date | undefined;
+  let lt = window.lt;
 
   if (q.from?.trim()) {
-    const d = new Date(q.from.trim());
-    if (!Number.isNaN(d.getTime())) and.push({ createdAt: { gte: d } });
+    const from = parseDayStart(q.from);
+    if (from && from > gte) gte = from;
   }
   if (q.to?.trim()) {
-    const d = new Date(q.to.trim());
-    if (!Number.isNaN(d.getTime())) {
-      // include whole end day if date-only
-      if (/^\d{4}-\d{2}-\d{2}$/.test(q.to.trim())) d.setHours(23, 59, 59, 999);
-      and.push({ createdAt: { lte: d } });
+    const to = parseDayEnd(q.to);
+    if (to) {
+      if (lt && to >= lt) {
+        // clamp to just before archive/active boundary
+        lte = new Date(lt.getTime() - 1);
+      } else {
+        lte = to;
+      }
     }
   }
+
+  and.push({ createdAt: { gte } });
+  if (lt) and.push({ createdAt: { lt } });
+  if (lte) and.push({ createdAt: { lte } });
 
   if (q.category && (Object.values(AccessLogCategory) as string[]).includes(q.category)) {
     where.category = q.category as AccessLogCategory;

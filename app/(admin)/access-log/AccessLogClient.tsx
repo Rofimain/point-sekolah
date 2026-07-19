@@ -34,6 +34,7 @@ const emptyFilters = {
   portal: "",
   action: "",
   q: "",
+  scope: "active" as "active" | "archive",
 };
 
 export default function AccessLogClient() {
@@ -48,6 +49,7 @@ export default function AccessLogClient() {
       const sp = new URLSearchParams();
       sp.set("page", String(p));
       sp.set("perPage", "30");
+      sp.set("scope", filters.scope);
       if (filters.from) sp.set("from", filters.from);
       if (filters.to) sp.set("to", filters.to);
       if (filters.category) sp.set("category", filters.category);
@@ -109,18 +111,51 @@ export default function AccessLogClient() {
             Log akses
           </h1>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Riwayat login (portal siswa &amp; staf) dan perubahan data. Hanya Super Admin. Log tidak dihapus otomatis — bisa membesar seiring waktu.
+            Riwayat login (portal siswa &amp; staf) dan perubahan data. Hanya Super Admin. Tampilan aktif: 12 bulan terakhir;
+            arsip: 12–24 bulan. Lebih dari 24 bulan dihapus otomatis (cron harian).
           </p>
         </div>
-        <button
-          type="button"
-          disabled={exporting || loading}
-          onClick={() => void exportExcel()}
-          className="rounded-xl border px-4 py-2 text-xs font-semibold disabled:opacity-50"
-          style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-secondary)" }}
-        >
-          {exporting ? "Mengunduh…" : "Unduh Excel"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-xl border p-0.5" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
+            <button
+              type="button"
+              onClick={() => {
+                setPage(1);
+                setFilters((f) => ({ ...f, scope: "active" }));
+              }}
+              className="rounded-lg px-3 py-2 text-xs font-semibold"
+              style={{
+                background: filters.scope === "active" ? "var(--accent)" : "transparent",
+                color: filters.scope === "active" ? "white" : "var(--text-secondary)",
+              }}
+            >
+              Aktif (12 bln)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPage(1);
+                setFilters((f) => ({ ...f, scope: "archive" }));
+              }}
+              className="rounded-lg px-3 py-2 text-xs font-semibold"
+              style={{
+                background: filters.scope === "archive" ? "var(--accent)" : "transparent",
+                color: filters.scope === "archive" ? "white" : "var(--text-secondary)",
+              }}
+            >
+              Arsip (12–24 bln)
+            </button>
+          </div>
+          <button
+            type="button"
+            disabled={exporting || loading}
+            onClick={() => void exportExcel()}
+            className="rounded-xl border px-4 py-2 text-xs font-semibold disabled:opacity-50"
+            style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-secondary)" }}
+          >
+            {exporting ? "Mengunduh…" : "Unduh Excel"}
+          </button>
+        </div>
       </div>
 
       <div

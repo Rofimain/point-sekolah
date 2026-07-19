@@ -72,7 +72,9 @@ services:
         apk add --no-cache curl tzdata
         # Remisi otomatis tiap hari jam 02:00 (set TZ di .env, mis. Asia/Jakarta)
         echo "0 2 * * * curl -fsS -X POST -H \"x-cron-secret: $${CRON_SECRET}\" http://app:3000/api/cron/quiet-month-points >> /proc/1/fd/1 2>&1" > /etc/crontabs/root
-        echo "Remisi cron terpasang (daily 02:00). Pastikan CRON_SECRET ada di .env."
+        # Purge log akses >24 bulan tiap hari jam 03:15
+        echo "15 3 * * * curl -fsS -X POST -H \"x-cron-secret: $${CRON_SECRET}\" http://app:3000/api/cron/access-log-purge >> /proc/1/fd/1 2>&1" >> /etc/crontabs/root
+        echo "Cron terpasang: remisi 02:00, purge access-log 03:15. Pastikan CRON_SECRET ada di .env."
         crond -f -l 8
 
 volumes:
