@@ -24,6 +24,8 @@ services:
       NEXTAUTH_SECRET: smoke-only-secret-that-is-never-used-in-production
       NEXTAUTH_URL: http://localhost:3000
       CRON_SECRET: smoke-cron-secret
+      DEFAULT_STUDENT_PASSWORD: SmokeSiswa@123456
+      TELEGRAM_WEBHOOK_SECRET: smoke-webhook-secret-hexhexhexhexhexhexhex
     depends_on:
       db:
         condition: service_healthy

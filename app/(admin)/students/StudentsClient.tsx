@@ -1146,7 +1146,7 @@ export default function StudentsClient({
                 type="text"
                 value={bulkDefaultPwd}
                 onChange={(e) => setBulkDefaultPwd(e.target.value)}
-                placeholder="Kosong = Siswa@123456 atau dari server"
+                placeholder="Kosong = pakai DEFAULT_STUDENT_PASSWORD dari server"
                 className="w-full rounded-xl border px-3 py-2 text-sm"
                 style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
               />

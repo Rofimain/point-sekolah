@@ -59,28 +59,34 @@ export async function POST(req: NextRequest) {
   const incident = parseOptionalIncidentDate(dateInput);
   if (!incident.ok) return NextResponse.json({ error: incident.error }, { status: 400 });
 
-  const record = await prisma.violationRecord.create({
-    data: {
-      studentId: targetStudentId,
-      violationTypeId,
-      session: sessionSlot || null,
-      notes: notes || null,
-      points: resolvedPoints,
-      date: incident.date,
-      submittedByStudent: session.user.role === "STUDENT",
-      createdByName: session.user.name ?? undefined,
-      evidenceImageData: evidenceImages[0] ?? null,
-      evidenceImagePresent: evidenceImages.length > 0,
-      studentSignatureData: signature && signature.trim() ? signature.trim() : null,
-    },
-    include: {
-      student: { select: { id: true, name: true, parentTelegram: true } },
-      violationType: true,
-    },
-  });
+  let record;
+  try {
+    record = await prisma.violationRecord.create({
+      data: {
+        studentId: targetStudentId,
+        violationTypeId,
+        session: sessionSlot || null,
+        notes: notes || null,
+        points: resolvedPoints,
+        date: incident.date,
+        submittedByStudent: session.user.role === "STUDENT",
+        createdByName: session.user.name ?? undefined,
+        evidenceImageData: evidenceImages[0] ?? null,
+        evidenceImagePresent: evidenceImages.length > 0,
+        studentSignatureData: signature && signature.trim() ? signature.trim() : null,
+      },
+      include: {
+        student: { select: { id: true, name: true, parentTelegram: true } },
+        violationType: true,
+      },
+    });
 
-  if (evidenceImages.length > 0) {
-    await replaceRecordEvidenceImages(record.id, evidenceImages);
+    if (evidenceImages.length > 0) {
+      await replaceRecordEvidenceImages(record.id, evidenceImages);
+    }
+  } catch (e) {
+    console.error("[records POST] gagal menyimpan catatan pelanggaran:", e);
+    return NextResponse.json({ error: "Gagal menyimpan catatan. Coba lagi." }, { status: 500 });
   }
 
   const staffName = session.user.role === "STUDENT" ? null : session.user.name ?? null;

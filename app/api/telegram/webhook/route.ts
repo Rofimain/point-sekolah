@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
         chat_id: chatIdStr,
         text: "Tautan tidak valid atau sudah dipakai. Minta link baru ke pihak sekolah.",
       }),
-    }).catch(() => {});
+    }).catch((e) => console.error("[telegram webhook] gagal kirim pesan token invalid:", e));
     return NextResponse.json({ ok: true });
   }
 
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
       chat_id: chatIdStr,
       text: `Terhubung. Notifikasi pelanggaran untuk "${student.name}" akan dikirim ke chat ini.`,
     }),
-  }).catch(() => {});
+  }).catch((e) => console.error("[telegram webhook] gagal kirim pesan sukses:", e));
 
   return NextResponse.json({ ok: true });
 }

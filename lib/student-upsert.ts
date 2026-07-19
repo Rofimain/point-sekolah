@@ -2,8 +2,22 @@ import type { Prisma } from "@/generated/prisma/client";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
 
-/** Default ≥12 karakter agar lolos password policy (user lama tidak di-rehash). */
-export const DEFAULT_STUDENT_PASSWORD = process.env.DEFAULT_STUDENT_PASSWORD || "Siswa@123456";
+/**
+ * Password default siswa dari environment.
+ * Production: wajib DEFAULT_STUDENT_PASSWORD (tanpa fallback hardcoded).
+ * Development/test: fallback lokal hanya jika env kosong.
+ */
+export function resolveDefaultStudentPassword(): string {
+  const fromEnv = process.env.DEFAULT_STUDENT_PASSWORD?.trim();
+  if (fromEnv) return fromEnv;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("DEFAULT_STUDENT_PASSWORD wajib diisi di environment production.");
+  }
+  return "Siswa@123456";
+}
+
+/** @deprecated Gunakan resolveDefaultStudentPassword() — nilai di-resolve saat dipanggil. */
+export const DEFAULT_STUDENT_PASSWORD = process.env.DEFAULT_STUDENT_PASSWORD?.trim() || "Siswa@123456";
 
 export function studentEmailFromNisn(nisn: string, domain: string): string {
   const local = nisn.trim().toLowerCase().replace(/[^a-z0-9]/g, "");

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import {
   buildStudentCreateInput,
-  DEFAULT_STUDENT_PASSWORD,
+  resolveDefaultStudentPassword,
   resolveStudentEmail,
 } from "@/lib/student-upsert";
 import { canManageData } from "@/lib/staff-roles";
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   const existingEmail = await prisma.user.findUnique({ where: { email: finalEmail } });
   if (existingEmail) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
 
-  const pwdRaw = (password?.trim() || DEFAULT_STUDENT_PASSWORD).slice(0, 72);
+  const pwdRaw = (password?.trim() || resolveDefaultStudentPassword()).slice(0, 72);
   const pwdCheck = validateNewPassword(pwdRaw);
   if (!pwdCheck.ok) return NextResponse.json({ error: pwdCheck.error }, { status: 400 });
 
