@@ -22,20 +22,12 @@ const GRADES = ["X", "XI", "XII"] as const;
 
 type FlashMsg = { type: "ok" | "err"; text: string };
 
-function PointsCell({ studentId, points }: { studentId: string; points: number }) {
+function PointsSummary({ points }: { points: number }) {
   return (
-    <Link
-      href={`/students/${studentId}/poin`}
-      className="inline-flex flex-col items-start gap-1 rounded-md outline-offset-2 hover:opacity-90 focus-visible:outline focus-visible:outline-2"
-      style={{ outlineColor: "var(--accent)" }}
-      title="Lihat detail poin"
-    >
+    <div className="inline-flex flex-col items-start gap-1">
       <PointBadge points={points} />
       <StatusBadge points={points} />
-      <span className="text-[10px] font-semibold hover:underline" style={{ color: "var(--accent)" }}>
-        Info poin
-      </span>
-    </Link>
+    </div>
   );
 }
 
@@ -684,15 +676,24 @@ export default function StudentsClient({
                           {u.email}
                         </div>
                         <div className="mt-2">
-                          <PointsCell studentId={u.id} points={totalPointsMap[u.id] ?? 0} />
+                          <PointsSummary points={totalPointsMap[u.id] ?? 0} />
                         </div>
-                        <Link
-                          href={`/students/${u.id}/cetak`}
-                          className="mt-2 inline-flex min-h-11 touch-manipulation items-center text-xs font-semibold hover:underline"
-                          style={{ color: "var(--accent)" }}
-                        >
-                          Cetak surat
-                        </Link>
+                        <div className="mt-2 flex flex-col items-start gap-1">
+                          <Link
+                            href={`/students/${u.id}/poin`}
+                            className="inline-flex min-h-11 touch-manipulation items-center text-xs font-semibold hover:underline"
+                            style={{ color: "var(--accent)" }}
+                          >
+                            Info poin
+                          </Link>
+                          <Link
+                            href={`/students/${u.id}/cetak`}
+                            className="inline-flex min-h-11 touch-manipulation items-center text-xs font-semibold hover:underline"
+                            style={{ color: "var(--accent)" }}
+                          >
+                            Cetak surat
+                          </Link>
+                        </div>
                       </div>
                     </li>
                   ))}
@@ -753,7 +754,7 @@ export default function StudentsClient({
                           </td>
                         )}
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <PointsCell studentId={u.id} points={totalPointsMap[u.id] ?? 0} />
+                          <PointsSummary points={totalPointsMap[u.id] ?? 0} />
                         </td>
                         <td className="px-4 py-3">
                           <span
