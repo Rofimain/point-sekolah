@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import {
   buildStudentCreateInput,
   DEFAULT_STUDENT_PASSWORD,
-  studentEmailFromNisn,
+  resolveStudentEmail,
 } from "@/lib/student-upsert";
 import { parseUserPhotoInput } from "@/lib/user-photo";
 import { validateNewPassword } from "@/lib/password-policy";
@@ -12,9 +12,11 @@ const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1con
 
 export type BulkStudentRow = {
   name: string;
-  nisn: string;
+  /** Opsional — data tambahan, bukan syarat login. */
+  nisn?: string;
   classId?: string;
   className?: string;
+  /** Wajib untuk login (atau kosong + NISN untuk email otomatis). */
   email?: string;
   password?: string;
   /** Data-URL JPEG/PNG untuk foto profil (opsional). */
@@ -66,9 +68,9 @@ export async function runBulkStudentImport(
     const rowNum = i + 1;
     try {
       const name = r.name?.trim();
-      const nisn = r.nisn?.trim();
-      if (!name || !nisn) {
-        errors.push({ row: rowNum, message: "Nama atau NISN kosong" });
+      const nisn = r.nisn?.trim() || "";
+      if (!name) {
+        errors.push({ row: rowNum, message: "Nama kosong" });
         continue;
       }
 
@@ -91,21 +93,24 @@ export async function runBulkStudentImport(
         continue;
       }
 
-      const nisnDup = await prisma.user.findFirst({ where: { nisn } });
-      if (nisnDup) {
-        errors.push({ row: rowNum, message: "NISN sudah terdaftar" });
-        continue;
-      }
-
-      let email = r.email?.trim().toLowerCase() || "";
-      if (!email) {
-        try {
-          email = studentEmailFromNisn(nisn, STUDENT_DOMAIN);
-        } catch {
-          errors.push({ row: rowNum, message: "NISN tidak valid untuk email otomatis" });
+      if (nisn) {
+        const nisnDup = await prisma.user.findFirst({ where: { nisn } });
+        if (nisnDup) {
+          errors.push({ row: rowNum, message: "NISN sudah terdaftar" });
           continue;
         }
       }
+
+      const emailResolved = resolveStudentEmail({
+        email: r.email,
+        nisn: nisn || null,
+        domain: STUDENT_DOMAIN,
+      });
+      if (!emailResolved.ok) {
+        errors.push({ row: rowNum, message: emailResolved.error });
+        continue;
+      }
+      const email = emailResolved.email;
 
       const mailDup = await prisma.user.findUnique({ where: { email } });
       if (mailDup) {
@@ -137,7 +142,7 @@ export async function runBulkStudentImport(
       await prisma.user.create({
         data: buildStudentCreateInput({
           name,
-          nisn,
+          nisn: nisn || null,
           classId,
           email,
           hashedPassword: hashed,

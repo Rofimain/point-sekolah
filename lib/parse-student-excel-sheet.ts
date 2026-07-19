@@ -56,7 +56,7 @@ function field(
 }
 
 /**
- * Baca sheet Excel. Baris 1 = header jika sel A1 seperti "nama" / "nisn".
+ * Baca sheet Excel. Baris 1 = header jika sel A1 seperti "nama" / "email" / "nisn".
  */
 export function worksheetToBulkRows(worksheet: ExcelJS.Worksheet): BulkStudentRow[] {
   const out: BulkStudentRow[] = [];
@@ -65,22 +65,30 @@ export function worksheetToBulkRows(worksheet: ExcelJS.Worksheet): BulkStudentRo
   const row1 = worksheet.getRow(1);
   const map = buildHeaderMap(row1);
   const r1 = normHeader(cellStr(row1.getCell(1)));
-  const isHeaderRow = r1 === "nama" || r1 === "name" || r1 === "nisn" || map.has("nama") || map.has("nisn");
+  const isHeaderRow =
+    r1 === "nama" ||
+    r1 === "name" ||
+    r1 === "email" ||
+    r1 === "nisn" ||
+    map.has("nama") ||
+    map.has("email") ||
+    map.has("nisn");
   const useMap = isHeaderRow;
   const start = isHeaderRow ? 2 : 1;
 
   for (let r = start; r <= worksheet.rowCount; r++) {
     const row = worksheet.getRow(r);
     const name = field(row, map, ["nama", "name", "nama_siswa", "nama_lengkap"], 1, useMap);
-    const nisn = field(row, map, ["nisn", "nis", "nomor_induk"], 2, useMap);
-    const email = field(row, map, ["email", "surel"], 4, useMap);
-    const password = field(row, map, ["password", "kata_sandi", "katasandi"], 5, useMap);
-
-    if (!name && !nisn) continue;
-
+    let nisn = "";
+    let email = "";
+    let password = "";
     let classId: string | undefined;
     let className: string | undefined;
+
     if (useMap) {
+      nisn = field(row, map, ["nisn", "nis", "nomor_induk"], 2, true);
+      email = field(row, map, ["email", "surel"], 4, true);
+      password = field(row, map, ["password", "kata_sandi", "katasandi"], 5, true);
       const cid = colOf(map, "id_kelas", "class_id", "kelas_id");
       const cnm = colOf(map, "nama_kelas", "kelas", "class", "class_name");
       if (cid != null) {
@@ -92,14 +100,30 @@ export function worksheetToBulkRows(worksheet: ExcelJS.Worksheet): BulkStudentRo
         if (v) className = v;
       }
     } else {
+      // Tanpa header: nama | email | kelas [| nisn] [| password]
+      // atau legacy: nama | nisn | kelas [| email] [| password]
+      const second = rowVal(row, 2);
       const third = rowVal(row, 3);
-      if (third.startsWith("cls-")) classId = third;
-      else if (third) className = third;
+      if (second.includes("@")) {
+        email = second;
+        if (third.startsWith("cls-")) classId = third;
+        else if (third) className = third;
+        nisn = rowVal(row, 4);
+        password = rowVal(row, 5);
+      } else {
+        nisn = second;
+        if (third.startsWith("cls-")) classId = third;
+        else if (third) className = third;
+        email = rowVal(row, 4);
+        password = rowVal(row, 5);
+      }
     }
+
+    if (!name && !email && !nisn) continue;
 
     out.push({
       name,
-      nisn,
+      nisn: nisn || undefined,
       classId,
       className,
       email: email || undefined,

@@ -11,9 +11,42 @@ export function studentEmailFromNisn(nisn: string, domain: string): string {
   return `${local}@${domain}`;
 }
 
+export function normalizeStudentEmail(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+export function isValidEmailShape(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+/**
+ * Resolve email siswa: wajib isi email, atau (jika kosong) otomatis dari NISN.
+ * Login utama = email; NISN hanya data tambahan.
+ */
+export function resolveStudentEmail(opts: {
+  email?: string | null;
+  nisn?: string | null;
+  domain: string;
+}): { ok: true; email: string } | { ok: false; error: string } {
+  const email = normalizeStudentEmail(opts.email ?? "");
+  if (email) {
+    if (!isValidEmailShape(email)) return { ok: false, error: "Format email tidak valid" };
+    return { ok: true, email };
+  }
+  const nisn = opts.nisn?.trim() || "";
+  if (!nisn) {
+    return { ok: false, error: "Email wajib diisi (atau isi NISN untuk membuat email otomatis)" };
+  }
+  try {
+    return { ok: true, email: studentEmailFromNisn(nisn, opts.domain) };
+  } catch {
+    return { ok: false, error: "NISN tidak valid untuk email otomatis" };
+  }
+}
+
 export function buildStudentCreateInput(input: {
   name: string;
-  nisn: string;
+  nisn?: string | null;
   classId: string;
   email: string;
   hashedPassword: string;
@@ -24,12 +57,13 @@ export function buildStudentCreateInput(input: {
   const tg = parseParentTelegramForDb(input.parentTelegram ?? undefined);
   if (!tg.ok) throw new Error(tg.error);
   const hasPhoto = Boolean(input.photoPresent && input.photoData);
+  const nisn = input.nisn?.trim() || null;
   return {
     name: input.name.trim(),
     email: input.email.toLowerCase().trim(),
     password: input.hashedPassword,
     role: "STUDENT",
-    nisn: input.nisn.trim(),
+    nisn,
     parentTelegram: tg.value,
     parentTelegramLinkToken: newParentLinkToken(),
     class: { connect: { id: input.classId } },

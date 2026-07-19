@@ -2,13 +2,18 @@ import JSZip from "jszip";
 import ExcelJS from "exceljs";
 import { worksheetToBulkRows } from "@/lib/parse-student-excel-sheet";
 import type { BulkStudentRow } from "@/lib/students-bulk-run";
-import { imageBufferToPhotoDataUrl, nisnFromPhotoFilename } from "@/lib/user-photo";
+import { imageBufferToPhotoDataUrl } from "@/lib/user-photo";
+import {
+  assignPhotosToRows,
+  photoStemFromFilename,
+  type PhotoMatchInput,
+} from "@/lib/student-photo-match";
 
 export type StudentImportPackageResult = {
   rows: BulkStudentRow[];
-  /** Foto ditemukan di ZIP tapi NISN-nya tidak ada di sheet. */
+  /** Stem nama file foto yang tidak cocok ke baris Excel. */
   unmatchedPhotos: string[];
-  /** Foto gagal dibaca / format tidak valid. */
+  /** Foto gagal dibaca / format tidak valid / ambigu. */
   photoErrors: { file: string; message: string }[];
 };
 
@@ -30,7 +35,7 @@ function normalizePhotoKey(path: string): string {
 /**
  * Parse paket impor .zip:
  * - satu file .xlsx (sheet "Data siswa" atau sheet pertama)
- * - folder foto/ (atau root) berisi {nisn}.jpg|jpeg|png
+ * - folder foto/ (atau root): nama file = NISN atau nama siswa (boleh disingkat)
  *
  * Juga menerima .xlsx murni (tanpa foto).
  */
@@ -39,7 +44,6 @@ export async function parseStudentImportPackage(buf: Buffer): Promise<StudentImp
     throw new Error("File harus .xlsx atau .zip (Excel + folder foto)");
   }
 
-  // .xlsx juga ZIP — bedakan: jika ada entry sheet XML tanpa folder foto, treat as workbook.
   const zip = await JSZip.loadAsync(buf);
   const entries = Object.keys(zip.files).filter((p) => !zip.files[p].dir);
 
@@ -53,14 +57,13 @@ export async function parseStudentImportPackage(buf: Buffer): Promise<StudentImp
     entries.some((p) => /xl\/workbook\.xml$/i.test(normalizePhotoKey(p)));
 
   let workbookBuf: Buffer;
-  const photoByNisn = new Map<string, { path: string; data: Buffer }>();
+  const photos: PhotoMatchInput[] = [];
   const photoErrors: { file: string; message: string }[] = [];
+  const seenStem = new Map<string, string>();
 
   if (looksLikeWorkbookOnly && xlsxEntries.length === 0) {
-    // File .xlsx langsung
     workbookBuf = buf;
   } else if (xlsxEntries.length >= 1) {
-    // Paket ZIP berisi .xlsx + foto
     const preferred =
       xlsxEntries.find((p) => /(?:^|\/)(data|siswa|template-import-siswa)\.xlsx$/i.test(normalizePhotoKey(p))) ||
       xlsxEntries[0];
@@ -68,24 +71,28 @@ export async function parseStudentImportPackage(buf: Buffer): Promise<StudentImp
 
     for (const path of entries) {
       if (!isPhotoPath(path)) continue;
-      const nisn = nisnFromPhotoFilename(path);
-      if (!nisn) {
-        photoErrors.push({ file: path, message: "Nama file foto harus {nisn}.jpg/png" });
+      const stem = photoStemFromFilename(path);
+      if (!stem) {
+        photoErrors.push({ file: path, message: "Ekstensi foto harus .jpg/.jpeg/.png" });
         continue;
       }
+      const stemKey = stem.toLowerCase();
+      if (seenStem.has(stemKey)) {
+        photoErrors.push({
+          file: path,
+          message: `Nama file foto ganda (sama dengan ${seenStem.get(stemKey)})`,
+        });
+        continue;
+      }
+      seenStem.set(stemKey, path);
       const data = Buffer.from(await zip.files[path].async("uint8array"));
-      const key = nisn.trim();
-      if (photoByNisn.has(key)) {
-        photoErrors.push({ file: path, message: `Foto ganda untuk NISN ${key}` });
-        continue;
-      }
-      photoByNisn.set(key, { path, data });
+      photos.push({ path, stem, data });
     }
   } else if (looksLikeWorkbookOnly) {
     workbookBuf = buf;
   } else {
     throw new Error(
-      "ZIP harus berisi satu file .xlsx plus folder foto/ (nama file = NISN.jpg atau .png)"
+      "ZIP harus berisi satu file .xlsx plus folder foto/ (nama file = nama siswa atau NISN)"
     );
   }
 
@@ -101,25 +108,18 @@ export async function parseStudentImportPackage(buf: Buffer): Promise<StudentImp
 
   const rows = worksheetToBulkRows(ws);
   if (rows.length === 0) {
-    throw new Error("Tidak ada baris data di sheet (pastikan ada header nama/nisn atau kolom A–B terisi)");
+    throw new Error("Tidak ada baris data di sheet (pastikan ada header nama/email atau kolom terisi)");
   }
 
-  const usedNisn = new Set<string>();
-  for (const row of rows) {
-    const nisn = row.nisn?.trim();
-    if (!nisn) continue;
-    const photo = photoByNisn.get(nisn);
-    if (!photo) continue;
-    const converted = imageBufferToPhotoDataUrl(photo.data);
-    if ("error" in converted) {
-      photoErrors.push({ file: photo.path, message: converted.error });
-      continue;
-    }
-    row.photoData = converted.photoData;
-    usedNisn.add(nisn);
-  }
+  const matched = assignPhotosToRows(rows, photos, (buf) => {
+    const r = imageBufferToPhotoDataUrl(buf);
+    if ("error" in r) return { error: r.error };
+    return { photoData: r.photoData };
+  });
 
-  const unmatchedPhotos = [...photoByNisn.keys()].filter((n) => !usedNisn.has(n));
-
-  return { rows, unmatchedPhotos, photoErrors };
+  return {
+    rows,
+    unmatchedPhotos: matched.unmatchedPhotos,
+    photoErrors: [...photoErrors, ...matched.photoErrors],
+  };
 }

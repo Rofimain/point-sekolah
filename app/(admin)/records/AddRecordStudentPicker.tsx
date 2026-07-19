@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import UserAvatar from "@/components/ui/UserAvatar";
+import { formatClassLabel } from "@/lib/class-label";
 
 export type PickerStudent = {
   id: string;
@@ -101,7 +102,7 @@ export function AddRecordStudentPicker({
                 {selected.name}
               </span>
               <span className="block text-[11px] truncate mt-0.5" style={{ color: "var(--text-muted)" }}>
-                {selected.class ? `${selected.class.grade} · ${selected.class.name}` : "Belum ada kelas"}
+                {selected.class ? formatClassLabel(selected.class) : "Belum ada kelas"}
                 {selected.nisn ? ` · NISN ${selected.nisn}` : ""}
               </span>
             </span>
@@ -191,7 +192,7 @@ export function AddRecordStudentPicker({
                           {s.name}
                         </span>
                         <span className="block text-[10px] truncate mt-0.5" style={{ color: "var(--text-muted)" }}>
-                          {s.class ? `${s.class.grade} ${s.class.name}` : "Tanpa kelas"}
+                          {s.class ? formatClassLabel(s.class) : "Tanpa kelas"}
                           {s.nisn ? ` · NISN ${s.nisn}` : " · NISN belum diisi"}
                         </span>
                       </span>

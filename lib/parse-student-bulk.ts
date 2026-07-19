@@ -1,7 +1,8 @@
 /** Baris untuk API /api/students/bulk — kelas bisa id atau nama persis di database. */
 export type ParsedBulkStudent = {
   name: string;
-  nisn: string;
+  /** Opsional — data tambahan. */
+  nisn?: string;
   classId?: string;
   className?: string;
   email?: string;
@@ -25,7 +26,8 @@ function headerIndex(headerCells: string[], keys: string[]): number {
 
 /**
  * Parse teks dari Excel (tab) atau CSV (koma).
- * Mendukung baris judul: nama, nisn, kelas, email, password (nama_kelas / class_name / id_kelas).
+ * Mendukung baris judul: nama, email, kelas, nisn, password (nama_kelas / class_name / id_kelas).
+ * Baris valid: ada nama + (email atau nisn untuk email otomatis).
  */
 export function parseStudentBulkPaste(raw: string): ParsedBulkStudent[] {
   const lines = raw
@@ -40,6 +42,7 @@ export function parseStudentBulkPaste(raw: string): ParsedBulkStudent[] {
   const looksHeader =
     lower0.includes("nama") ||
     lower0.includes("nisn") ||
+    lower0.includes("email") ||
     lower0.includes("name") ||
     lower0.includes("kelas") ||
     lower0.includes("class");
@@ -79,20 +82,41 @@ export function parseStudentBulkPaste(raw: string): ParsedBulkStudent[] {
       email = gi("email", "surel") || undefined;
       password = gi("password", "kata_sandi", "katasandi") || undefined;
     } else {
+      // Tanpa header: nama, email, nama_kelas [, nisn] [, password]
+      // Atau legacy: nama, nisn, nama_kelas [, email] [, password]
       name = cells[0] || "";
-      nisn = cells[1] || "";
+      const second = cells[1] || "";
       const third = cells[2] || "";
-      if (third.startsWith("cls-") || third.length > 20) {
-        classId = third;
+      if (second.includes("@")) {
+        email = second;
+        if (third.startsWith("cls-") || third.length > 20) {
+          classId = third;
+        } else {
+          className = third || undefined;
+        }
+        nisn = cells[3] || "";
+        password = cells[4] || undefined;
       } else {
-        className = third || undefined;
+        nisn = second;
+        if (third.startsWith("cls-") || third.length > 20) {
+          classId = third;
+        } else {
+          className = third || undefined;
+        }
+        email = cells[3] || undefined;
+        password = cells[4] || undefined;
       }
-      email = cells[3] || undefined;
-      password = cells[4] || undefined;
     }
 
-    if (name && nisn) {
-      out.push({ name, nisn, classId, className, email, password });
+    if (name && (email || nisn)) {
+      out.push({
+        name,
+        nisn: nisn || undefined,
+        classId,
+        className,
+        email,
+        password,
+      });
     }
   }
 

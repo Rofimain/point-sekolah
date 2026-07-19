@@ -208,8 +208,12 @@ export default function StudentsClient({
   async function submitSingle(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
-    if (!name.trim() || !nisn.trim() || !classId) {
-      setMsg({ type: "err", text: "Lengkapi nama, NISN, dan kelas." });
+    if (!name.trim() || !classId) {
+      setMsg({ type: "err", text: "Lengkapi nama dan kelas." });
+      return;
+    }
+    if (!email.trim() && !nisn.trim()) {
+      setMsg({ type: "err", text: "Isi email (wajib untuk login), atau NISN jika ingin email otomatis." });
       return;
     }
     setLoading(true);
@@ -219,7 +223,7 @@ export default function StudentsClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          nisn: nisn.trim(),
+          nisn: nisn.trim() || undefined,
           classId,
           email: email.trim() || undefined,
           password: password.trim() || undefined,
@@ -439,8 +443,9 @@ export default function StudentsClient({
           )}
           {tab === null && !selectedClass && (
             <p className="mt-1 hidden max-w-2xl text-[10px] leading-relaxed text-balance sm:block" style={{ color: "var(--text-muted)" }}>
-              Nama kelas di impor harus <strong style={{ color: "var(--text-secondary)" }}>sama persis</strong> dengan yang di tab Kelas. Login siswa:{" "}
-              <strong style={{ color: "var(--text-secondary)" }}>nisn@{studentDomain}</strong> bila email dikosongkan.
+              Nama kelas di impor harus <strong style={{ color: "var(--text-secondary)" }}>sama persis</strong> dengan yang di tab Kelas. Login siswa memakai{" "}
+              <strong style={{ color: "var(--text-secondary)" }}>email</strong>
+              {` (contoh @${studentDomain})`}; NISN opsional.
             </p>
           )}
         </div>
@@ -853,12 +858,33 @@ export default function StudentsClient({
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                NISN *
+                Email *
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={`contoh@${studentDomain}`}
+                className="w-full rounded-xl border px-3 py-2.5 text-sm"
+                style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+              />
+              <p className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                Dipakai untuk login. Boleh dikosongkan hanya jika NISN diisi (email otomatis).
+              </p>
+              {autoEmailPreview && (
+                <p className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  Akan dipakai: <span style={{ color: "var(--accent)" }}>{autoEmailPreview}</span>
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                NISN <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opsional)</span>
               </label>
               <input
                 value={nisn}
                 onChange={(e) => setNisn(e.target.value)}
-                required
+                placeholder="Boleh dikosongkan"
                 className="w-full rounded-xl border px-3 py-2.5 text-sm"
                 style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
               />
@@ -881,24 +907,6 @@ export default function StudentsClient({
                   </option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                Email <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opsional)</span>
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="kosong = otomatis dari NISN"
-                className="w-full rounded-xl border px-3 py-2.5 text-sm"
-                style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-              />
-              {autoEmailPreview && (
-                <p className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
-                  Akan dipakai: <span style={{ color: "var(--accent)" }}>{autoEmailPreview}</span>
-                </p>
-              )}
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
@@ -994,10 +1002,13 @@ export default function StudentsClient({
               <p className="mt-1 max-w-xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
                 Unggah <strong style={{ color: "var(--text-secondary)" }}>.xlsx</strong> atau paket{" "}
                 <strong style={{ color: "var(--text-secondary)" }}>.zip</strong> (Excel + folder{" "}
-                <code className="text-[10px]">foto/</code> bernama NISN), atau tempel CSV/tab. Kolom:{" "}
-                <code className="text-[10px]">nama</code>, <code className="text-[10px]">nisn</code>,{" "}
-                <code className="text-[10px]">nama_kelas</code>, <code className="text-[10px]">email</code>,{" "}
-                <code className="text-[10px]">password</code>. Foto profil hanya lewat unggah ZIP. Telegram ortu diisi setelah impor via Manajemen Pengguna.
+                <code className="text-[10px]">foto/</code>). Nama file foto ={" "}
+                <strong style={{ color: "var(--text-secondary)" }}>nama siswa</strong> (boleh disingkat/inisial)
+                atau NISN. Kolom wajib:{" "}
+                <code className="text-[10px]">nama</code>, <code className="text-[10px]">email</code>,{" "}
+                <code className="text-[10px]">nama_kelas</code>. Opsional:{" "}
+                <code className="text-[10px]">nisn</code>, <code className="text-[10px]">password</code>. Login memakai email.
+                Telegram ortu diisi setelah impor via Manajemen Pengguna.
               </p>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -1047,7 +1058,7 @@ export default function StudentsClient({
             </button>
             <p className="max-w-md text-[10px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
               .xlsx maks. 8 MB; ZIP + foto maks. 40 MB. Struktur ZIP: <code className="text-[10px]">data.xlsx</code> +{" "}
-              <code className="text-[10px]">foto/0012345678.jpg</code>. Password default di bawah untuk baris tanpa kolom password.
+              <code className="text-[10px]">foto/ahmad fauzi m.jpg</code> (nama boleh disingkat). Password default di bawah untuk baris tanpa kolom password.
             </p>
           </div>
 
@@ -1076,7 +1087,7 @@ export default function StudentsClient({
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
             rows={8}
-            placeholder={`Contoh (tab):\nnama\tnisn\tnama_kelas\nBudi\t0011122233\tX MIPA 1`}
+            placeholder={`Contoh (tab):\nnama\temail\tnama_kelas\tnisn\nBudi\tbudi@siswa.sekolah.sch.id\tX MIPA 1\t`}
             className="w-full rounded-xl border px-3 py-2 font-mono text-sm"
             style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
           />
@@ -1128,7 +1139,7 @@ export default function StudentsClient({
                   </li>
                 ))}
                 {(bulkResult.unmatchedPhotos || []).map((n) => (
-                  <li key={`up-${n}`}>Foto NISN {n} tidak cocok dengan baris Excel</li>
+                  <li key={`up-${n}`}>Foto “{n}” tidak cocok dengan baris Excel</li>
                 ))}
               </ul>
             </div>

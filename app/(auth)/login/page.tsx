@@ -53,19 +53,19 @@ function StudentLoginForm() {
       <div className="h-px mb-6" style={{ background: "linear-gradient(90deg, transparent, var(--gold), transparent)", opacity: 0.45 }} />
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold mb-1.5 tracking-wide uppercase" style={{ color: "var(--text-secondary)" }}>NISN</label>
+          <label className="block text-xs font-semibold mb-1.5 tracking-wide uppercase" style={{ color: "var(--text-secondary)" }}>Email</label>
           <input
             type="text"
-            inputMode="numeric"
+            inputMode="email"
             autoComplete="username"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="0051234567"
+            placeholder="nama@siswa.sekolah.sch.id"
             required
             className="w-full px-3 py-2.5 rounded-lg border text-sm"
             style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
           />
-          <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>* Boleh juga isi email siswa jika ada</p>
+          <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>* Boleh juga isi NISN jika sudah terdaftar di akun</p>
         </div>
         <div>
           <label className="block text-xs font-semibold mb-1.5 tracking-wide uppercase" style={{ color: "var(--text-secondary)" }}>Password</label>

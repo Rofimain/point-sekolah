@@ -21,9 +21,9 @@ export async function GET() {
   const ws = wb.addWorksheet("Data siswa", { views: [{ state: "frozen", ySplit: 1 }] });
   ws.columns = [
     { header: "nama", key: "nama", width: 30 },
-    { header: "nisn", key: "nisn", width: 14 },
-    { header: "nama_kelas", key: "nama_kelas", width: 20 },
     { header: "email", key: "email", width: 38 },
+    { header: "nama_kelas", key: "nama_kelas", width: 20 },
+    { header: "nisn", key: "nisn", width: 14 },
     { header: "password", key: "password", width: 18 },
   ];
   const h = ws.getRow(1);
@@ -32,9 +32,9 @@ export async function GET() {
   h.alignment = { vertical: "middle" };
   ws.addRow({
     nama: "Contoh Siswa",
-    nisn: "0012345678",
+    email: "siswa.contoh@siswa.sekolah.sch.id",
     nama_kelas: "X MIPA 1",
-    email: "",
+    nisn: "",
     password: "",
   });
 
@@ -45,25 +45,29 @@ export async function GET() {
     "",
     "=== Format Excel (.xlsx) tanpa foto ===",
     "1. Isi baris data di sheet \"Data siswa\" di bawah baris judul. Hapus baris contoh jika tidak dipakai.",
-    "2. Kolom wajib: nama, nisn, nama_kelas. Kolom email dan password boleh dikosongkan.",
-    "3. nama_kelas harus sama persis dengan nama kelas di Data Siswa → tab Kelas, contoh: X MIPA 1.",
-    "4. Jika email kosong, sistem membuat email otomatis: nisn@domain-siswa sekolah.",
-    "5. Jika password kosong, dipakai password default sekolah (lihat dokumentasi admin).",
+    "2. Kolom wajib: nama, email, nama_kelas. NISN dan password opsional.",
+    "3. Login siswa memakai email (bukan NISN). NISN hanya data tambahan bila sudah ada.",
+    "4. nama_kelas harus sama persis dengan nama kelas di Data Siswa → tab Kelas, contoh: X MIPA 1.",
+    "5. Jika email kosong tapi NISN diisi, sistem membuat email otomatis: nisn@domain-siswa sekolah.",
+    "6. Jika password kosong, dipakai password default sekolah (lihat dokumentasi admin).",
     "",
     "=== Format ZIP dengan foto profil (disarankan) ===",
-    "6. Buat folder, contoh: impor-siswa/",
-    "7. Letakkan file Excel di dalamnya (nama bebas, contoh: data.xlsx) — isi sama seperti di atas.",
-    "8. Buat subfolder foto/ berisi foto siswa. Nama file = NISN + ekstensi:",
-    "     foto/0012345678.jpg",
-    "     foto/0012345679.png",
-    "   Hanya JPEG (.jpg/.jpeg) atau PNG (.png). Satu foto per NISN.",
-    "9. Zip seluruh isi folder (data.xlsx + foto/) menjadi satu file .zip, lalu unggah di tab Impor bulk.",
-    "10. Foto ikut tersimpan di profil user/siswa (satu akun = role STUDENT).",
+    "7. Buat folder, contoh: impor-siswa/",
+    "8. Letakkan file Excel di dalamnya (nama bebas, contoh: data.xlsx) — isi sama seperti di atas.",
+    "9. Buat subfolder foto/ berisi foto siswa. Nama file = nama siswa (boleh disingkat) atau NISN:",
+    "     foto/Ahmad Fauzi Muharrom.jpg",
+    "     foto/ahmad fauzi m.jpg",
+    "     foto/ahmad fauzi.jpg",
+    "     foto/0012345678.png   (jika kolom nisn diisi)",
+    "   Hanya JPEG (.jpg/.jpeg) atau PNG (.png). Satu foto per siswa.",
+    "10. Sistem mencocokkan nama file ke kolom nama (inisial/singkatan OK). Jika dua siswa mirip, foto tidak dipasangkan.",
+    "11. Zip seluruh isi folder (data.xlsx + foto/) menjadi satu file .zip, lalu unggah di tab Impor bulk.",
+    "12. Foto ikut tersimpan di profil user/siswa (satu akun = role STUDENT).",
     "",
     "=== Catatan ===",
-    "11. Tempel CSV/tab di web tidak mendukung foto — gunakan unggah .xlsx atau .zip.",
-    "12. Telegram ortu: tidak diisi lewat Excel. Setelah siswa masuk, Admin salin tautan di Manajemen Pengguna.",
-    "13. Maks. 500 baris; .xlsx maks. 8 MB; .zip (dengan foto) maks. 40 MB.",
+    "13. Tempel CSV/tab di web tidak mendukung foto — gunakan unggah .xlsx atau .zip.",
+    "14. Telegram ortu: tidak diisi lewat Excel. Setelah siswa masuk, Admin salin tautan di Manajemen Pengguna.",
+    "15. Maks. 500 baris; .xlsx maks. 8 MB; .zip (dengan foto) maks. 40 MB.",
   ];
   lines.forEach((t, i) => {
     const row = help.getRow(i + 1);

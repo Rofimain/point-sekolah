@@ -5,6 +5,7 @@ import { canManageData } from "@/lib/staff-roles";
 import { prisma } from "@/lib/prisma";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
 import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
+import { formatClassLabel } from "@/lib/class-label";
 
 const MAX_IDS = 300;
 
@@ -83,9 +84,7 @@ export async function POST(req: NextRequest) {
   }
 
   const links: ParentTelegramLinkRow[] = rows.map((r) => {
-    const cl = r.student.class
-      ? [r.student.class.grade, r.student.class.name, r.student.class.major].filter(Boolean).join(" ").trim()
-      : "";
+    const cl = r.student.class ? formatClassLabel(r.student.class, "") : "";
     return {
       id: r.student.id,
       name: r.student.name,

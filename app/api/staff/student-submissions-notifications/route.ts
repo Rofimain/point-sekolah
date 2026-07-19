@@ -9,10 +9,12 @@ export const dynamic = "force-dynamic";
 
 const LIMIT = 200;
 
+import { formatClassLabel } from "@/lib/class-label";
+
 function classLabel(c: { grade: string; name: string; major: string } | null): string | null {
   if (!c) return null;
-  const parts = [c.grade, c.name, c.major].filter((x) => x?.trim());
-  return parts.length ? parts.join(" · ") : null;
+  const label = formatClassLabel(c, "");
+  return label || null;
 }
 
 /**

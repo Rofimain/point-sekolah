@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import {
   buildStudentCreateInput,
   DEFAULT_STUDENT_PASSWORD,
-  studentEmailFromNisn,
+  resolveStudentEmail,
 } from "@/lib/student-upsert";
 import { canManageData } from "@/lib/staff-roles";
 import { buildParentTelegramDeepLink } from "@/lib/parent-telegram-link";
@@ -29,15 +29,15 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { name, nisn, classId, email, password, photoData } = body as {
     name?: string;
-    nisn?: string;
+    nisn?: string | null;
     classId?: string;
     email?: string | null;
     password?: string | null;
     photoData?: string | null;
   };
 
-  if (!name?.trim() || !nisn?.trim() || !classId) {
-    return NextResponse.json({ error: "Nama, NISN, dan kelas wajib diisi" }, { status: 400 });
+  if (!name?.trim() || !classId) {
+    return NextResponse.json({ error: "Nama dan kelas wajib diisi" }, { status: 400 });
   }
 
   const photo = parseUserPhotoInput(photoData);
@@ -46,18 +46,21 @@ export async function POST(req: NextRequest) {
   const cls = await prisma.class.findUnique({ where: { id: classId } });
   if (!cls) return NextResponse.json({ error: "Kelas tidak ditemukan" }, { status: 400 });
 
-  const nisnTrim = nisn.trim();
-  const existingNisn = await prisma.user.findFirst({ where: { nisn: nisnTrim } });
-  if (existingNisn) return NextResponse.json({ error: "NISN sudah terdaftar" }, { status: 409 });
-
-  let finalEmail = (email?.trim() || "").toLowerCase();
-  if (!finalEmail) {
-    try {
-      finalEmail = studentEmailFromNisn(nisnTrim, STUDENT_DOMAIN);
-    } catch {
-      return NextResponse.json({ error: "NISN tidak valid untuk email otomatis" }, { status: 400 });
-    }
+  const nisnTrim = nisn?.trim() || "";
+  if (nisnTrim) {
+    const existingNisn = await prisma.user.findFirst({ where: { nisn: nisnTrim } });
+    if (existingNisn) return NextResponse.json({ error: "NISN sudah terdaftar" }, { status: 409 });
   }
+
+  const emailResolved = resolveStudentEmail({
+    email,
+    nisn: nisnTrim || null,
+    domain: STUDENT_DOMAIN,
+  });
+  if (!emailResolved.ok) {
+    return NextResponse.json({ error: emailResolved.error }, { status: 400 });
+  }
+  const finalEmail = emailResolved.email;
 
   const existingEmail = await prisma.user.findUnique({ where: { email: finalEmail } });
   if (existingEmail) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
@@ -71,7 +74,7 @@ export async function POST(req: NextRequest) {
   try {
     data = buildStudentCreateInput({
       name,
-      nisn: nisnTrim,
+      nisn: nisnTrim || null,
       classId,
       email: finalEmail,
       hashedPassword: hashed,

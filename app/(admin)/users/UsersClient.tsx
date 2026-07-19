@@ -14,6 +14,7 @@ import {
 import UserAvatar from "@/components/ui/UserAvatar";
 import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
 import { USER_STATUS_LABEL } from "@/lib/user-status";
+import { formatClassLabel } from "@/lib/class-label";
 
 const ROLES = ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN"] as const;
 const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
@@ -647,7 +648,7 @@ export default function UsersClient({
               <option value="">Semua Kelas</option>
               {classes.map((c: any) => (
                 <option key={c.id} value={c.id}>
-                  {c.grade} {c.name} {c.major}
+                  {formatClassLabel(c)}
                 </option>
               ))}
             </select>
@@ -658,7 +659,7 @@ export default function UsersClient({
                 const classId = (searchParams.classId || "").trim();
                 if (!classId) return;
                 const classObj = classes.find((c: any) => c.id === classId);
-                const label = classObj ? `${classObj.grade} ${classObj.name} ${classObj.major}` : "kelas terpilih";
+                const label = classObj ? formatClassLabel(classObj) : "kelas terpilih";
                 const confirmText = window.prompt(
                   `Anda akan menandai SEMUA akun siswa di ${label} sebagai Keluar (soft delete).\nHistori pelanggaran tetap tersimpan; akun tidak bisa login.\n\nKetik HAPUS untuk lanjut:`
                 );
@@ -1113,7 +1114,9 @@ export default function UsersClient({
                 {form.role === "STUDENT" && (
                   <>
                   <div>
-                    <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>NISN</label>
+                    <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                      NISN <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opsional)</span>
+                    </label>
                     <input value={form.nisn} onChange={e => setForm({ ...form, nisn: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
                   </div>
                   <div className="col-span-2 rounded-lg border p-3 text-[11px] leading-relaxed" style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>

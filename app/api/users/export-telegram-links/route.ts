@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import ExcelJS from "exceljs";
 import { buildParentTelegramDeepLink } from "@/lib/parent-telegram-link";
 import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
+import { formatClassLabel } from "@/lib/class-label";
 
 const MAX_ROWS = 15_000;
 
@@ -94,9 +95,7 @@ export async function GET(req: NextRequest) {
   h.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8EEFF" } };
 
   for (const s of students) {
-    const classLabel = s.class
-      ? [s.class.grade, s.class.name, s.class.major].filter(Boolean).join(" ").trim()
-      : "";
+    const classLabel = s.class ? formatClassLabel(s.class, "") : "";
     const connected = Boolean(s.parentTelegram?.trim());
     const token = s.parentTelegramLinkToken?.trim() || "";
     let status: string;

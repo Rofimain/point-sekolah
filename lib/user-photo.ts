@@ -64,7 +64,7 @@ export function imageBufferToPhotoDataUrl(
   return { photoData, photoPresent: true };
 }
 
-/** Nama file foto bulk: NISN sebagai stem, ekstensi jpg/jpeg/png. */
+/** Nama file foto bulk: stem (NISN atau nama) + ekstensi jpg/jpeg/png. */
 export function nisnFromPhotoFilename(filename: string): string | null {
   const base = filename.replace(/^.*[/\\]/, "").trim();
   const m = /^(.+)\.(jpe?g|png)$/i.exec(base);
