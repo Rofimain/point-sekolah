@@ -1,4 +1,4 @@
-point-sekolah.rofimain.com {
+tanse.smai-alazhar1.com {
     tls /etc/caddy/certs/origin-cert.pem /etc/caddy/certs/origin-key.pem
 
     encode gzip zstd

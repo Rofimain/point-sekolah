@@ -13,7 +13,7 @@
 ## LANGKAH 1 — Persiapan server
 
 1. Siapkan VPS/EC2 dengan akses SSH
-2. Domain mengarah ke IP server (contoh: `point-sekolah.rofimain.com`)
+2. Domain mengarah ke IP server (contoh: `tanse.smai-alazhar1.com`)
 3. Cert Cloudflare Origin (atau sertifikat TLS lain) di folder `certs/` di server
 4. Siapkan secrets GitHub: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `ENV_FILE_CONTENT`, `CLOUDFLARE_ORIGIN_CERT`, `CLOUDFLARE_ORIGIN_KEY`
 
@@ -93,7 +93,7 @@ POSTGRES_DB=point_sekolah
 DATABASE_URL=postgresql://postgres:ganti_password_kuat@db:5432/point_sekolah
 DIRECT_URL=postgresql://postgres:ganti_password_kuat@db:5432/point_sekolah
 NEXTAUTH_SECRET=...
-NEXTAUTH_URL=https://point-sekolah.rofimain.com
+NEXTAUTH_URL=https://tanse.smai-alazhar1.com
 # ... NEXT_PUBLIC_*, CRON_SECRET, TELEGRAM_*, dll.
 ```
 
@@ -136,7 +136,7 @@ Setelah `docker compose up -d`, cek log: `docker compose logs -f cron`.
 Alternatif host crontab (jika cron container dimatikan):
 
 ```cron
-0 2 * * * curl -sS -X POST "https://point-sekolah.rofimain.com/api/cron/quiet-month-points" -H "x-cron-secret: $CRON_SECRET"
+0 2 * * * curl -sS -X POST "https://tanse.smai-alazhar1.com/api/cron/quiet-month-points" -H "x-cron-secret: $CRON_SECRET"
 ```
 
 ---
