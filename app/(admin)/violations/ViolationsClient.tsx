@@ -79,8 +79,6 @@ export default function ViolationsClient({
   const [bagianLabel, setBagianLabel] = useState("");
   const [form, setForm] = useState({ ...empty });
   const [loading, setLoading] = useState(false);
-  const [filterCat, setFilterCat] = useState("");
-  const [filterSection, setFilterSection] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [portalReady, setPortalReady] = useState(false);
@@ -199,12 +197,7 @@ export default function ViolationsClient({
     return map;
   }, [bagian, violations]);
 
-  const filtered = violations.filter((v) => {
-    if (filterCat && v.category !== filterCat) return false;
-    if (filterSection && (v.section || "") !== filterSection) return false;
-    if (!matchesViolationSearch(v, searchQuery, bagian)) return false;
-    return true;
-  });
+  const filtered = violations.filter((v) => matchesViolationSearch(v, searchQuery, bagian));
 
   const grouped = useMemo(() => {
     return groupByViolationSection(filtered, bagian).map(({ section, items }) => ({
@@ -561,63 +554,6 @@ export default function ViolationsClient({
             </button>
           </div>
         )}
-      </div>
-
-      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {bagian.map((b) => {
-          const count = violations.filter((v) => v.section === b.id).length;
-          const active = filterSection === b.id;
-          return (
-            <div
-              key={b.id}
-              className="rounded-xl border p-4 cursor-pointer transition-opacity"
-              style={{
-                background: "var(--bg-secondary)",
-                borderColor: active ? "var(--accent)" : "var(--border)",
-                borderWidth: active ? 2 : 1,
-              }}
-              onClick={() => setFilterSection(active ? "" : b.id)}
-            >
-              <div className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
-                {b.label}
-              </div>
-              <div className="text-2xl font-serif" style={{ color: "var(--accent)" }}>
-                {count}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {CATS.map((cat) => {
-          const count = violations.filter((v) => v.category === cat).length;
-          const c: Record<string, string[]> = {
-            RINGAN: ["var(--success-bg)", "var(--success)"],
-            SEDANG: ["var(--warning-bg)", "var(--warning)"],
-            BERAT: ["var(--danger-bg)", "var(--danger)"],
-          };
-          const [, color] = c[cat];
-          return (
-            <div
-              key={cat}
-              className="rounded-xl border p-3 cursor-pointer"
-              style={{
-                background: "var(--bg-secondary)",
-                borderColor: filterCat === cat ? color : "var(--border)",
-                borderWidth: filterCat === cat ? 2 : 1,
-              }}
-              onClick={() => setFilterCat(filterCat === cat ? "" : cat)}
-            >
-              <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                Bobot {CAT_LABELS[cat]}
-              </div>
-              <div className="text-lg font-serif" style={{ color }}>
-                {count}
-              </div>
-            </div>
-          );
-        })}
       </div>
 
       <form onSubmit={applySearch} className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">

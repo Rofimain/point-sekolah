@@ -538,6 +538,16 @@ export default function UsersClient({
   ];
 
   const roleParam = (searchParams.role || "").trim();
+  const roleTotalLabel =
+    roleParam === "STUDENT"
+      ? "siswa"
+      : roleParam === "TEACHER"
+        ? "guru"
+        : roleParam === "ADMIN"
+          ? "admin"
+          : roleParam === "SUPER_ADMIN"
+            ? "super admin"
+            : "pengguna";
   const showClassFilter = roleParam === "STUDENT";
   const metaColumnLabel =
     roleParam === "STUDENT"
@@ -553,8 +563,12 @@ export default function UsersClient({
           <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>
             Manajemen Pengguna
           </h1>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            CRUD akun siswa, guru, dan super admin
+          <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
+            Total {roleTotalLabel}:{" "}
+            <span className="font-semibold tabular-nums" style={{ color: "var(--text-secondary)" }}>
+              {total}
+            </span>
+            {searchParams.search || (showClassFilter && searchParams.classId) ? " · sesuai filter" : null}
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
@@ -650,29 +664,6 @@ export default function UsersClient({
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-        {[
-          ["Siswa", "STUDENT", "var(--accent)"],
-          ["Guru", "TEACHER", "var(--warning)"],
-          ["Admin", "ADMIN", "var(--success)"],
-          ["Super Admin", "SUPER_ADMIN", "var(--danger)"],
-        ].map(([label, role, color]) => (
-          <div
-            key={role}
-            className="rounded-xl border p-3 sm:p-4"
-            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
-          >
-            <div className="text-[10px] sm:text-xs mb-1 leading-tight" style={{ color: "var(--text-muted)" }}>
-              {label}
-            </div>
-            <div className="text-xl font-serif sm:text-2xl" style={{ color: color as string }}>
-              {users.filter((u: any) => u.role === role).length + (total > 20 ? "+" : "")}
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* Filters */}
