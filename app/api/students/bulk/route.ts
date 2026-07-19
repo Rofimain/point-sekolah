@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { runBulkStudentImport, type BulkStudentRow } from "@/lib/students-bulk-run";
 import { canManageData } from "@/lib/staff-roles";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 function staffOk(role: string | undefined) {
   return canManageData(role);
@@ -22,6 +23,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await runBulkStudentImport(rows, { defaultPassword });
+    await recordDataAccessLog({
+      session,
+      action: "STUDENT_BULK_IMPORT",
+      summary: `Impor bulk siswa: ${result.created} berhasil, ${result.failed} gagal`,
+      targetType: "User",
+      meta: { created: result.created, failed: result.failed, rows: rows.length },
+    });
     return NextResponse.json(result);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Impor gagal";

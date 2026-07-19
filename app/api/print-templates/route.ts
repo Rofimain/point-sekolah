@@ -6,6 +6,7 @@ import { canManageData } from "@/lib/staff-roles";
 import { slugifyPrintTemplate } from "@/lib/print-templates";
 import { DEFAULT_PAGE_SETTINGS, serializePageSettings, parsePageSettings } from "@/lib/document-page";
 import { plainTextToDocumentHtml } from "@/lib/document-html";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -68,6 +69,14 @@ export async function POST(req: NextRequest) {
       pageSettings,
       sortOrder,
     },
+  });
+
+  await recordDataAccessLog({
+    session,
+    action: "TEMPLATE_CREATE",
+    summary: `Tambah template surat ${created.title}`,
+    targetType: "PrintTemplate",
+    targetId: created.id,
   });
 
   return NextResponse.json(created, { status: 201 });

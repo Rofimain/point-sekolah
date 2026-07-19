@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
 import { violationNameSortOrder } from "@/lib/violation-name";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function GET() {
   const violations = await prisma.violationType.findMany({
@@ -32,6 +33,14 @@ export async function POST(req: NextRequest) {
       sortOrder: violationNameSortOrder(nameStr),
       active: true,
     },
+  });
+  await recordDataAccessLog({
+    session,
+    action: "VIOLATION_CREATE",
+    summary: `Tambah jenis pelanggaran ${vt.name}`,
+    targetType: "ViolationType",
+    targetId: vt.id,
+    meta: { points: vt.points, category: vt.category },
   });
   return NextResponse.json(vt, { status: 201 });
 }

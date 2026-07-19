@@ -16,6 +16,7 @@ import {
 } from "@/lib/user-status";
 import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
 import { hardDeleteUser } from "@/lib/user-hard-delete";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 const VALID_STATUSES = new Set<string>(Object.values(UserStatus));
@@ -153,6 +154,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
+  await recordDataAccessLog({
+    session,
+    action: "USER_UPDATE",
+    summary: `Mengubah pengguna ${user.name}`,
+    targetType: "User",
+    targetId: user.id,
+    meta: {
+      role: user.role,
+      status: user.status,
+      fields: Object.keys(body).filter((k) => !["password", "photoData"].includes(k)),
+    },
+  });
+
   const { password: _, parentTelegramLinkToken: __, photoData: ___, ...safe } = user;
   return NextResponse.json(safe);
 }
@@ -161,12 +175,20 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const existing = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true } });
+  const existing = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true, name: true, email: true } });
   if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
   if (!canDeleteUser(session.user.role, existing.role)) {
     return NextResponse.json({ error: "Admin tidak boleh menghapus akun Admin atau Super Admin." }, { status: 403 });
   }
   const result = await hardDeleteUser({ userId: id });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+  await recordDataAccessLog({
+    session,
+    action: "USER_DELETE",
+    summary: `Hapus permanen ${existing.name} (${existing.role})`,
+    targetType: "User",
+    targetId: existing.id,
+    meta: { role: existing.role, email: existing.email },
+  });
   return NextResponse.json({ ok: true, permanentlyDeleted: true });
 }

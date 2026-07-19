@@ -8,6 +8,7 @@ import { sendParentViolationTelegram } from "@/lib/telegram-notify";
 import { parseOptionalIncidentDate } from "@/lib/incident-date";
 import { normalizeEvidenceImagesFromBody } from "@/lib/evidence-data-url";
 import { replaceRecordEvidenceImages } from "@/lib/record-evidence-images";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 const studentRecordSelect = {
   id: true,
@@ -110,6 +111,21 @@ export async function POST(req: NextRequest) {
     parentTelegramNotify = r.ok ? { status: "sent" } : { status: "failed", message: r.error };
     if (!r.ok) console.error("[telegram] kirim ke ortu gagal:", r.error);
   }
+
+  await recordDataAccessLog({
+    session,
+    action: "RECORD_CREATE",
+    summary: `Catat pelanggaran: ${record.violationType.name} (${resolvedPoints} poin) — ${record.student.name}`,
+    targetType: "ViolationRecord",
+    targetId: record.id,
+    meta: {
+      studentId: targetStudentId,
+      violationTypeId,
+      points: resolvedPoints,
+      submittedByStudent: session.user.role === "STUDENT",
+    },
+    portal: session.user.role === "STUDENT" ? "STUDENT" : "STAFF",
+  });
 
   return NextResponse.json(
     {

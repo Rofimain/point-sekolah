@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
 import { violationNameSortOrder } from "@/lib/violation-name";
 import { Prisma } from "@/generated/prisma/client";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -24,6 +25,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       active: true,
     },
   });
+  await recordDataAccessLog({
+    session,
+    action: "VIOLATION_UPDATE",
+    summary: `Ubah jenis pelanggaran ${updated.name}`,
+    targetType: "ViolationType",
+    targetId: updated.id,
+  });
   return NextResponse.json(updated);
 }
 
@@ -37,6 +45,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const usage = await prisma.violationRecord.count({ where: { violationTypeId: id } });
   if (usage === 0) {
     await prisma.violationType.delete({ where: { id } });
+    await recordDataAccessLog({
+      session,
+      action: "VIOLATION_DELETE",
+      summary: `Hapus jenis pelanggaran ${id}`,
+      targetType: "ViolationType",
+      targetId: id,
+    });
     return NextResponse.json({ ok: true, deleted: true });
   }
 
@@ -49,5 +64,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
     throw e;
   }
+  await recordDataAccessLog({
+    session,
+    action: "VIOLATION_DEACTIVATE",
+    summary: `Nonaktifkan jenis pelanggaran ${id}`,
+    targetType: "ViolationType",
+    targetId: id,
+  });
   return NextResponse.json({ ok: true, deleted: false, deactivated: true });
 }

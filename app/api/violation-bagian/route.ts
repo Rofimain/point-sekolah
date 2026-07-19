@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { canManageData, isStaffRole } from "@/lib/staff-roles";
 import { slugifyBagianId } from "@/lib/violation-sections";
 import { listViolationBagian } from "@/lib/violation-bagian";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,13 @@ export async function POST(req: NextRequest) {
         where: { id },
         data: { active: true, label },
       });
+      await recordDataAccessLog({
+        session,
+        action: "BAGIAN_REVIVE",
+        summary: `Aktifkan lagi bagian ${revived.label}`,
+        targetType: "ViolationBagian",
+        targetId: revived.id,
+      });
       return NextResponse.json(revived);
     }
     return NextResponse.json({ error: `Bagian dengan kode ${id} sudah ada` }, { status: 409 });
@@ -57,6 +65,13 @@ export async function POST(req: NextRequest) {
 
   const row = await prisma.violationBagian.create({
     data: { id, label, sortOrder, active: true },
+  });
+  await recordDataAccessLog({
+    session,
+    action: "BAGIAN_CREATE",
+    summary: `Tambah bagian ${row.label}`,
+    targetType: "ViolationBagian",
+    targetId: row.id,
   });
   return NextResponse.json(row, { status: 201 });
 }

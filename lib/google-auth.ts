@@ -77,7 +77,13 @@ export async function resolveAndLinkGoogleUser(input: {
     if (email && !isGoogleEmailDomainAllowed(email)) {
       return { ok: false, code: "DOMAIN_NOT_ALLOWED" };
     }
-    const authVersion = await markGoogleLoginSuccess(bySub.id, "OK", bySub.role);
+    const authVersion = await markGoogleLoginSuccess({
+      userId: bySub.id,
+      reason: "OK",
+      role: bySub.role,
+      name: bySub.name,
+      email: bySub.email,
+    });
     return { ok: true, user: { ...bySub, authVersion } };
   }
 
@@ -121,24 +127,36 @@ export async function resolveAndLinkGoogleUser(input: {
     });
   }
 
-  const authVersion = await markGoogleLoginSuccess(
-    updated.id,
-    alreadyLinked ? "OK" : "OK_LINKED",
-    updated.role
-  );
+  const authVersion = await markGoogleLoginSuccess({
+    userId: updated.id,
+    reason: alreadyLinked ? "OK" : "OK_LINKED",
+    role: updated.role,
+    name: updated.name,
+    email: updated.email,
+  });
   return { ok: true, user: { ...updated, authVersion } };
 }
 
-async function markGoogleLoginSuccess(userId: string, reason: string, role: string): Promise<number> {
-  const { authVersion } = await registerSuccessfulLogin(userId, { role });
+async function markGoogleLoginSuccess(opts: {
+  userId: string;
+  reason: string;
+  role: string;
+  name: string;
+  email: string;
+}): Promise<number> {
+  const { authVersion } = await registerSuccessfulLogin(opts.userId, { role: opts.role });
   const meta = await getAuthRequestMeta();
   await recordAuthLoginEvent({
-    userId,
+    userId: opts.userId,
+    identifier: opts.email,
     provider: "google",
     success: true,
-    reason,
+    reason: opts.reason,
     ip: meta.ip,
     userAgent: meta.userAgent,
+    googlePortal: opts.role === "STUDENT" ? "student" : "staff",
+    actorName: opts.name,
+    actorRole: opts.role,
   });
   return authVersion;
 }

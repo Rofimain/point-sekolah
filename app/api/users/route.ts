@@ -13,6 +13,7 @@ import { ACTIVE_USER_WHERE, lifecycleFieldsForStatus, statusFromActiveToggle } f
 import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
 import { hardDeleteStudentsByClassId, hardDeleteUsersByIds } from "@/lib/user-hard-delete";
 import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 
@@ -62,6 +63,14 @@ export async function POST(req: NextRequest) {
     toStatus: user.status,
     reason: "manual_create",
     actor: { id: session.user.id, name: session.user.name },
+  });
+  await recordDataAccessLog({
+    session,
+    action: "USER_CREATE",
+    summary: `Membuat pengguna ${user.name} (${user.role})`,
+    targetType: "User",
+    targetId: user.id,
+    meta: { role: user.role, email: user.email },
   });
   const { password: _, parentTelegramLinkToken: linkTok, photoData: __, ...safe } = user;
   const bot = getTelegramBotUsername();
@@ -128,6 +137,14 @@ export async function PATCH(req: NextRequest) {
       )
   );
 
+  await recordDataAccessLog({
+    session,
+    action: active ? "USER_BULK_ACTIVATE" : "USER_BULK_DEACTIVATE",
+    summary: `${active ? "Aktifkan" : "Blokir"} ${res.count} pengguna`,
+    targetType: "User",
+    meta: { count: res.count, ids: ids.slice(0, 50) },
+  });
+
   return NextResponse.json({ ok: true, count: res.count });
 }
 
@@ -143,6 +160,14 @@ export async function DELETE(req: NextRequest) {
   if (classId) {
     try {
       const count = await hardDeleteStudentsByClassId({ classId });
+      await recordDataAccessLog({
+        session,
+        action: "USER_DELETE_BY_CLASS",
+        summary: `Hapus permanen ${count} siswa di kelas`,
+        targetType: "Class",
+        targetId: classId,
+        meta: { count },
+      });
       return NextResponse.json({ ok: true, count, permanentlyDeleted: true });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Gagal menghapus";
@@ -166,6 +191,13 @@ export async function DELETE(req: NextRequest) {
   try {
     const count = await hardDeleteUsersByIds({
       ids: found.map((u) => u.id),
+    });
+    await recordDataAccessLog({
+      session,
+      action: "USER_BULK_DELETE",
+      summary: `Hapus permanen ${count} siswa`,
+      targetType: "User",
+      meta: { count, names: found.slice(0, 20).map((u) => u.name) },
     });
     return NextResponse.json({ ok: true, count, permanentlyDeleted: true });
   } catch (e: unknown) {

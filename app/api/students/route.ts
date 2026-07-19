@@ -13,6 +13,7 @@ import { buildParentTelegramDeepLink } from "@/lib/parent-telegram-link";
 import { parseUserPhotoInput } from "@/lib/user-photo";
 import { validateNewPassword } from "@/lib/password-policy";
 import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 function staffOk(role: string | undefined) {
   return canManageData(role);
@@ -87,6 +88,14 @@ export async function POST(req: NextRequest) {
   }
 
   const user = await prisma.user.create({ data, include: { class: true } });
+  await recordDataAccessLog({
+    session,
+    action: "STUDENT_CREATE",
+    summary: `Tambah siswa ${user.name}`,
+    targetType: "User",
+    targetId: user.id,
+    meta: { email: user.email, classId: user.classId },
+  });
   const { password: _, parentTelegramLinkToken: linkTok, photoData: __, ...safe } = user;
   const bot = getTelegramBotUsername();
   const ortuTelegramLink =

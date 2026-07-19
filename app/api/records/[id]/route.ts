@@ -11,6 +11,7 @@ import {
   listRecordEvidenceImageData,
   replaceRecordEvidenceImages,
 } from "@/lib/record-evidence-images";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -83,6 +84,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await replaceRecordEvidenceImages(id, nextEvidenceImages);
   }
 
+  await recordDataAccessLog({
+    session,
+    action: "RECORD_UPDATE",
+    summary: `Mengubah catatan pelanggaran ${id}`,
+    targetType: "ViolationRecord",
+    targetId: id,
+    meta: { points: nextPoints, violationTypeId: nextVtId },
+  });
+
   return NextResponse.json(updated);
 }
 
@@ -133,5 +143,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   await prisma.violationRecord.delete({ where: { id } });
+  await recordDataAccessLog({
+    session,
+    action: "RECORD_DELETE",
+    summary: `Menghapus catatan pelanggaran ${id}`,
+    targetType: "ViolationRecord",
+    targetId: id,
+  });
   return NextResponse.json({ ok: true });
 }

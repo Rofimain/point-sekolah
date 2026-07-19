@@ -11,6 +11,7 @@ import {
 } from "@/lib/remisi-rules";
 import { getEffectivePointsBreakdown } from "@/lib/student-effective-points";
 import { calendarTodayYmd } from "@/lib/incident-date";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 const VALID_TYPES = new Set<string>(Object.values(MANUAL_REMISI_TYPE));
 
@@ -116,6 +117,15 @@ export async function POST(req: NextRequest) {
   if (!applied.ok) {
     return NextResponse.json({ error: applied.error }, { status: 400 });
   }
+
+  await recordDataAccessLog({
+    session,
+    action: "REMISI_MANUAL",
+    summary: `Remisi manual ${type} untuk siswa ${studentId}`,
+    targetType: "User",
+    targetId: studentId,
+    meta: { type, achievementYmd, pointsDelta: applied.result.pointsDelta },
+  });
 
   return NextResponse.json({ ok: true, ...applied.result });
 }

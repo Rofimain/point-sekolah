@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData, isStaffRole } from "@/lib/staff-roles";
 import { APP_KEYS } from "@/lib/app-settings";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 const ALLOWED_KEYS = new Set<string>(Object.values(APP_KEYS));
 
@@ -40,6 +41,13 @@ export async function PATCH(req: NextRequest) {
       })
     )
   );
+  await recordDataAccessLog({
+    session,
+    action: "SETTING_UPDATE",
+    summary: `Ubah pengaturan sekolah (${entries.map(([k]) => k).join(", ")})`,
+    targetType: "AppSetting",
+    meta: { keys: entries.map(([k]) => k) },
+  });
   const rows = await prisma.appSetting.findMany();
   const map: Record<string, string> = {};
   for (const r of rows) map[r.key] = r.value;

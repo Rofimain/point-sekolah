@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { clearPasswordAttempts, passwordAttemptStatus, recordFailedPasswordAttempt } from "@/lib/account-rate-limit";
 import { validateNewPassword } from "@/lib/password-policy";
 import { canUserLogin } from "@/lib/user-status";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 function isSameOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
@@ -73,6 +74,13 @@ export async function PATCH(request: NextRequest) {
     },
   });
   clearPasswordAttempts(session.user.id);
+  await recordDataAccessLog({
+    session,
+    action: "PASSWORD_CHANGE",
+    summary: `Ganti password akun sendiri`,
+    targetType: "User",
+    targetId: session.user.id,
+  });
   return NextResponse.json(
     { ok: true },
     { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } }

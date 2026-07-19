@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { parseStudentImportPackage } from "@/lib/parse-student-import-package";
 import { runBulkStudentImport } from "@/lib/students-bulk-run";
 import { canManageData } from "@/lib/staff-roles";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 function staffOk(role: string | undefined) {
   return canManageData(role);
@@ -48,6 +49,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await runBulkStudentImport(parsed.rows, { defaultPassword });
+    await recordDataAccessLog({
+      session,
+      action: "STUDENT_FILE_IMPORT",
+      summary: `Impor file siswa: ${result.created} berhasil, ${result.failed} gagal`,
+      targetType: "User",
+      meta: {
+        created: result.created,
+        failed: result.failed,
+        photosAttached: parsed.rows.filter((r) => r.photoData).length,
+        isZip,
+      },
+    });
     return NextResponse.json({
       ...result,
       photosAttached: parsed.rows.filter((r) => r.photoData).length,

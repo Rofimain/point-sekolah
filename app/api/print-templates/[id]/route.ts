@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
 import { slugifyPrintTemplate } from "@/lib/print-templates";
 import { serializePageSettings, parsePageSettings, type DocumentPageSettings } from "@/lib/document-page";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -83,6 +84,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const updated = await prisma.printTemplate.update({ where: { id }, data });
+  await recordDataAccessLog({
+    session,
+    action: "TEMPLATE_UPDATE",
+    summary: `Ubah template surat ${updated.title}`,
+    targetType: "PrintTemplate",
+    targetId: updated.id,
+  });
   return NextResponse.json(updated);
 }
 
@@ -99,5 +107,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   }
 
   await prisma.printTemplate.delete({ where: { id } });
+  await recordDataAccessLog({
+    session,
+    action: "TEMPLATE_DELETE",
+    summary: `Hapus template surat ${existing.title}`,
+    targetType: "PrintTemplate",
+    targetId: existing.id,
+  });
   return NextResponse.json({ ok: true });
 }

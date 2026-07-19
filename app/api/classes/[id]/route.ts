@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: rawId } = await params;
@@ -28,5 +29,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   ]);
 
   revalidateTag("sidebar-classes", { expire: 0 });
+  await recordDataAccessLog({
+    session,
+    action: "CLASS_DELETE",
+    summary: `Hapus kelas ${cls.name}`,
+    targetType: "Class",
+    targetId: cls.id,
+  });
   return NextResponse.json({ ok: true, removedClassName: cls.name });
 }

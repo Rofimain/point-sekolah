@@ -144,6 +144,8 @@ async function authorizeCredentials(
     reason: "OK",
     ip: meta.ip,
     userAgent: meta.userAgent,
+    actorName: user.name,
+    actorRole: user.role,
   });
 
   return {
@@ -232,6 +234,7 @@ export const authOptions: NextAuthOptions = {
           reason: resolved.code,
           ip: meta.ip,
           userAgent: meta.userAgent,
+          googlePortal: portal,
         });
         return googleErrorRedirect(resolved.code, portal);
       }

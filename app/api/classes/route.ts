@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData, isStaffRole } from "@/lib/staff-roles";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function GET(_req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -36,5 +37,12 @@ export async function POST(req: NextRequest) {
     data: { name: n, grade: g, major: (major?.trim() || "") || "", year: y },
   });
   revalidateTag("sidebar-classes", { expire: 0 });
+  await recordDataAccessLog({
+    session,
+    action: "CLASS_CREATE",
+    summary: `Tambah kelas ${cls.name}`,
+    targetType: "Class",
+    targetId: cls.id,
+  });
   return NextResponse.json({ class: cls }, { status: 201 });
 }

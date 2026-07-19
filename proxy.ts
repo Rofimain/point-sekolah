@@ -43,6 +43,7 @@ export const proxy = withAuth(
       pathname.startsWith("/violations") ||
       pathname.startsWith("/users") ||
       pathname.startsWith("/settings") ||
+      pathname.startsWith("/access-log") ||
       pathname.startsWith("/export") ||
       pathname.startsWith("/notifications") ||
       pathname.startsWith("/cetak-surat") ||
@@ -50,6 +51,10 @@ export const proxy = withAuth(
 
     if (needsStaffRole && (!token || !isStaffRole(token.role as string))) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+
+    if (pathname.startsWith("/access-log") && token?.role !== "SUPER_ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     if (pathname.startsWith("/form") && (!token || token.role !== "STUDENT")) {
@@ -72,6 +77,7 @@ export const proxy = withAuth(
           pathname.startsWith("/violations") ||
           pathname.startsWith("/users") ||
           pathname.startsWith("/settings") ||
+          pathname.startsWith("/access-log") ||
           pathname.startsWith("/export") ||
           pathname.startsWith("/notifications") ||
           pathname.startsWith("/cetak-surat") ||
@@ -96,6 +102,8 @@ export const config = {
     "/violations/:path*",
     "/users/:path*",
     "/settings/:path*",
+    "/access-log",
+    "/access-log/:path*",
     "/export/:path*",
     "/notifications/:path*",
     "/cetak-surat/:path*",

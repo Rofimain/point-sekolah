@@ -92,6 +92,42 @@ model AuthLoginEvent {
   @@index([ip, createdAt])
 }
 
+/// Log akses terpusat untuk Super Admin (login + mutasi data). Tanpa FK actor agar bertahan setelah hard-delete.
+model AccessLog {
+  id         String             @id @default(cuid())
+  createdAt  DateTime           @default(now())
+  portal     AccessLogPortal
+  category   AccessLogCategory
+  action     String
+  success    Boolean            @default(true)
+  actorId    String?
+  actorName  String?
+  actorRole  String?
+  targetType String?
+  targetId   String?
+  summary    String
+  meta       String?            @db.Text
+  ip         String?
+  userAgent  String?
+
+  @@index([createdAt])
+  @@index([category, createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([portal, createdAt])
+}
+
+enum AccessLogPortal {
+  STUDENT
+  STAFF
+  SYSTEM
+}
+
+enum AccessLogCategory {
+  LOGIN
+  DATA
+}
+
 enum Role {
   STUDENT
   TEACHER

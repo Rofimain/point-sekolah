@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData, canModifyUser, isAdminRole } from "@/lib/staff-roles";
 import { unlinkGoogleAccount } from "@/lib/google-account-link";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 /** PUTUS tautan Google (relink = user login Google lagi setelah unlink). */
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -30,6 +31,14 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     reason: "admin_unlink",
   });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+
+  await recordDataAccessLog({
+    session,
+    action: "GOOGLE_UNLINK",
+    summary: `Putus tautan Google user ${id}`,
+    targetType: "User",
+    targetId: id,
+  });
 
   return NextResponse.json({ ok: true, unlinked: true });
 }

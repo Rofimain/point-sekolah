@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
+import { recordDataAccessLog } from "@/lib/access-log";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   try {
     const row = await prisma.violationBagian.update({ where: { id }, data });
+    await recordDataAccessLog({
+      session,
+      action: "BAGIAN_UPDATE",
+      summary: `Ubah bagian ${row.label}`,
+      targetType: "ViolationBagian",
+      targetId: row.id,
+    });
     return NextResponse.json(row);
   } catch {
     return NextResponse.json({ error: "Bagian tidak ditemukan" }, { status: 404 });
@@ -60,6 +68,13 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     const row = await prisma.violationBagian.update({
       where: { id },
       data: { active: false },
+    });
+    await recordDataAccessLog({
+      session,
+      action: "BAGIAN_DELETE",
+      summary: `Nonaktifkan bagian ${row.label}`,
+      targetType: "ViolationBagian",
+      targetId: row.id,
     });
     return NextResponse.json({ ok: true, item: row });
   } catch {

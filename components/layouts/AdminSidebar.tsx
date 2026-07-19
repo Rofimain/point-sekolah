@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { cn, getRoleLabel } from "@/lib/utils";
-import { canManageData } from "@/lib/staff-roles";
+import { canManageData, isSuperAdmin } from "@/lib/staff-roles";
 
 export type SidebarClass = { id: string; name: string; grade: string };
 
@@ -190,6 +190,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const canManage = canManageData(session?.user?.role);
+  const superAdmin = isSuperAdmin(session?.user?.role);
 
   const [openMenu, setOpenMenu] = useState<null | "records" | "students" | "users" | "settings">(null);
 
@@ -333,6 +334,20 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
                 Redaksi cetak
               </SubmenuLink>
             </SplitNavRow>
+          )}
+
+          {superAdmin && (
+            <SimpleNavLink
+              href="/access-log"
+              active={pathname.startsWith("/access-log")}
+              icon={
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              }
+              label="Log akses"
+            />
           )}
 
           <SimpleNavLink
