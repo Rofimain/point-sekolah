@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  VIOLATION_SECTIONS,
   getViolationSectionLabel,
+  groupByViolationSection,
   sortViolationSections,
+  type ViolationBagianRow,
 } from "@/lib/violation-sections";
 import { splitViolationName, violationNameSortOrder } from "@/lib/violation-name";
+import { SectionAccordion, useSectionAccordionState } from "@/components/SectionAccordion";
 
 export type PickerViolationType = {
   id: string;
@@ -18,7 +20,7 @@ export type PickerViolationType = {
   sortOrder?: number;
 };
 
-function matchesQuery(v: PickerViolationType, q: string): boolean {
+function matchesQuery(v: PickerViolationType, q: string, bagian: ViolationBagianRow[]): boolean {
   const t = q.trim().toLowerCase();
   if (!t) return true;
   const { code, title } = splitViolationName(v.name);
@@ -28,7 +30,7 @@ function matchesQuery(v: PickerViolationType, q: string): boolean {
     title,
     String(v.points),
     v.description ?? "",
-    getViolationSectionLabel(v.section),
+    getViolationSectionLabel(v.section, bagian),
     v.section ?? "",
   ]
     .join(" ")
@@ -38,6 +40,7 @@ function matchesQuery(v: PickerViolationType, q: string): boolean {
 
 export function ViolationTypePicker({
   violationTypes,
+  bagian = [],
   value,
   onChange,
   required,
@@ -46,11 +49,11 @@ export function ViolationTypePicker({
   id,
 }: {
   violationTypes: PickerViolationType[];
+  bagian?: ViolationBagianRow[];
   value: string;
   onChange: (id: string) => void;
   required?: boolean;
   placeholder?: string;
-  /** Jika diisi, render label di atas kontrol. Kosongkan jika label sudah di luar. */
   label?: string;
   id?: string;
 }) {
@@ -64,29 +67,22 @@ export function ViolationTypePicker({
 
   const sorted = useMemo(() => {
     return [...violationTypes].sort((a, b) => {
-      const sec = sortViolationSections(a.section, b.section);
+      const sec = sortViolationSections(a.section, b.section, bagian);
       if (sec !== 0) return sec;
       const byCode = violationNameSortOrder(a.name) - violationNameSortOrder(b.name);
       if (byCode !== 0) return byCode;
       return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.points - b.points || a.name.localeCompare(b.name);
     });
-  }, [violationTypes]);
+  }, [violationTypes, bagian]);
 
-  const filtered = useMemo(() => sorted.filter((v) => matchesQuery(v, q)), [sorted, q]);
+  const filtered = useMemo(
+    () => sorted.filter((v) => matchesQuery(v, q, bagian)),
+    [sorted, q, bagian]
+  );
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, PickerViolationType[]>();
-    for (const v of filtered) {
-      const key = v.section || "";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(v);
-    }
-    const keys = [
-      ...VIOLATION_SECTIONS.filter((s) => map.has(s)),
-      ...[...map.keys()].filter((k) => !(VIOLATION_SECTIONS as readonly string[]).includes(k)),
-    ];
-    return keys.map((section) => ({ section, items: map.get(section)! }));
-  }, [filtered]);
+  const grouped = useMemo(() => groupByViolationSection(filtered, bagian), [filtered, bagian]);
+  const sectionKeys = useMemo(() => grouped.map((g) => g.section || "lainnya"), [grouped]);
+  const { isOpen, toggle } = useSectionAccordionState(sectionKeys, Boolean(q.trim()));
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -99,16 +95,6 @@ export function ViolationTypePicker({
   }, [open]);
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    if (open) {
-      window.addEventListener("keydown", onKey);
-      return () => window.removeEventListener("keydown", onKey);
-    }
-  }, [open]);
-
-  useEffect(() => {
     if (open) {
       inputRef.current?.focus();
       if (listRef.current) listRef.current.scrollTop = 0;
@@ -117,14 +103,12 @@ export function ViolationTypePicker({
     }
   }, [open]);
 
-  const selectedParts = selected ? splitViolationName(selected.name) : null;
-
   return (
     <div ref={rootRef} className="relative">
       {label ? (
         <label
           htmlFor={id}
-          className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+          className="mb-1.5 block text-xs font-semibold uppercase tracking-wide"
           style={{ color: "var(--text-secondary)" }}
         >
           {label}
@@ -135,86 +119,59 @@ export function ViolationTypePicker({
       <button
         type="button"
         id={id}
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-sm"
+        style={{
+          background: "var(--bg-primary)",
+          borderColor: open ? "var(--accent)" : "var(--border)",
+          color: selected ? "var(--text-primary)" : "var(--text-muted)",
+          boxShadow: open ? "0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent)" : undefined,
+        }}
         aria-expanded={open}
         aria-haspopup="listbox"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-start justify-between gap-2 rounded-lg border px-3 py-2.5 text-left text-sm"
-        style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
       >
         <span className="min-w-0 flex-1">
           {selected ? (
             <>
-              <span className="font-medium">
-                {selectedParts?.code ? (
-                  <>
-                    <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>
-                      [{selectedParts.code}]
-                    </span>{" "}
-                    {selectedParts.title}
-                  </>
-                ) : (
-                  selected.name
-                )}
-              </span>
-              <span className="mt-0.5 block text-[10px]" style={{ color: "var(--text-muted)" }}>
-                {getViolationSectionLabel(selected.section)} · {selected.points} poin
+              <span className="block truncate font-medium">{selected.name}</span>
+              <span className="mt-0.5 block truncate text-[10px]" style={{ color: "var(--text-muted)" }}>
+                {getViolationSectionLabel(selected.section, bagian)} · {selected.points} poin
               </span>
             </>
           ) : (
-            <span style={{ color: "var(--text-muted)" }}>{placeholder}</span>
+            placeholder
           )}
         </span>
-        <span className="shrink-0 text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
-          {open ? "▲" : "▼"}
-        </span>
+        <span className="shrink-0 text-xs opacity-60">{open ? "▲" : "▼"}</span>
       </button>
 
-      {/* Hidden input for native form required validation */}
-      {required ? (
-        <input
-          tabIndex={-1}
-          className="sr-only"
-          value={value}
-          required
-          onChange={() => {}}
-          aria-hidden
-        />
-      ) : null}
+      {required ? <input tabIndex={-1} className="sr-only" required value={value} onChange={() => {}} /> : null}
 
-      {open && (
+      {open ? (
         <div
-          className="absolute z-40 mt-1 w-full overflow-hidden rounded-xl border shadow-lg"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+          className="absolute left-0 right-0 top-full z-[70] mt-2 overflow-hidden rounded-xl border shadow-lg"
+          style={{
+            background: "var(--bg-secondary)",
+            borderColor: "var(--border)",
+            maxHeight: "min(24rem, 70vh)",
+          }}
           role="listbox"
         >
-          <div className="flex gap-2 border-b p-2" style={{ borderColor: "var(--border)" }}>
+          <div className="border-b p-2" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
             <input
               ref={inputRef}
-              type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Cari no / nama / poin…"
-              className="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"
-              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.preventDefault();
-              }}
+              placeholder="Cari no / nama pelanggaran…"
+              className="w-full rounded-lg border px-3 py-2 text-sm"
+              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
             />
-            <button
-              type="button"
-              className="shrink-0 rounded-lg px-3 py-2 text-xs font-semibold text-white"
-              style={{ background: "var(--accent)" }}
-              onClick={() => inputRef.current?.focus()}
-            >
-              Cari
-            </button>
           </div>
-
-          <div ref={listRef} className="max-h-[min(16rem,50dvh)] overflow-y-auto overscroll-contain py-1">
+          <div ref={listRef} className="max-h-[min(18rem,55vh)] space-y-1 overflow-y-auto overscroll-contain p-1.5">
             {value ? (
               <button
                 type="button"
-                className="w-full px-3 py-2 text-left text-xs"
+                className="w-full rounded-lg px-3 py-2 text-left text-xs"
                 style={{ color: "var(--text-muted)" }}
                 onClick={() => {
                   onChange("");
@@ -230,55 +187,59 @@ export function ViolationTypePicker({
                 Tidak ada hasil untuk &quot;{q.trim()}&quot;
               </p>
             ) : (
-              grouped.map(({ section, items }) => (
-                <div key={section || "lainnya"}>
-                  <div
-                    className="sticky top-0 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide"
-                    style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}
+              grouped.map(({ section, items }) => {
+                const key = section || "lainnya";
+                return (
+                  <SectionAccordion
+                    key={key}
+                    title={getViolationSectionLabel(section, bagian)}
+                    count={items.length}
+                    open={isOpen(key)}
+                    onToggle={() => toggle(key)}
+                    className="rounded-lg"
                   >
-                    {getViolationSectionLabel(section)}
-                  </div>
-                  {items.map((v) => {
-                    const { code, title } = splitViolationName(v.name);
-                    const active = v.id === value;
-                    return (
-                      <button
-                        key={v.id}
-                        type="button"
-                        role="option"
-                        aria-selected={active}
-                        className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs transition-colors"
-                        style={{
-                          background: active ? "var(--accent-light)" : "transparent",
-                          color: "var(--text-primary)",
-                        }}
-                        onClick={() => {
-                          onChange(v.id);
-                          setOpen(false);
-                        }}
-                      >
-                        <span
-                          className="w-10 shrink-0 pt-0.5 text-[11px] font-semibold tabular-nums"
-                          style={{ color: "var(--text-muted)" }}
+                    {items.map((v) => {
+                      const { code, title } = splitViolationName(v.name);
+                      const active = v.id === value;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          role="option"
+                          aria-selected={active}
+                          className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs transition-colors"
+                          style={{
+                            background: active ? "var(--accent-light)" : "transparent",
+                            color: "var(--text-primary)",
+                          }}
+                          onClick={() => {
+                            onChange(v.id);
+                            setOpen(false);
+                          }}
                         >
-                          {code || "—"}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="font-medium leading-snug">{title || v.name}</span>
-                          <span className="mt-0.5 block text-[10px]" style={{ color: "var(--text-muted)" }}>
-                            {v.points} poin
-                            {v.description ? ` · ${v.description}` : ""}
+                          <span
+                            className="w-10 shrink-0 pt-0.5 text-[11px] font-semibold tabular-nums"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            {code || "—"}
                           </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))
+                          <span className="min-w-0 flex-1">
+                            <span className="font-medium leading-snug">{title || v.name}</span>
+                            <span className="mt-0.5 block text-[10px]" style={{ color: "var(--text-muted)" }}>
+                              {v.points} poin
+                              {v.description ? ` · ${v.description}` : ""}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </SectionAccordion>
+                );
+              })
             )}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

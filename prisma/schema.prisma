@@ -53,7 +53,7 @@ model Class {
 model ViolationType {
   id          String    @id @default(cuid())
   name        String
-  /// Bagian Pasal 15: KELAKUAN | KERAJINAN | KERAPIHAN
+  /// Kode bagian (FK soft ke ViolationBagian.id), mis. KELAKUAN
   section     String?
   category    Category
   points      Int
@@ -65,6 +65,18 @@ model ViolationType {
   updatedAt   DateTime  @updatedAt
 
   @@index([section, sortOrder])
+}
+
+/// Master bagian jenis pelanggaran (Kelakuan, Kerajinan, …). Admin bisa menambah.
+model ViolationBagian {
+  id        String   @id
+  label     String
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder, label])
 }
 
 enum Category {

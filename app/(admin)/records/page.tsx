@@ -5,6 +5,7 @@ import { RECORD_LIST_SELECT, RECORD_STUDENT_SELECT, type RecordsRow } from "./re
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import { getSafeServerSession } from "@/lib/auth";
 import { canManageData } from "@/lib/staff-roles";
+import { listViolationBagian } from "@/lib/violation-bagian";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export default async function RecordsPage({
     studentWhere.name = { contains: query.search, mode: "insensitive" };
   }
 
-  const [classes, violationTypes, studentsForPicker, totalPointsMap] = await Promise.all([
+  const [classes, violationTypes, studentsForPicker, totalPointsMap, bagian] = await Promise.all([
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
     prisma.violationType.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { points: "asc" }] }),
     prisma.user.findMany({
@@ -44,6 +45,7 @@ export default async function RecordsPage({
       orderBy: { name: "asc" },
     }),
     getEffectivePointsMap(),
+    listViolationBagian(),
   ]);
 
   let rows: RecordsRow[] = [];
@@ -132,6 +134,7 @@ export default async function RecordsPage({
       perPage={perPage}
       classes={classes}
       violationTypes={violationTypes}
+      bagian={bagian}
       studentsForPicker={studentsForPicker}
       totalPointsMap={Object.fromEntries(totalPointsMap)}
       searchParams={query}

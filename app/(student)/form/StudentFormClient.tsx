@@ -8,9 +8,10 @@ import { TopBar } from "@/components/layouts/TopBar";
 import { formatDate, formatIncidentDateOnly, formatInputDateTime, getCategoryLabel } from "@/lib/utils";
 import { formatPointAdjustmentReason } from "@/lib/point-adjustment-reason";
 import {
-  VIOLATION_SECTIONS,
   getViolationSectionLabel,
+  groupByViolationSection,
   sortViolationSections,
+  type ViolationBagianRow,
 } from "@/lib/violation-sections";
 import { splitViolationName, violationNameSortOrder } from "@/lib/violation-name";
 import { ViolationTypePicker } from "@/components/ViolationTypePicker";
@@ -20,6 +21,7 @@ import { calendarTodayYmd } from "@/lib/incident-date";
 import { EvidencePreviewModal } from "@/components/records/EvidencePreviewModal";
 import { EvidenceMultiUploader } from "@/components/records/EvidenceMultiUploader";
 import UserAvatar from "@/components/ui/UserAvatar";
+import { SectionAccordion, useSectionAccordionState } from "@/components/SectionAccordion";
 
 const SESSIONS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 const CRITICAL = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
@@ -75,6 +77,7 @@ export default function StudentFormClient({
   studentNisn,
   studentPhotoPresent = false,
   studentPhotoCacheKey = null,
+  bagian = [],
 }: {
   session: Session;
   violationTypes: any[];
@@ -92,6 +95,7 @@ export default function StudentFormClient({
   studentNisn: string | null;
   studentPhotoPresent?: boolean;
   studentPhotoCacheKey?: string | null;
+  bagian?: ViolationBagianRow[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("lapor");
@@ -123,13 +127,13 @@ export default function StudentFormClient({
 
   const sortedTypes = useMemo(() => {
     return [...violationTypes].sort((a, b) => {
-      const sec = sortViolationSections(a.section, b.section);
+      const sec = sortViolationSections(a.section, b.section, bagian);
       if (sec !== 0) return sec;
       const byCode = violationNameSortOrder(a.name || "") - violationNameSortOrder(b.name || "");
       if (byCode !== 0) return byCode;
       return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.points - b.points;
     });
-  }, [violationTypes]);
+  }, [violationTypes, bagian]);
 
   const typesBySection = useMemo(() => {
     const q = tataQuery.trim().toLowerCase();
@@ -138,23 +142,23 @@ export default function StudentFormClient({
       ? sortedTypes
       : sortedTypes.filter((v: any) => {
           const { code, title } = splitViolationName(v.name || "");
-          const blob = [v.name, code, title, String(v.points), v.description ?? "", getViolationSectionLabel(v.section)]
+          const blob = [
+            v.name,
+            code,
+            title,
+            String(v.points),
+            v.description ?? "",
+            getViolationSectionLabel(v.section, bagian),
+          ]
             .join(" ")
             .toLowerCase();
           return parts.every((p) => blob.includes(p));
         });
-    const map = new Map<string, any[]>();
-    for (const v of filtered) {
-      const key = v.section || "";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(v);
-    }
-    const keys = [
-      ...VIOLATION_SECTIONS.filter((s) => map.has(s)),
-      ...[...map.keys()].filter((k) => !(VIOLATION_SECTIONS as readonly string[]).includes(k)),
-    ];
-    return keys.map((section) => ({ section, items: map.get(section)! }));
-  }, [sortedTypes, tataQuery]);
+    return groupByViolationSection(filtered, bagian);
+  }, [sortedTypes, tataQuery, bagian]);
+
+  const sectionKeys = useMemo(() => typesBySection.map((g) => g.section || "lainnya"), [typesBySection]);
+  const { isOpen, toggle } = useSectionAccordionState(sectionKeys, Boolean(tataQuery.trim()));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -387,53 +391,59 @@ export default function StudentFormClient({
                 </button>
               </form>
             </div>
-            <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
-              {typesBySection.map(({ section, items }) => (
-                <li key={section || "lainnya"} className="list-none">
-                  <div
-                    className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wide"
-                    style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}
+            <div className="space-y-2 p-2 sm:p-3">
+              {typesBySection.map(({ section, items }) => {
+                const key = section || "lainnya";
+                return (
+                  <SectionAccordion
+                    key={key}
+                    title={getViolationSectionLabel(section, bagian)}
+                    count={items.length}
+                    open={isOpen(key)}
+                    onToggle={() => toggle(key)}
                   >
-                    {getViolationSectionLabel(section)}
-                  </div>
-                  <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
-                    {items.map((v: any) => {
-                      const { code, title } = splitViolationName(v.name || "");
-                      return (
-                      <li key={v.id} className="px-4 py-3 flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex gap-2">
-                          <span className="shrink-0 w-9 text-[11px] font-semibold tabular-nums" style={{ color: "var(--text-muted)" }}>
-                            {code || "—"}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="text-xs font-medium break-words" style={{ color: "var(--text-primary)" }}>
-                              {title || v.name}
-                            </div>
-                            {v.description && (
-                              <div className="text-[10px] mt-0.5 break-words" style={{ color: "var(--text-muted)" }}>
-                                {v.description}
+                    <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+                      {items.map((v: any) => {
+                        const { code, title } = splitViolationName(v.name || "");
+                        return (
+                          <li key={v.id} className="px-4 py-3 flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex gap-2">
+                              <span
+                                className="shrink-0 w-9 text-[11px] font-semibold tabular-nums"
+                                style={{ color: "var(--text-muted)" }}
+                              >
+                                {code || "—"}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="text-xs font-medium break-words" style={{ color: "var(--text-primary)" }}>
+                                  {title || v.name}
+                                </div>
+                                {v.description && (
+                                  <div className="text-[10px] mt-0.5 break-words" style={{ color: "var(--text-muted)" }}>
+                                    {v.description}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <CategoryBadge category={v.category} />
-                          <span className="text-xs font-bold tabular-nums" style={{ color: "var(--text-secondary)" }}>
-                            {v.points} poin
-                          </span>
-                        </div>
-                      </li>
-                      );
-                    })}
-                  </ul>
-                </li>
-              ))}
+                            </div>
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              <CategoryBadge category={v.category} />
+                              <span className="text-xs font-bold tabular-nums" style={{ color: "var(--text-secondary)" }}>
+                                {v.points} poin
+                              </span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </SectionAccordion>
+                );
+              })}
               {!typesBySection.length && (
-                <li className="px-4 py-6 text-center text-xs list-none" style={{ color: "var(--text-muted)" }}>
+                <p className="px-4 py-6 text-center text-xs" style={{ color: "var(--text-muted)" }}>
                   Tidak ada hasil pencarian.
-                </li>
+                </p>
               )}
-            </ul>
+            </div>
           </div>
         )}
 
@@ -461,6 +471,7 @@ export default function StudentFormClient({
                     label="Jenis pelanggaran"
                     required
                     violationTypes={violationTypes}
+                    bagian={bagian}
                     value={vtId}
                     onChange={setVtId}
                   />

@@ -3,12 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
-  VIOLATION_SECTIONS,
+  groupByViolationSection,
   getViolationSectionLabel,
-  type ViolationSection,
+  type ViolationBagianRow,
 } from "@/lib/violation-sections";
 import { joinViolationName, splitViolationName, violationNameSortOrder } from "@/lib/violation-name";
 import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
+import { SectionAccordion, useSectionAccordionState } from "@/components/SectionAccordion";
 
 const CATS = ["RINGAN", "SEDANG", "BERAT"] as const;
 const CAT_LABELS: Record<string, string> = { RINGAN: "Ringan", SEDANG: "Sedang", BERAT: "Berat" };
@@ -40,13 +41,13 @@ function CatBadge({ cat }: { cat: string }) {
 const empty = {
   code: "",
   title: "",
-  section: "KELAKUAN" as ViolationSection | "",
+  section: "" as string,
   category: "RINGAN" as (typeof CATS)[number],
   points: 5,
   description: "",
 };
 
-function matchesViolationSearch(v: any, q: string): boolean {
+function matchesViolationSearch(v: any, q: string, bagian: ViolationBagianRow[]): boolean {
   const t = q.trim().toLowerCase();
   if (!t) return true;
   const { code, title } = splitViolationName(v.name || "");
@@ -56,7 +57,7 @@ function matchesViolationSearch(v: any, q: string): boolean {
     title,
     String(v.points),
     v.description ?? "",
-    getViolationSectionLabel(v.section),
+    getViolationSectionLabel(v.section, bagian),
     CAT_LABELS[v.category] ?? v.category,
   ]
     .join(" ")
@@ -66,13 +67,17 @@ function matchesViolationSearch(v: any, q: string): boolean {
 
 export default function ViolationsClient({
   violations,
+  bagian,
   canManage,
 }: {
   violations: any[];
+  bagian: ViolationBagianRow[];
   canManage: boolean;
 }) {
   const router = useRouter();
   const [modal, setModal] = useState<any>(null);
+  const [bagianModal, setBagianModal] = useState(false);
+  const [bagianLabel, setBagianLabel] = useState("");
   const [form, setForm] = useState({ ...empty });
   const [loading, setLoading] = useState(false);
   const [filterCat, setFilterCat] = useState("");
@@ -86,12 +91,12 @@ export default function ViolationsClient({
   }, []);
 
   useEffect(() => {
-    if (!modal) return;
+    if (!modal && !bagianModal) return;
     return lockAppScroll();
-  }, [modal]);
+  }, [modal, bagianModal]);
 
   function openAdd() {
-    setForm({ ...empty });
+    setForm({ ...empty, section: bagian[0]?.id ?? "" });
     setModal("add");
   }
   function openEdit(v: any) {
@@ -99,7 +104,7 @@ export default function ViolationsClient({
     setForm({
       code,
       title,
-      section: (v.section as ViolationSection) || "",
+      section: (v.section as string) || "",
       category: v.category,
       points: v.points,
       description: v.description || "",
@@ -149,38 +154,72 @@ export default function ViolationsClient({
     router.refresh();
   }
 
+  async function handleAddBagian() {
+    const label = bagianLabel.trim();
+    if (label.length < 2) return;
+    setLoading(true);
+    const res = await fetch("/api/violation-bagian", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label }),
+    });
+    const d = await res.json().catch(() => ({}));
+    setLoading(false);
+    if (!res.ok) {
+      alert(d.error || "Gagal menambah bagian");
+      return;
+    }
+    setBagianLabel("");
+    setBagianModal(false);
+    router.refresh();
+  }
+
+  async function handleDeleteBagian(id: string, label: string) {
+    if (!confirm(`Hapus bagian "${label}"?`)) return;
+    const res = await fetch(`/api/violation-bagian/${id}`, { method: "DELETE" });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(d.error || "Gagal menghapus bagian");
+      return;
+    }
+    router.refresh();
+  }
+
   function applySearch(e?: React.FormEvent) {
     e?.preventDefault();
     setSearchQuery(searchInput);
   }
 
+  const bagianUsage = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const b of bagian) map.set(b.id, 0);
+    for (const v of violations) {
+      const s = v.section || "";
+      if (s) map.set(s, (map.get(s) || 0) + 1);
+    }
+    return map;
+  }, [bagian, violations]);
+
   const filtered = violations.filter((v) => {
     if (filterCat && v.category !== filterCat) return false;
     if (filterSection && (v.section || "") !== filterSection) return false;
-    if (!matchesViolationSearch(v, searchQuery)) return false;
+    if (!matchesViolationSearch(v, searchQuery, bagian)) return false;
     return true;
   });
 
   const grouped = useMemo(() => {
-    const map = new Map<string, any[]>();
-    for (const v of filtered) {
-      const key = v.section || "";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(v);
-    }
-    const keys = [
-      ...VIOLATION_SECTIONS.filter((s) => map.has(s)),
-      ...[...map.keys()].filter((k) => !(VIOLATION_SECTIONS as readonly string[]).includes(k)),
-    ];
-    return keys.map((section) => ({
+    return groupByViolationSection(filtered, bagian).map(({ section, items }) => ({
       section,
-      items: [...map.get(section)!].sort((a, b) => {
+      items: [...items].sort((a, b) => {
         const byCode = violationNameSortOrder(a.name || "") - violationNameSortOrder(b.name || "");
         if (byCode !== 0) return byCode;
         return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.points - b.points || String(a.name).localeCompare(String(b.name));
       }),
     }));
-  }, [filtered]);
+  }, [filtered, bagian]);
+
+  const sectionKeys = useMemo(() => grouped.map((g) => g.section || "lainnya"), [grouped]);
+  const { isOpen, toggle } = useSectionAccordionState(sectionKeys, Boolean(searchQuery.trim()));
 
   const colgroup = (
     <colgroup>
@@ -264,7 +303,7 @@ export default function ViolationsClient({
                   </label>
                   <select
                     value={form.section}
-                    onChange={(e) => setForm({ ...form, section: e.target.value as ViolationSection | "" })}
+                    onChange={(e) => setForm({ ...form, section: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border text-sm"
                     style={{
                       background: "var(--bg-primary)",
@@ -273,9 +312,9 @@ export default function ViolationsClient({
                     }}
                   >
                     <option value="">— Tidak ditentukan —</option>
-                    {VIOLATION_SECTIONS.map((s) => (
-                      <option key={s} value={s}>
-                        {getViolationSectionLabel(s)}
+                    {bagian.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.label}
                       </option>
                     ))}
                   </select>
@@ -371,6 +410,121 @@ export default function ViolationsClient({
         )
       : null;
 
+  const bagianModalUi =
+    canManage && bagianModal && portalReady
+      ? createPortal(
+          <div
+            className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+            style={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            onClick={() => setBagianModal(false)}
+          >
+            <div
+              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-2xl sm:mx-4 sm:rounded-xl sm:p-6"
+              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3
+                className="text-sm font-serif mb-4 pb-3 border-b"
+                style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
+              >
+                Kelola Bagian
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <label
+                    className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    Nama bagian baru
+                  </label>
+                  <input
+                    value={bagianLabel}
+                    onChange={(e) => setBagianLabel(e.target.value)}
+                    placeholder="Contoh: Kebersihan"
+                    className="w-full px-3 py-2 rounded-lg border text-sm"
+                    style={{
+                      background: "var(--bg-primary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text-primary)",
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddBagian();
+                      }
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddBagian}
+                  disabled={loading || bagianLabel.trim().length < 2}
+                  className="w-full rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                  style={{ background: "var(--accent)" }}
+                >
+                  Tambah bagian
+                </button>
+              </div>
+              {bagian.length > 0 ? (
+                <ul className="mt-4 divide-y rounded-lg border" style={{ borderColor: "var(--border)" }}>
+                  {bagian.map((b) => {
+                    const usage = bagianUsage.get(b.id) || 0;
+                    return (
+                      <li
+                        key={b.id}
+                        className="flex items-center justify-between gap-2 px-3 py-2 text-xs"
+                        style={{ background: "var(--bg-primary)" }}
+                      >
+                        <div className="min-w-0">
+                          <div className="font-medium" style={{ color: "var(--text-primary)" }}>
+                            {b.label}
+                          </div>
+                          <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            {usage} jenis pelanggaran
+                          </div>
+                        </div>
+                        {usage === 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteBagian(b.id, b.label)}
+                            className="shrink-0 rounded border px-2 py-1 text-[10px]"
+                            style={{
+                              background: "var(--danger-bg)",
+                              color: "var(--danger)",
+                              borderColor: "var(--danger)",
+                            }}
+                          >
+                            Hapus
+                          </button>
+                        ) : (
+                          <span className="shrink-0 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            Dipakai
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="mt-4 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+                  Belum ada bagian.
+                </p>
+              )}
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={() => setBagianModal(false)}
+                  className="px-4 py-2 rounded-lg border text-sm"
+                  style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
     <div>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -380,34 +534,47 @@ export default function ViolationsClient({
           </h1>
         </div>
         {canManage && (
-          <button
-            type="button"
-            onClick={openAdd}
-            className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
-            style={{ background: "var(--accent)" }}
-          >
-            + Tambah Pelanggaran
-          </button>
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
+            <button
+              type="button"
+              onClick={() => {
+                setBagianLabel("");
+                setBagianModal(true);
+              }}
+              className="w-full touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold sm:w-auto sm:py-1.5"
+              style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-secondary)" }}
+            >
+              + Tambah bagian
+            </button>
+            <button
+              type="button"
+              onClick={openAdd}
+              className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
+              style={{ background: "var(--accent)" }}
+            >
+              + Tambah Pelanggaran
+            </button>
+          </div>
         )}
       </div>
 
-      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {VIOLATION_SECTIONS.map((sec) => {
-          const count = violations.filter((v) => v.section === sec).length;
-          const active = filterSection === sec;
+      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {bagian.map((b) => {
+          const count = violations.filter((v) => v.section === b.id).length;
+          const active = filterSection === b.id;
           return (
             <div
-              key={sec}
+              key={b.id}
               className="rounded-xl border p-4 cursor-pointer transition-opacity"
               style={{
                 background: "var(--bg-secondary)",
                 borderColor: active ? "var(--accent)" : "var(--border)",
                 borderWidth: active ? 2 : 1,
               }}
-              onClick={() => setFilterSection(active ? "" : sec)}
+              onClick={() => setFilterSection(active ? "" : b.id)}
             >
               <div className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
-                {getViolationSectionLabel(sec)}
+                {b.label}
               </div>
               <div className="text-2xl font-serif" style={{ color: "var(--accent)" }}>
                 {count}
@@ -483,189 +650,188 @@ export default function ViolationsClient({
       </form>
 
       <div className="space-y-4">
-        {grouped.map(({ section, items }) => (
-          <div
-            key={section || "lainnya"}
-            className="overflow-hidden rounded-xl border"
-            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
-          >
-            <div
-              className="px-4 py-2.5 border-b text-xs font-semibold uppercase tracking-wide"
-              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+        {grouped.map(({ section, items }) => {
+          const key = section || "lainnya";
+          return (
+            <SectionAccordion
+              key={key}
+              title={getViolationSectionLabel(section, bagian)}
+              count={items.length}
+              open={isOpen(key)}
+              onToggle={() => toggle(key)}
             >
-              {getViolationSectionLabel(section)} · {items.length} jenis
-            </div>
-            <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
-              {items.map((v) => {
-                const { code, title } = splitViolationName(v.name || "");
-                return (
-                  <li key={v.id} className="space-y-2 px-4 py-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[11px] font-semibold tabular-nums" style={{ color: "var(--text-muted)" }}>
-                            {code || "—"}
-                          </span>
-                          <CatBadge cat={v.category} />
-                        </div>
-                        <div className="mt-1 text-sm font-medium leading-snug break-words" style={{ color: "var(--text-primary)" }}>
-                          {title || v.name}
-                        </div>
-                        {v.description ? (
-                          <div className="mt-1 text-[11px] leading-snug break-words" style={{ color: "var(--text-muted)" }}>
-                            {v.description}
+              <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
+                {items.map((v) => {
+                  const { code, title } = splitViolationName(v.name || "");
+                  return (
+                    <li key={v.id} className="space-y-2 px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[11px] font-semibold tabular-nums" style={{ color: "var(--text-muted)" }}>
+                              {code || "—"}
+                            </span>
+                            <CatBadge cat={v.category} />
                           </div>
-                        ) : null}
-                      </div>
-                      <span
-                        className="inline-flex shrink-0 items-center justify-center min-w-9 h-6 px-1.5 rounded-full text-xs font-bold"
-                        style={{
-                          background:
-                            v.points >= 51
-                              ? "var(--danger-bg)"
-                              : v.points >= 16
-                                ? "var(--warning-bg)"
-                                : "var(--success-bg)",
-                          color:
-                            v.points >= 51
-                              ? "var(--danger)"
-                              : v.points >= 16
-                                ? "var(--warning)"
-                                : "var(--success)",
-                        }}
-                      >
-                        {v.points}
-                      </span>
-                    </div>
-                    {canManage ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        <button
-                          onClick={() => openEdit(v)}
-                          className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                          <div className="mt-1 text-sm font-medium leading-snug break-words" style={{ color: "var(--text-primary)" }}>
+                            {title || v.name}
+                          </div>
+                          {v.description ? (
+                            <div className="mt-1 text-[11px] leading-snug break-words" style={{ color: "var(--text-muted)" }}>
+                              {v.description}
+                            </div>
+                          ) : null}
+                        </div>
+                        <span
+                          className="inline-flex shrink-0 items-center justify-center min-w-9 h-6 px-1.5 rounded-full text-xs font-bold"
                           style={{
-                            borderColor: "var(--border)",
-                            color: "var(--text-secondary)",
-                            background: "var(--bg-primary)",
+                            background:
+                              v.points >= 51
+                                ? "var(--danger-bg)"
+                                : v.points >= 16
+                                  ? "var(--warning-bg)"
+                                  : "var(--success-bg)",
+                            color:
+                              v.points >= 51
+                                ? "var(--danger)"
+                                : v.points >= 16
+                                  ? "var(--warning)"
+                                  : "var(--success)",
                           }}
                         >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(v.id)}
-                          className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                          style={{
-                            background: "var(--danger-bg)",
-                            color: "var(--danger)",
-                            borderColor: "var(--danger)",
-                          }}
-                        >
-                          Hapus
-                        </button>
+                          {v.points}
+                        </span>
                       </div>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full table-fixed min-w-[920px]">
-                {colgroup}
-                <thead>
-                  <tr style={{ background: "var(--bg-primary)" }}>
-                    {["No", "Nama Pelanggaran", "Kategori", "Poin", "Keterangan", ...(canManage ? ["Aksi"] : [])].map(
-                      (h) => (
-                        <th
-                          key={h}
-                          className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          {h}
-                        </th>
-                      )
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((v) => {
-                    const { code, title } = splitViolationName(v.name || "");
-                    return (
-                      <tr
-                        key={v.id}
-                        className="border-t"
-                        style={{ borderColor: "var(--border)" }}
-                      >
-                        <td
-                          className="px-3 py-3 text-xs font-semibold tabular-nums whitespace-nowrap align-top"
-                          style={{ color: "var(--text-secondary)" }}
-                        >
-                          {code || "—"}
-                        </td>
-                        <td className="px-3 py-3 text-xs font-medium align-top break-words" style={{ color: "var(--text-primary)" }}>
-                          {title || v.name}
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <CatBadge cat={v.category} />
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <span
-                            className="inline-flex items-center justify-center min-w-9 h-5 px-1.5 rounded-full text-xs font-bold"
+                      {canManage ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          <button
+                            onClick={() => openEdit(v)}
+                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
                             style={{
-                              background:
-                                v.points >= 51
-                                  ? "var(--danger-bg)"
-                                  : v.points >= 16
-                                    ? "var(--warning-bg)"
-                                    : "var(--success-bg)",
-                              color:
-                                v.points >= 51
-                                  ? "var(--danger)"
-                                  : v.points >= 16
-                                    ? "var(--warning)"
-                                    : "var(--success)",
+                              borderColor: "var(--border)",
+                              color: "var(--text-secondary)",
+                              background: "var(--bg-primary)",
                             }}
                           >
-                            {v.points}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 text-xs align-top break-words" style={{ color: "var(--text-muted)" }}>
-                          {v.description || "—"}
-                        </td>
-                        {canManage && (
-                          <td className="px-3 py-3 align-top">
-                            <div className="flex flex-wrap gap-1.5">
-                              <button
-                                onClick={() => openEdit(v)}
-                                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                                style={{
-                                  borderColor: "var(--border)",
-                                  color: "var(--text-secondary)",
-                                  background: "var(--bg-primary)",
-                                }}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDelete(v.id)}
-                                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                                style={{
-                                  background: "var(--danger-bg)",
-                                  color: "var(--danger)",
-                                  borderColor: "var(--danger)",
-                                }}
-                              >
-                                Hapus
-                              </button>
-                            </div>
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(v.id)}
+                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                            style={{
+                              background: "var(--danger-bg)",
+                              color: "var(--danger)",
+                              borderColor: "var(--danger)",
+                            }}
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full table-fixed min-w-[920px]">
+                  {colgroup}
+                  <thead>
+                    <tr style={{ background: "var(--bg-primary)" }}>
+                      {["No", "Nama Pelanggaran", "Kategori", "Poin", "Keterangan", ...(canManage ? ["Aksi"] : [])].map(
+                        (h) => (
+                          <th
+                            key={h}
+                            className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            {h}
+                          </th>
+                        )
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((v) => {
+                      const { code, title } = splitViolationName(v.name || "");
+                      return (
+                        <tr
+                          key={v.id}
+                          className="border-t"
+                          style={{ borderColor: "var(--border)" }}
+                        >
+                          <td
+                            className="px-3 py-3 text-xs font-semibold tabular-nums whitespace-nowrap align-top"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            {code || "—"}
                           </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ))}
+                          <td className="px-3 py-3 text-xs font-medium align-top break-words" style={{ color: "var(--text-primary)" }}>
+                            {title || v.name}
+                          </td>
+                          <td className="px-3 py-3 align-top">
+                            <CatBadge cat={v.category} />
+                          </td>
+                          <td className="px-3 py-3 align-top">
+                            <span
+                              className="inline-flex items-center justify-center min-w-9 h-5 px-1.5 rounded-full text-xs font-bold"
+                              style={{
+                                background:
+                                  v.points >= 51
+                                    ? "var(--danger-bg)"
+                                    : v.points >= 16
+                                      ? "var(--warning-bg)"
+                                      : "var(--success-bg)",
+                                color:
+                                  v.points >= 51
+                                    ? "var(--danger)"
+                                    : v.points >= 16
+                                      ? "var(--warning)"
+                                      : "var(--success)",
+                              }}
+                            >
+                              {v.points}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-xs align-top break-words" style={{ color: "var(--text-muted)" }}>
+                            {v.description || "—"}
+                          </td>
+                          {canManage && (
+                            <td className="px-3 py-3 align-top">
+                              <div className="flex flex-wrap gap-1.5">
+                                <button
+                                  onClick={() => openEdit(v)}
+                                  className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                                  style={{
+                                    borderColor: "var(--border)",
+                                    color: "var(--text-secondary)",
+                                    background: "var(--bg-primary)",
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(v.id)}
+                                  className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                                  style={{
+                                    background: "var(--danger-bg)",
+                                    color: "var(--danger)",
+                                    borderColor: "var(--danger)",
+                                  }}
+                                >
+                                  Hapus
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </SectionAccordion>
+          );
+        })}
         {!grouped.length && (
           <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>
             Tidak ada pelanggaran untuk filter ini.
@@ -674,6 +840,7 @@ export default function ViolationsClient({
       </div>
 
       {modalUi}
+      {bagianModalUi}
     </div>
   );
 }

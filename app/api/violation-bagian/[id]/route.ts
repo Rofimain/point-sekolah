@@ -1,0 +1,68 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { canManageData } from "@/lib/staff-roles";
+
+export const dynamic = "force-dynamic";
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  if (!session || !canManageData(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const body = (await req.json().catch(() => ({}))) as {
+    label?: string;
+    sortOrder?: number;
+    active?: boolean;
+  };
+
+  const data: { label?: string; sortOrder?: number; active?: boolean } = {};
+  if (typeof body.label === "string" && body.label.trim().length >= 2) data.label = body.label.trim();
+  if (typeof body.sortOrder === "number" && Number.isFinite(body.sortOrder)) {
+    data.sortOrder = Math.trunc(body.sortOrder);
+  }
+  if (typeof body.active === "boolean") data.active = body.active;
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "Tidak ada perubahan" }, { status: 400 });
+  }
+
+  try {
+    const row = await prisma.violationBagian.update({ where: { id }, data });
+    return NextResponse.json(row);
+  } catch {
+    return NextResponse.json({ error: "Bagian tidak ditemukan" }, { status: 404 });
+  }
+}
+
+/** Soft-delete (active=false). Tolak hard-delete jika masih dipakai jenis pelanggaran aktif. */
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  if (!session || !canManageData(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const usage = await prisma.violationType.count({ where: { section: id, active: true } });
+  if (usage > 0) {
+    return NextResponse.json(
+      {
+        error: `Masih dipakai ${usage} jenis pelanggaran aktif. Pindahkan jenis itu dulu, atau nonaktifkan bagian.`,
+      },
+      { status: 409 }
+    );
+  }
+
+  try {
+    const row = await prisma.violationBagian.update({
+      where: { id },
+      data: { active: false },
+    });
+    return NextResponse.json({ ok: true, item: row });
+  } catch {
+    return NextResponse.json({ error: "Bagian tidak ditemukan" }, { status: 404 });
+  }
+}

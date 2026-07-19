@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import StudentFormClient from "./StudentFormClient";
 import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 import { getQuietMonthCountdown } from "@/lib/quiet-month-reduction";
+import { listViolationBagian } from "@/lib/violation-bagian";
 
 /** Form siswa query DB per session — skip static generation saat image build. */
 export const dynamic = "force-dynamic";
@@ -37,9 +38,10 @@ export default async function StudentFormPage() {
     take: 20,
   });
 
-  const [{ effective }, remisiCountdown] = await Promise.all([
+  const [{ effective }, remisiCountdown, bagian] = await Promise.all([
     getEffectivePointsBreakdown(session.user.id),
     getQuietMonthCountdown(session.user.id),
+    listViolationBagian(),
   ]);
 
   let pointAdjustments: {
@@ -83,6 +85,7 @@ export default async function StudentFormPage() {
       studentNisn={student?.nisn ?? null}
       studentPhotoPresent={student?.photoPresent ?? false}
       studentPhotoCacheKey={student?.updatedAt?.toISOString() ?? null}
+      bagian={bagian}
     />
   );
 }

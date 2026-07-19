@@ -14,6 +14,7 @@ import { calendarTodayYmd, dateToYmdInput } from "@/lib/incident-date";
 import { EvidencePreviewModal } from "@/components/records/EvidencePreviewModal";
 import { EvidenceMultiUploader } from "@/components/records/EvidenceMultiUploader";
 import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
+import type { ViolationBagianRow } from "@/lib/violation-sections";
 
 const SESSION_SLOTS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 
@@ -34,6 +35,7 @@ export default function RecordsClient({
   perPage,
   classes,
   violationTypes,
+  bagian = [],
   studentsForPicker,
   totalPointsMap,
   searchParams,
@@ -46,6 +48,7 @@ export default function RecordsClient({
   perPage: number;
   classes: { id: string; name: string; grade: string }[];
   violationTypes: any[];
+  bagian?: ViolationBagianRow[];
   studentsForPicker: PickerStudent[];
   totalPointsMap: Record<string, number>;
   searchParams: { grade?: string; classId?: string; search?: string; page?: string };
@@ -778,6 +781,7 @@ export default function RecordsClient({
                 <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Jenis Pelanggaran</label>
                 <ViolationTypePicker
                   violationTypes={violationTypes}
+                  bagian={bagian}
                   value={editVtId}
                   onChange={(id) => {
                     setEditVtId(id);
@@ -889,6 +893,7 @@ export default function RecordsClient({
                 <ViolationTypePicker
                   label="Jenis pelanggaran"
                   violationTypes={violationTypes}
+                  bagian={bagian}
                   value={addVtId}
                   onChange={setAddVtId}
                 />

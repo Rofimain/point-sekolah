@@ -4,7 +4,10 @@ import { QUIET_MONTH_REASON } from "../lib/student-effective-points";
 import { applyQuietMonthReductionForStudent } from "../lib/quiet-month-reduction";
 import { createPrismaClient } from "../lib/prisma";
 import { DEFAULT_PRINT_TEMPLATES, PRINT_TEMPLATES_LAYOUT_VERSION } from "../lib/print-templates";
+import { plainTextToDocumentHtml } from "../lib/document-html";
+import { DEFAULT_PAGE_SETTINGS, serializePageSettings } from "../lib/document-page";
 import { PASAL_15_VIOLATIONS, pasal15ToCreateInput } from "./pasal-15-violations";
+import { DEFAULT_VIOLATION_BAGIAN } from "../lib/violation-sections";
 
 const prisma = createPrismaClient();
 
@@ -27,6 +30,15 @@ async function main() {
     prisma.class.upsert({ where: { id: "cls-xii-ipa1" }, update: {}, create: { id: "cls-xii-ipa1", name: "XII IPA 1", grade: "XII", major: "IPA", year: "2025/2026" } }),
     prisma.class.upsert({ where: { id: "cls-xii-ips1" }, update: {}, create: { id: "cls-xii-ips1", name: "XII IPS 1", grade: "XII", major: "IPS", year: "2025/2026" } }),
   ]);
+
+  // Master bagian jenis pelanggaran
+  for (const b of DEFAULT_VIOLATION_BAGIAN) {
+    await prisma.violationBagian.upsert({
+      where: { id: b.id },
+      update: { label: b.label, sortOrder: b.sortOrder, active: true },
+      create: { id: b.id, label: b.label, sortOrder: b.sortOrder, active: true },
+    });
+  }
 
   // Jenis pelanggaran per bagian (Kelakuan / Kerajinan / Kerapihan)
   for (const v of PASAL_15_VIOLATIONS) {
@@ -301,13 +313,15 @@ async function main() {
       where: { slug: t.slug },
       update: {
         title: t.title,
-        body: t.body,
+        body: plainTextToDocumentHtml(t.body),
+        pageSettings: serializePageSettings(DEFAULT_PAGE_SETTINGS),
         sortOrder: t.sortOrder,
       },
       create: {
         slug: t.slug,
         title: t.title,
-        body: t.body,
+        body: plainTextToDocumentHtml(t.body),
+        pageSettings: serializePageSettings(DEFAULT_PAGE_SETTINGS),
         sortOrder: t.sortOrder,
       },
     });
