@@ -45,6 +45,7 @@ export default async function UsersPage({
         googleSub: true,
         authProvider: true,
         photoPresent: true,
+        jabatan: true,
         createdAt: true,
         updatedAt: true,
         class: true,

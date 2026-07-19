@@ -8,6 +8,7 @@ import { sendParentViolationTelegram } from "@/lib/telegram-notify";
 import { parseOptionalIncidentDate } from "@/lib/incident-date";
 import { normalizeEvidenceImagesFromBody } from "@/lib/evidence-data-url";
 import { replaceRecordEvidenceImages } from "@/lib/record-evidence-images";
+import { formatStaffDisplayName } from "@/lib/staff-roles";
 import { recordDataAccessLog } from "@/lib/access-log";
 
 const studentRecordSelect = {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
     if (!studentId) return NextResponse.json({ error: "studentId diperlukan" }, { status: 400 });
     const student = await prisma.user.findFirst({
-      where: { OR: [{ id: studentId }, { nisn: studentId }], role: "STUDENT" },
+      where: { OR: [{ id: studentId }, { nisn: studentId }], role: "STUDENT", deletedAt: null },
     });
     if (!student) return NextResponse.json({ error: "Siswa tidak ditemukan" }, { status: 404 });
     targetStudentId = student.id;
@@ -59,6 +60,20 @@ export async function POST(req: NextRequest) {
   const incident = parseOptionalIncidentDate(dateInput);
   if (!incident.ok) return NextResponse.json({ error: incident.error }, { status: 400 });
 
+  let createdByName: string | undefined;
+  if (session.user.role === "STUDENT") {
+    createdByName = session.user.name ?? undefined;
+  } else {
+    const staff = await prisma.user.findFirst({
+      where: { id: session.user.id, deletedAt: null },
+      select: { name: true, jabatan: true },
+    });
+    createdByName = formatStaffDisplayName({
+      name: staff?.name ?? session.user.name,
+      jabatan: staff?.jabatan,
+    });
+  }
+
   let record;
   try {
     record = await prisma.violationRecord.create({
@@ -70,7 +85,7 @@ export async function POST(req: NextRequest) {
         points: resolvedPoints,
         date: incident.date,
         submittedByStudent: session.user.role === "STUDENT",
-        createdByName: session.user.name ?? undefined,
+        createdByName,
         evidenceImageData: evidenceImages[0] ?? null,
         evidenceImagePresent: evidenceImages.length > 0,
         studentSignatureData: signature && signature.trim() ? signature.trim() : null,
@@ -89,7 +104,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Gagal menyimpan catatan. Coba lagi." }, { status: 500 });
   }
 
-  const staffName = session.user.role === "STUDENT" ? null : session.user.name ?? null;
+  const staffName = session.user.role === "STUDENT" ? null : createdByName ?? null;
   const payload = {
     studentName: record.student.name,
     violationName: record.violationType.name,

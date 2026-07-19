@@ -337,13 +337,14 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "piket@sman1contoh.sch.id" },
-    update: { role: Role.ADMIN, active: true, status: "ACTIVE" },
+    update: { role: Role.ADMIN, active: true, status: "ACTIVE", jabatan: "Piket" },
     create: {
       email: "piket@sman1contoh.sch.id",
       name: "Bidang Pertahanan Sekolah",
       password: teacherPwd,
       role: Role.ADMIN,
       nip: "198201011990032001",
+      jabatan: "Piket",
       active: true,
       status: "ACTIVE",
       createdFrom: "MANUAL",
@@ -351,13 +352,14 @@ async function main() {
   });
   await prisma.user.upsert({
     where: { email: "walas.mipa1@sman1contoh.sch.id" },
-    update: { role: Role.TEACHER, classId: null, active: true, status: "ACTIVE" },
+    update: { role: Role.TEACHER, classId: null, active: true, status: "ACTIVE", jabatan: "Wali Kelas X MIPA 1" },
     create: {
       email: "walas.mipa1@sman1contoh.sch.id",
-      name: "Wali Kelas X MIPA 1",
+      name: "Siti Walas",
       password: teacherPwd,
       role: Role.TEACHER,
       nip: "198303031990033001",
+      jabatan: "Wali Kelas X MIPA 1",
       active: true,
       status: "ACTIVE",
       createdFrom: "MANUAL",

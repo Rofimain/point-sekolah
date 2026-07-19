@@ -46,6 +46,8 @@ model User {
   photoData        String?           @db.Text
   /// Ringkas untuk UI daftar — ada foto (tanpa load kolom besar)
   photoPresent     Boolean           @default(false)
+  /// Jabatan tampilan (mis. "Piket", "Wali Kelas X IPA 1") — bukan permission
+  jabatan          String?
   /// Soft-delete — null = aktif di daftar; set saat dihapus lewat UI/API
   deletedAt        DateTime?
   createdAt        DateTime          @default(now())

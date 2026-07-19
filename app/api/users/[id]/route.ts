@@ -123,9 +123,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (nextRoleResolved === "STUDENT") {
     if (body.classId !== undefined) updateData.classId = body.classId || null;
     updateData.nip = null;
+    updateData.jabatan = null;
   } else {
     updateData.classId = null;
     updateData.nisn = null;
+    if (body.jabatan !== undefined) {
+      updateData.jabatan =
+        typeof body.jabatan === "string" && body.jabatan.trim()
+          ? body.jabatan.trim().slice(0, 120)
+          : null;
+    }
   }
 
   if (nextRoleResolved === "STUDENT") {

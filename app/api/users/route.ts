@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json();
-  const { name, email, password, role, nisn, nip, classId, active, photoData } = body;
+  const { name, email, password, role, nisn, nip, classId, active, photoData, jabatan } = body;
   if (!name || !email || !password) return NextResponse.json({ error: "Nama, email, password wajib" }, { status: 400 });
   if (!role || !VALID_ROLES.has(String(role))) {
     return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
@@ -51,6 +51,12 @@ export async function POST(req: NextRequest) {
   const r = role as Role;
   const wantActive = active ?? true;
   const statusFields = lifecycleFieldsForStatus(statusFromActiveToggle(Boolean(wantActive)));
+  const jabatanValue =
+    r === "STUDENT"
+      ? null
+      : typeof jabatan === "string" && jabatan.trim()
+        ? jabatan.trim().slice(0, 120)
+        : null;
   const user = await prisma.user.create({
     data: {
       name,
@@ -60,6 +66,7 @@ export async function POST(req: NextRequest) {
       nisn: r === "STUDENT" ? nisn || null : null,
       nip: r === "STUDENT" ? null : nip || null,
       classId: r === "STUDENT" ? classId || null : null,
+      jabatan: jabatanValue,
       parentTelegram: null,
       parentTelegramLinkToken: r === "STUDENT" ? newParentLinkToken() : null,
       ...statusFields,

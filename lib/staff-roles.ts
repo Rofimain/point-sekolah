@@ -35,11 +35,11 @@ export function canManageData(role: string | undefined | null): boolean {
 }
 
 /**
- * Staf (Guru/Admin/Super Admin) boleh mengakses manajemen pengguna.
- * Batasan ubah/hapus pakai canModifyUser / canDeleteUser.
+ * Akses halaman/API manajemen pengguna.
+ * TEACHER tidak mengelola user (tidak boleh membuat/hapus/ubah role siapa pun).
  */
 export function canManageUsers(role: string | undefined | null): boolean {
-  return isStaffRole(role);
+  return isAdminRole(role) || isSuperAdmin(role);
 }
 
 /** Semua staf boleh menambah catatan pelanggaran. */
@@ -50,8 +50,8 @@ export function canCreateViolationRecord(role: string | undefined | null): boole
 /**
  * Boleh membuat user dengan role target?
  * - SUPER_ADMIN: semua role
- * - Staf lain: role dengan rank ≤ dirinya, kecuali SUPER_ADMIN (hanya sesama SA)
- *   → Guru boleh tambah Guru/Siswa; Admin boleh tambah Admin/Guru/Siswa
+ * - ADMIN: STUDENT, TEACHER, ADMIN (bukan SUPER_ADMIN)
+ * - TEACHER: tidak boleh membuat user apa pun
  */
 export function canCreateUserWithRole(
   actorRole: string | undefined | null,
@@ -59,31 +59,56 @@ export function canCreateUserWithRole(
 ): boolean {
   if (!actorRole || !newRole || !(newRole in ROLE_RANK)) return false;
   if (isSuperAdmin(actorRole)) return true;
-  if (!isStaffRole(actorRole)) return false;
-  if (newRole === "SUPER_ADMIN") return false;
-  return roleRank(newRole) <= roleRank(actorRole);
+  if (isAdminRole(actorRole)) {
+    return newRole === "STUDENT" || newRole === "TEACHER" || newRole === "ADMIN";
+  }
+  return false;
 }
 
 /**
- * Ubah akun target: SUPER_ADMIN bebas; selain itu actor harus rank > target
- * (tidak boleh ubah peer atau atasan).
+ * Ubah akun target (termasuk nonaktifkan / ubah field):
+ * - SUPER_ADMIN: bebas
+ * - ADMIN: hanya TEACHER dan STUDENT (bukan peer ADMIN / SUPER_ADMIN)
+ * - TEACHER: tidak boleh
  */
 export function canModifyUser(
   actorRole: string | undefined | null,
   targetRole: string | undefined | null
 ): boolean {
   if (isSuperAdmin(actorRole)) return true;
-  if (!isStaffRole(actorRole)) return false;
-  return roleRank(actorRole) > roleRank(targetRole);
+  if (isAdminRole(actorRole)) {
+    return targetRole === "TEACHER" || targetRole === "STUDENT";
+  }
+  return false;
 }
 
 /**
- * Hapus akun target: sama aturan dengan canModifyUser
- * (guru tidak boleh hapus guru lain; hanya SUPER_ADMIN yang boleh hapus SUPER_ADMIN).
+ * Hapus akun target — sama batasan dengan canModifyUser.
  */
 export function canDeleteUser(
   actorRole: string | undefined | null,
   targetRole: string | undefined | null
 ): boolean {
   return canModifyUser(actorRole, targetRole);
+}
+
+/** Label tampilan role (bukan jabatan). */
+export function getRoleLabel(role: string): string {
+  const map: Record<string, string> = {
+    STUDENT: "Siswa",
+    TEACHER: "Guru",
+    ADMIN: "Admin",
+    SUPER_ADMIN: "Super Admin",
+  };
+  return map[role] || role;
+}
+
+/** Nama staf + jabatan opsional untuk kolom "dicatat oleh". */
+export function formatStaffDisplayName(user: {
+  name?: string | null;
+  jabatan?: string | null;
+}): string {
+  const name = user.name?.trim() || "Staf";
+  const jabatan = user.jabatan?.trim();
+  return jabatan ? `${name} (${jabatan})` : name;
 }

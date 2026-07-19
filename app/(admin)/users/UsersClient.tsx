@@ -38,6 +38,7 @@ const emptyForm = {
   role: "STUDENT" as typeof ROLES[number],
   nisn: "",
   nip: "",
+  jabatan: "",
   classId: "",
   active: true,
 };
@@ -108,9 +109,16 @@ function GoogleLinkBadge({ u }: { u: { googleSub?: string | null; email?: string
   );
 }
 
-function kelasAtauNip(u: { role: string; class?: { name: string } | null; nisn?: string | null; nip?: string | null }) {
+function kelasAtauNip(u: {
+  role: string;
+  class?: { name: string } | null;
+  nisn?: string | null;
+  nip?: string | null;
+  jabatan?: string | null;
+}) {
   if (u.role === "STUDENT") return u.class?.name || "—";
-  return u.nip?.trim() || "—";
+  const parts = [u.nip?.trim(), u.jabatan?.trim()].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "—";
 }
 
 
@@ -173,6 +181,7 @@ export default function UsersClient({
       role: u.role,
       nisn: u.nisn || "",
       nip: u.nip || "",
+      jabatan: u.jabatan || "",
       classId: u.classId || "",
       active: u.active,
     });
@@ -215,6 +224,7 @@ export default function UsersClient({
         role: form.role,
         nisn: form.nisn || null,
         nip: form.nip || null,
+        jabatan: form.role === "STUDENT" ? null : form.jabatan.trim() || null,
         active: form.active,
       };
       if (form.role === "STUDENT") {
@@ -507,7 +517,11 @@ export default function UsersClient({
   const roleParam = (searchParams.role || "").trim();
   const showClassFilter = roleParam === "STUDENT";
   const metaColumnLabel =
-    roleParam === "STUDENT" ? "Kelas" : roleParam === "TEACHER" || roleParam === "ADMIN" || roleParam === "SUPER_ADMIN" ? "NIP" : "Kelas / NIP";
+    roleParam === "STUDENT"
+      ? "Kelas"
+      : roleParam === "TEACHER" || roleParam === "ADMIN" || roleParam === "SUPER_ADMIN"
+        ? "NIP / Jabatan"
+        : "Kelas / NIP / Jabatan";
 
   return (
     <div>
@@ -1178,10 +1192,28 @@ export default function UsersClient({
                   </div>
                 )}
                 {form.role !== "STUDENT" && (
-                  <div>
-                    <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>NIP</label>
-                    <input value={form.nip} onChange={e => setForm({ ...form, nip: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>NIP</label>
+                      <input value={form.nip} onChange={e => setForm({ ...form, nip: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" htmlFor="user-jabatan" style={{ color: "var(--text-secondary)" }}>
+                        Jabatan (opsional)
+                      </label>
+                      <input
+                        id="user-jabatan"
+                        value={form.jabatan}
+                        onChange={(e) => setForm({ ...form, jabatan: e.target.value })}
+                        placeholder="Contoh: Piket, Wali Kelas X IPA 1"
+                        className="w-full px-3 py-2 rounded-lg border text-sm"
+                        style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                      />
+                      <p className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                        Label tampilan saja — tidak mengubah hak akses.
+                      </p>
+                    </div>
+                  </>
                 )}
                 <div className="col-span-2 flex items-center gap-2">
                   <input
