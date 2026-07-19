@@ -1,6 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderTemplate, slugifyPrintTemplate, escapeHtml, sortPrintTemplates } from "../lib/print-templates";
+import {
+  renderTemplate,
+  slugifyPrintTemplate,
+  escapeHtml,
+  sortPrintTemplates,
+  findUnrecognizedPlaceholders,
+  extractPlaceholderKeys,
+  TEMPLATE_OFFICIAL_PLACEHOLDERS,
+  DEFAULT_PRINT_TEMPLATES,
+} from "../lib/print-templates";
 
 test("renderTemplate mengganti placeholder", () => {
   const out = renderTemplate("Nama: {{nama}}, kelas {{kelas}}", {
@@ -33,4 +42,19 @@ test("sortPrintTemplates mengurutkan sortOrder lalu judul", () => {
     rows.map((r) => r.title),
     ["A", "Z", "B"]
   );
+});
+
+test("findUnrecognizedPlaceholders soft-warn for typos", () => {
+  const unknown = findUnrecognizedPlaceholders("Halo {{nama}} dan {{nama_siswa}}", "sp1");
+  assert.deepEqual(unknown, ["nama_siswa"]);
+});
+
+test("default templates use only official placeholders for their slug", () => {
+  for (const t of DEFAULT_PRINT_TEMPLATES) {
+    const official = new Set(TEMPLATE_OFFICIAL_PLACEHOLDERS[t.slug] || []);
+    const used = extractPlaceholderKeys(t.body);
+    for (const key of used) {
+      assert.ok(official.has(key), `${t.slug} uses non-official {{${key}}}`);
+    }
+  }
 });

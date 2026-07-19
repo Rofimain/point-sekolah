@@ -42,6 +42,15 @@ test("isLikelyHtmlDocument detects html", () => {
   assert.equal(isLikelyHtmlDocument("Nama: {{nama}}"), false);
 });
 
+test("page settings default is F4 kop", () => {
+  const parsed = parsePageSettings(null);
+  assert.equal(parsed.paper, "F4");
+  assert.equal(parsed.margin, "kop");
+  const box = resolvePageBox(parsed);
+  assert.equal(box.widthMm, 216);
+  assert.equal(box.heightMm, 330);
+});
+
 test("page settings roundtrip", () => {
   const raw = serializePageSettings({ ...DEFAULT_PAGE_SETTINGS, paper: "F4", orientation: "landscape" });
   const parsed = parsePageSettings(raw);
@@ -49,7 +58,7 @@ test("page settings roundtrip", () => {
   assert.equal(parsed.orientation, "landscape");
   const box = resolvePageBox(parsed);
   assert.equal(box.widthMm, 330);
-  assert.equal(box.heightMm, 215);
+  assert.equal(box.heightMm, 216);
 });
 
 test("buildSampleVars includes core keys", () => {

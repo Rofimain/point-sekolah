@@ -1,6 +1,6 @@
 export type PaperSize = "A4" | "Letter" | "Legal" | "F4";
 export type PageOrientation = "portrait" | "landscape";
-export type MarginPreset = "normal" | "narrow" | "wide" | "custom";
+export type MarginPreset = "kop" | "normal" | "narrow" | "wide" | "custom";
 
 export type DocumentMarginsMm = {
   top: number;
@@ -24,19 +24,22 @@ export const PAPER_SIZES_MM: Record<PaperSize, { width: number; height: number; 
   A4: { width: 210, height: 297, label: "A4" },
   Letter: { width: 215.9, height: 279.4, label: "Letter" },
   Legal: { width: 215.9, height: 355.6, label: "Legal" },
-  F4: { width: 215, height: 330, label: "F4 / Folio" },
+  /** Folio Indonesia umum untuk surat sekolah. */
+  F4: { width: 216, height: 330, label: "F4 / Folio" },
 };
 
 export const MARGIN_PRESETS_MM: Record<Exclude<MarginPreset, "custom">, DocumentMarginsMm> = {
+  /** Default untuk kertas kop tercetak (atas lega). */
+  kop: { top: 35, right: 25, bottom: 25, left: 25 },
   normal: { top: 20, right: 20, bottom: 20, left: 20 },
   narrow: { top: 12.7, right: 12.7, bottom: 12.7, left: 12.7 },
   wide: { top: 30, right: 30, bottom: 30, left: 30 },
 };
 
 export const DEFAULT_PAGE_SETTINGS: DocumentPageSettings = {
-  paper: "A4",
+  paper: "F4",
   orientation: "portrait",
-  margin: "normal",
+  margin: "kop",
   headerHtml: "",
   footerHtml: "",
   showPageNumbers: false,
@@ -46,12 +49,12 @@ export function resolveMargins(settings: DocumentPageSettings): DocumentMarginsM
   if (settings.margin === "custom" && settings.customMarginMm) {
     return settings.customMarginMm;
   }
-  const preset = settings.margin === "custom" ? "normal" : settings.margin;
-  return MARGIN_PRESETS_MM[preset];
+  const preset = settings.margin === "custom" ? "kop" : settings.margin;
+  return MARGIN_PRESETS_MM[preset] ?? MARGIN_PRESETS_MM.kop;
 }
 
 export function resolvePageBox(settings: DocumentPageSettings): { widthMm: number; heightMm: number } {
-  const paper = PAPER_SIZES_MM[settings.paper] ?? PAPER_SIZES_MM.A4;
+  const paper = PAPER_SIZES_MM[settings.paper] ?? PAPER_SIZES_MM.F4;
   if (settings.orientation === "landscape") {
     return { widthMm: paper.height, heightMm: paper.width };
   }
@@ -62,9 +65,17 @@ export function parsePageSettings(raw: string | null | undefined): DocumentPageS
   if (!raw?.trim()) return { ...DEFAULT_PAGE_SETTINGS };
   try {
     const parsed = JSON.parse(raw) as Partial<DocumentPageSettings>;
+    const margin = parsed.margin;
+    const validMargin: MarginPreset =
+      margin === "kop" || margin === "normal" || margin === "narrow" || margin === "wide" || margin === "custom"
+        ? margin
+        : DEFAULT_PAGE_SETTINGS.margin;
     return {
       ...DEFAULT_PAGE_SETTINGS,
       ...parsed,
+      paper: parsed.paper && parsed.paper in PAPER_SIZES_MM ? parsed.paper : DEFAULT_PAGE_SETTINGS.paper,
+      orientation: parsed.orientation === "landscape" ? "landscape" : "portrait",
+      margin: validMargin,
       customMarginMm: parsed.customMarginMm ?? DEFAULT_PAGE_SETTINGS.customMarginMm,
       headerHtml: typeof parsed.headerHtml === "string" ? parsed.headerHtml : "",
       footerHtml: typeof parsed.footerHtml === "string" ? parsed.footerHtml : "",
@@ -79,7 +90,7 @@ export function serializePageSettings(settings: DocumentPageSettings): string {
   return JSON.stringify(settings);
 }
 
-/** CSS @page size string, e.g. "A4 portrait" or "215mm 330mm". */
+/** CSS @page size string, e.g. "A4 portrait" or "216mm 330mm". */
 export function pageSizeCss(settings: DocumentPageSettings): string {
   const { widthMm, heightMm } = resolvePageBox(settings);
   if (settings.paper === "A4" || settings.paper === "Letter" || settings.paper === "Legal") {
@@ -198,7 +209,6 @@ export function buildDocumentPageCss(settings: DocumentPageSettings, options?: {
   padding: 0 8px;
   font-family: system-ui, sans-serif;
 }
-/* Blok akhir surat jangan putus ke halaman berikutnya jika masih muat */
 .doc-page-body p:last-child,
 .doc-page-body p:nth-last-child(-n+4) {
   break-inside: avoid;
@@ -219,7 +229,6 @@ export function buildDocumentPageCss(settings: DocumentPageSettings, options?: {
     min-height: 0 !important;
     max-width: none !important;
     margin: 0 !important;
-    /* Margin sudah di @page — jangan dobel */
     padding: 0 !important;
     box-shadow: none !important;
     display: block !important;
@@ -231,7 +240,6 @@ export function buildDocumentPageCss(settings: DocumentPageSettings, options?: {
     break-inside: avoid;
     page-break-inside: avoid;
   }
-  /* Nomor halaman dekoratif layar: jangan cetak (bikin orphan page) */
   .doc-page-footer.doc-footer-pagenum-only { display: none !important; }
   @page {
     size: ${pageSizeCss(settings)};

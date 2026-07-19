@@ -15,11 +15,19 @@ function isPrintTemplateTableMissing(e: unknown): boolean {
   );
 }
 
-export default async function StaffStudentPrintPointsPage({ params }: { params: Promise<{ studentId: string }> }) {
+export default async function StaffStudentPrintPointsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ studentId: string }>;
+  searchParams: Promise<{ from?: string; template?: string }>;
+}) {
   const session = await getSafeServerSession();
   if (!session || !isStaffRole(session.user.role)) redirect("/admin/login");
 
   const { studentId } = await params;
+  const sp = await searchParams;
+  const fromCetakSurat = sp.from === "cetak-surat";
 
   const [print, student, breakdown, records, adjustments, quietDays] = await Promise.all([
     getPrintBlock(),
@@ -77,6 +85,9 @@ export default async function StaffStudentPrintPointsPage({ params }: { params: 
       issued={new Date()}
       redaksi={print.redaksi}
       letterTemplates={letterTemplates}
+      initialTemplateSlug={sp.template ?? null}
+      backHref={fromCetakSurat ? "/cetak-surat" : "/students"}
+      backLabel={fromCetakSurat ? "← Kembali ke Cetak surat" : "← Kembali ke daftar siswa"}
       breakdown={breakdown}
       quietDays={quietDays}
       history={{

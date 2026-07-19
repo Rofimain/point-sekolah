@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   PRINT_PLACEHOLDERS,
+  TEMPLATE_OFFICIAL_PLACEHOLDERS,
+  findUnrecognizedPlaceholders,
   sortPrintTemplates,
 } from "@/lib/print-templates";
 import {
@@ -290,6 +292,20 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
 
   const previewVars = useMemo(() => buildSampleVars(), []);
 
+  const unrecognizedPlaceholders = useMemo(
+    () => findUnrecognizedPlaceholders(body, slug),
+    [body, slug]
+  );
+
+  const suggestedPlaceholders = useMemo(() => {
+    const official = TEMPLATE_OFFICIAL_PLACEHOLDERS[slug];
+    if (!official) return PRINT_PLACEHOLDERS;
+    const set = new Set(official);
+    const primary = PRINT_PLACEHOLDERS.filter((p) => set.has(p.key));
+    const rest = PRINT_PLACEHOLDERS.filter((p) => !set.has(p.key));
+    return [...primary, ...rest];
+  }, [slug]);
+
   return (
     <div>
       <div className="mb-5 no-print">
@@ -468,19 +484,31 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                       Sisipkan placeholder
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {PRINT_PLACEHOLDERS.map((p) => (
+                      {suggestedPlaceholders.map((p) => (
                         <button
                           key={p.key}
                           type="button"
                           title={p.label}
                           onClick={() => insertPlaceholder(p.key)}
                           className="rounded-md border px-2 py-1 text-[10px] font-mono"
-                          style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                          style={{
+                            borderColor: "var(--border)",
+                            color: "var(--text-secondary)",
+                            background: "var(--bg-primary)",
+                            opacity: TEMPLATE_OFFICIAL_PLACEHOLDERS[slug]?.includes(p.key) === false ? 0.65 : 1,
+                          }}
                         >
                           {`{{${p.key}}}`}
                         </button>
                       ))}
                     </div>
+                    {unrecognizedPlaceholders.length > 0 && (
+                      <p className="mt-2 text-[11px] leading-relaxed" style={{ color: "var(--warning)" }}>
+                        Peringatan: token tidak ada di daftar resmi jenis surat ini:{" "}
+                        {unrecognizedPlaceholders.map((k) => `{{${k}}}`).join(", ")}. Tidak memblokir simpan —
+                        boleh tetap dipakai jika sengaja.
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2 pt-1">

@@ -198,7 +198,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
 
   useEffect(() => {
     if (pathname.startsWith("/records")) setOpenMenu("records");
-    else if (pathname.startsWith("/students")) setOpenMenu("students");
+    else if (pathname.startsWith("/students") && !pathname.includes("/cetak")) setOpenMenu("students");
     else if (pathname.startsWith("/users")) setOpenMenu("users");
     else if (pathname.startsWith("/settings")) setOpenMenu("settings");
     else setOpenMenu(null);
@@ -262,7 +262,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
 
           <SplitNavRow
             href="/students"
-            active={pathname.startsWith("/students")}
+            active={pathname.startsWith("/students") && !pathname.includes("/cetak")}
             open={openMenu === "students"}
             onToggle={() => setOpenMenu((m) => (m === "students" ? null : "students"))}
             ariaToggle="Buka daftar kelas — Data Siswa"
@@ -275,19 +275,31 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             }
             label="Data Siswa"
           >
-            <SubmenuLink href="/students" active={!classId && pathname.startsWith("/students")}>
+            <SubmenuLink href="/students" active={!classId && pathname.startsWith("/students") && !pathname.includes("/cetak")}>
               Semua kelas
             </SubmenuLink>
             {classes.map((c) => (
               <SubmenuLink
                 key={c.id}
                 href={`/students?classId=${c.id}`}
-                active={classId === c.id && pathname.startsWith("/students")}
+                active={classId === c.id && pathname.startsWith("/students") && !pathname.includes("/cetak")}
               >
                 {c.name.trim() || c.grade || "—"}
               </SubmenuLink>
             ))}
           </SplitNavRow>
+
+          <SimpleNavLink
+            href="/cetak-surat"
+            active={pathname.startsWith("/cetak-surat") || (pathname.includes("/students/") && pathname.includes("/cetak"))}
+            icon={
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" strokeLinecap="round" />
+                <path d="M6 14h12v8H6z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
+            label="Cetak surat"
+          />
         </div>
 
         <div className="px-3 pb-2 pt-2">

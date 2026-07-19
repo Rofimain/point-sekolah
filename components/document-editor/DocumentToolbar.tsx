@@ -273,13 +273,14 @@ export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, on
             if (margin === "custom") {
               update({
                 margin,
-                customMarginMm: pageSettings.customMarginMm ?? MARGIN_PRESETS_MM.normal,
+                customMarginMm: pageSettings.customMarginMm ?? MARGIN_PRESETS_MM.kop,
               });
             } else {
               update({ margin });
             }
           }}
         >
+          <option value="kop">Margin Kop Surat</option>
           <option value="normal">Margin Normal</option>
           <option value="narrow">Margin Narrow</option>
           <option value="wide">Margin Wide</option>
@@ -296,14 +297,14 @@ export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, on
                   step={1}
                   className="h-7 w-12 rounded border px-1 text-[11px]"
                   style={{ borderColor: "var(--border)", background: "var(--bg-secondary)", color: "var(--text-primary)" }}
-                  value={pageSettings.customMarginMm?.[side] ?? 25}
+                  value={pageSettings.customMarginMm?.[side] ?? MARGIN_PRESETS_MM.kop[side]}
                   onChange={(e) =>
                     update({
                       customMarginMm: {
-                        top: pageSettings.customMarginMm?.top ?? 25,
-                        right: pageSettings.customMarginMm?.right ?? 25,
-                        bottom: pageSettings.customMarginMm?.bottom ?? 25,
-                        left: pageSettings.customMarginMm?.left ?? 25,
+                        top: pageSettings.customMarginMm?.top ?? MARGIN_PRESETS_MM.kop.top,
+                        right: pageSettings.customMarginMm?.right ?? MARGIN_PRESETS_MM.kop.right,
+                        bottom: pageSettings.customMarginMm?.bottom ?? MARGIN_PRESETS_MM.kop.bottom,
+                        left: pageSettings.customMarginMm?.left ?? MARGIN_PRESETS_MM.kop.left,
                         [side]: Number(e.target.value) || 0,
                       },
                     })

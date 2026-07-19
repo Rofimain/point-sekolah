@@ -582,7 +582,7 @@ export default function StudentsClient({
                         className="mt-2 inline-flex min-h-11 touch-manipulation items-center text-xs font-semibold hover:underline"
                         style={{ color: "var(--accent)" }}
                       >
-                        Info poin
+                        Cetak surat
                       </Link>
                     </div>
                   </li>
@@ -650,7 +650,7 @@ export default function StudentsClient({
                         className="inline-flex min-h-11 items-center text-xs font-semibold hover:underline touch-manipulation"
                         style={{ color: "var(--accent)" }}
                       >
-                        Info poin
+                        Cetak surat
                       </Link>
                     </td>
                   </tr>
