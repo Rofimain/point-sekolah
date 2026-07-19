@@ -58,6 +58,7 @@ model User {
   @@index([status])
   @@index([role, status])
   @@index([deletedAt])
+  @@index([classId])
 }
 
 /// Audit perubahan lifecycle / linking (bukan hard delete)
@@ -232,6 +233,11 @@ model ViolationRecord {
 
   @@index([submittedByStudent, createdAt])
   @@index([deletedAt])
+  @@index([studentId])
+  @@index([createdAt])
+  @@index([studentId, createdAt])
+  @@index([violationTypeId])
+  @@index([date])
 }
 
 /// Foto bukti pelanggaran (bisa banyak per catatan).
