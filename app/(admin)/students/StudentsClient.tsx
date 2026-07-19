@@ -97,6 +97,7 @@ export default function StudentsClient({
   const router = useRouter();
   const pathname = usePathname();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoZipInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const totalPages = Math.ceil(total / perPage);
   const canManage = canManageData(viewerRole);
@@ -143,6 +144,13 @@ export default function StudentsClient({
     photosAttached?: number;
     unmatchedPhotos?: string[];
     photoErrors?: { file: string; message: string }[];
+  } | null>(null);
+  const [photoUpdateClassId, setPhotoUpdateClassId] = useState("");
+  const [photoUpdateResult, setPhotoUpdateResult] = useState<{
+    updated: number;
+    unmatchedPhotos: string[];
+    photoErrors: { file: string; message: string }[];
+    truncatedErrors?: boolean;
   } | null>(null);
 
   const [classModalOpen, setClassModalOpen] = useState(false);
@@ -364,6 +372,38 @@ export default function StudentsClient({
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
       if (!data.failed) setTabQuery(null);
+      router.refresh();
+    } catch (err: unknown) {
+      setMsg({ type: "err", text: err instanceof Error ? err.message : "Gagal" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitPhotoZip(file: File) {
+    setMsg(null);
+    setPhotoUpdateResult(null);
+    setLoading(true);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      if (photoUpdateClassId) fd.set("classId", photoUpdateClassId);
+      const res = await fetch("/api/students/bulk-photos", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Update foto gagal");
+      setPhotoUpdateResult({
+        updated: data.updated ?? 0,
+        unmatchedPhotos: data.unmatchedPhotos || [],
+        photoErrors: data.photoErrors || [],
+        truncatedErrors: data.truncatedErrors,
+      });
+      setMsg({
+        type: data.updated > 0 ? "ok" : "err",
+        text: `Update foto: ${data.updated ?? 0} siswa diperbarui.${
+          (data.unmatchedPhotos?.length ?? 0) > 0 ? ` Tidak cocok: ${data.unmatchedPhotos.length}.` : ""
+        }`,
+      });
+      if (photoZipInputRef.current) photoZipInputRef.current.value = "";
       router.refresh();
     } catch (err: unknown) {
       setMsg({ type: "err", text: err instanceof Error ? err.message : "Gagal" });
@@ -1226,6 +1266,83 @@ export default function StudentsClient({
                     di bawah untuk baris tanpa kolom password. Siswa wajib ganti password saat login credentials pertama
                     kali.
                   </p>
+                </div>
+
+                <div
+                  className="mb-4 rounded-xl border p-4"
+                  style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
+                >
+                  <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                    Update foto massal (siswa sudah ada)
+                  </h3>
+                  <p className="mt-1 text-[10px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                    ZIP berisi foto saja (tanpa Excel). Nama file = nama siswa (boleh disingkat/inisial) atau NISN.
+                    Ekstensi <code className="text-[10px]">.jpg / .JPG / .jpeg / .png</code> aman. Opsional filter kelas
+                    agar matching lebih akurat.
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-end gap-3">
+                    <div className="min-w-[10rem] flex-1">
+                      <label className="mb-1 block text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                        Batasi ke kelas (opsional)
+                      </label>
+                      <select
+                        value={photoUpdateClassId}
+                        onChange={(e) => setPhotoUpdateClassId(e.target.value)}
+                        className="w-full rounded-xl border px-3 py-2 text-sm"
+                        style={{
+                          background: "var(--bg-secondary)",
+                          borderColor: "var(--border)",
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        <option value="">Semua kelas</option>
+                        {classes.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.grade} {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <input
+                      ref={photoZipInputRef}
+                      type="file"
+                      accept=".zip,application/zip,application/x-zip-compressed"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void submitPhotoZip(f);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => photoZipInputRef.current?.click()}
+                      className="rounded-xl border px-4 py-2 text-xs font-semibold disabled:opacity-50"
+                      style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-secondary)" }}
+                    >
+                      {loading ? "Memproses…" : "Unggah ZIP foto"}
+                    </button>
+                  </div>
+                  {photoUpdateResult && (
+                    <div className="mt-3 space-y-1 text-[11px]" style={{ color: "var(--text-secondary)" }}>
+                      <p>
+                        Diperbarui: <strong>{photoUpdateResult.updated}</strong>
+                        {photoUpdateResult.truncatedErrors ? " (daftar error dipotong)" : ""}
+                      </p>
+                      {(photoUpdateResult.photoErrors.length > 0 || photoUpdateResult.unmatchedPhotos.length > 0) && (
+                        <ul className="max-h-28 list-disc overflow-y-auto pl-4 text-[10px]" style={{ color: "var(--danger)" }}>
+                          {photoUpdateResult.photoErrors.map((e) => (
+                            <li key={`${e.file}-${e.message}`}>
+                              {e.file}: {e.message}
+                            </li>
+                          ))}
+                          {photoUpdateResult.unmatchedPhotos.map((n) => (
+                            <li key={n}>Tidak cocok: {n}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mb-4 grid gap-4 md:grid-cols-2">

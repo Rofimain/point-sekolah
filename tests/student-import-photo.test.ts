@@ -93,3 +93,31 @@ test("parseStudentImportPackage accepts bare xlsx", async () => {
   assert.equal(parsed.rows[0].name, "Budi");
   assert.equal(parsed.rows[0].photoData, undefined);
 });
+
+test("extractPhotosFromZip accepts uppercase .JPG and matches abbreviated name", async () => {
+  const { extractPhotosFromZip } = await import("../lib/extract-photos-from-zip");
+  const { assignPhotosToRows } = await import("../lib/student-photo-match");
+
+  const zip = new JSZip();
+  zip.file("foto/ahmad fauzi m.JPG", PNG_1X1);
+  zip.file("foto/0051234567.png", PNG_1X1);
+  const zipBuf = Buffer.from(await zip.generateAsync({ type: "uint8array" }));
+
+  const extracted = await extractPhotosFromZip(zipBuf);
+  assert.equal(extracted.photos.length, 2);
+  assert.ok(extracted.photos.some((p) => p.stem.toLowerCase() === "ahmad fauzi m"));
+
+  const rows = [
+    { id: "1", name: "Ahmad Fauzi Muharrom", nisn: "0059999999" },
+    { id: "2", name: "Budi Santoso", nisn: "0051234567" },
+  ] as { id: string; name: string; nisn?: string; photoData?: string }[];
+
+  const matched = assignPhotosToRows(rows, extracted.photos, (buf) => {
+    const r = imageBufferToPhotoDataUrl(buf);
+    if ("error" in r) return { error: r.error };
+    return { photoData: r.photoData };
+  });
+  assert.equal(matched.unmatchedPhotos.length, 0);
+  assert.ok(rows[0].photoData?.startsWith("data:image/"));
+  assert.ok(rows[1].photoData?.startsWith("data:image/"));
+});
