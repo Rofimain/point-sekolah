@@ -65,24 +65,20 @@ export default async function RecordsPage({
       }),
     ]);
     const studentIds = students.map((s) => s.id);
-    const recordLists =
+    /** Satu query batch (hindari N+1); ambil max 40 terbaru per siswa di memori. */
+    const recordsFetched =
       studentIds.length === 0
         ? []
-        : await Promise.all(
-            studentIds.map((id) =>
-              prisma.violationRecord.findMany({
-                where: { studentId: id, deletedAt: null },
-                take: ROSTER_RECORDS_PER_STUDENT,
-                orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-                select: RECORD_LIST_SELECT,
-              })
-            )
-          );
-    const recordsInScope = recordLists.flat();
+        : await prisma.violationRecord.findMany({
+            where: { studentId: { in: studentIds }, deletedAt: null },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            select: RECORD_LIST_SELECT,
+          });
 
-    const byStudent = new Map<string, typeof recordsInScope>();
-    for (const r of recordsInScope) {
+    const byStudent = new Map<string, typeof recordsFetched>();
+    for (const r of recordsFetched) {
       const list = byStudent.get(r.studentId) ?? [];
+      if (list.length >= ROSTER_RECORDS_PER_STUDENT) continue;
       list.push(r);
       byStudent.set(r.studentId, list);
     }

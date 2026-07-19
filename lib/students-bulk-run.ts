@@ -66,6 +66,12 @@ export async function runBulkStudentImport(
   }
   const hashedDefault = await bcrypt.hash(pwdDefaultCheck.value, 12);
 
+  const existingUsers = await prisma.user.findMany({
+    select: { email: true, nisn: true },
+  });
+  const usedEmails = new Set(existingUsers.map((u) => u.email.toLowerCase()));
+  const usedNisn = new Set(existingUsers.map((u) => u.nisn).filter((n): n is string => Boolean(n)));
+
   const errors: { row: number; message: string }[] = [];
   let created = 0;
 
@@ -100,8 +106,7 @@ export async function runBulkStudentImport(
       }
 
       if (nisn) {
-        const nisnDup = await prisma.user.findFirst({ where: { nisn } });
-        if (nisnDup) {
+        if (usedNisn.has(nisn)) {
           errors.push({ row: rowNum, message: "NISN sudah terdaftar" });
           continue;
         }
@@ -118,8 +123,7 @@ export async function runBulkStudentImport(
       }
       const email = emailResolved.email;
 
-      const mailDup = await prisma.user.findUnique({ where: { email } });
-      if (mailDup) {
+      if (usedEmails.has(email.toLowerCase())) {
         errors.push({ row: rowNum, message: `Email ${email} sudah dipakai` });
         continue;
       }
@@ -156,6 +160,8 @@ export async function runBulkStudentImport(
           photoPresent,
         }),
       });
+      usedEmails.add(email.toLowerCase());
+      if (nisn) usedNisn.add(nisn);
       created++;
     } catch (e: unknown) {
       console.error("[students-bulk-run] row", rowNum, e);
