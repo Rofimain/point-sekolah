@@ -7,10 +7,7 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    return NextResponse.json(
-      { ok: true, database: "ready" },
-      { headers: { "Cache-Control": "no-store" } }
-    );
+    return NextResponse.json({ ok: true, database: "ready" }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("[health] database belum siap", error);
     return NextResponse.json(

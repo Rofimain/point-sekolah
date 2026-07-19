@@ -104,8 +104,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  console.log("[telegram webhook] terhubung:", student.name, "chat", chatIdStr);
-
   await fetch(`${TG}/bot${encodeURIComponent(token)}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { canManageData } from "@/lib/staff-roles";
 import { slugifyPrintTemplate } from "@/lib/print-templates";
 import { DEFAULT_PAGE_SETTINGS, serializePageSettings, parsePageSettings } from "@/lib/document-page";
 import { plainTextToDocumentHtml } from "@/lib/document-html";
@@ -10,10 +8,8 @@ import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
 
   const rows = await prisma.printTemplate.findMany({
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
@@ -22,10 +18,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
 
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") {
@@ -38,9 +33,7 @@ export async function POST(req: NextRequest) {
   }
 
   const requestedSlug =
-    typeof body.slug === "string" && body.slug.trim()
-      ? slugifyPrintTemplate(body.slug)
-      : slugifyPrintTemplate(title);
+    typeof body.slug === "string" && body.slug.trim() ? slugifyPrintTemplate(body.slug) : slugifyPrintTemplate(title);
 
   let slug = requestedSlug;
   const existing = await prisma.printTemplate.findUnique({ where: { slug } });
@@ -49,9 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   const templateBody =
-    typeof body.body === "string"
-      ? sanitizeDocumentHtml(plainTextToDocumentHtml(body.body))
-      : "<p></p>";
+    typeof body.body === "string" ? sanitizeDocumentHtml(plainTextToDocumentHtml(body.body)) : "<p></p>";
   const pageSettings =
     body.pageSettings != null
       ? typeof body.pageSettings === "string"

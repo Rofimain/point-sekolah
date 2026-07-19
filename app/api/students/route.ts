@@ -111,7 +111,6 @@ export async function POST(req: NextRequest) {
   });
   const { password: _, parentTelegramLinkToken: linkTok, photoData: __, ...safe } = user;
   const bot = getTelegramBotUsername();
-  const ortuTelegramLink =
-    bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;
+  const ortuTelegramLink = bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;
   return NextResponse.json({ ...safe, ortuTelegramLink }, { status: 201 });
 }

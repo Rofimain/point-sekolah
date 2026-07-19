@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManageData } from "@/lib/staff-roles";
 import { validateHeavyViolationEvidence } from "@/lib/heavy-violation";
 import { parseIncidentDateYmd } from "@/lib/incident-date";
 import { canReadViolationRecord } from "@/lib/record-access";
 import { normalizeEvidenceImagesFromBody } from "@/lib/evidence-data-url";
-import {
-  listRecordEvidenceImageData,
-  replaceRecordEvidenceImages,
-} from "@/lib/record-evidence-images";
+import { listRecordEvidenceImageData, replaceRecordEvidenceImages } from "@/lib/record-evidence-images";
 import { softDeleteViolationRecord } from "@/lib/user-soft-delete";
 import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
 
   const existing = await prisma.violationRecord.findFirst({
     where: { id, deletedAt: null },
@@ -141,8 +139,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
   const ok = await softDeleteViolationRecord(id);
   if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
   await recordDataAccessLog({

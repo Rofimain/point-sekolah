@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Gagal menyimpan catatan. Coba lagi." }, { status: 500 });
   }
 
-  const staffName = session.user.role === "STUDENT" ? null : createdByName ?? null;
+  const staffName = session.user.role === "STUDENT" ? null : (createdByName ?? null);
   const payload = {
     studentName: record.student.name,
     violationName: record.violationType.name,
@@ -129,7 +129,9 @@ export async function POST(req: NextRequest) {
     parentTelegramNotify = { status: "skipped_no_token" };
   } else {
     const r = await sendParentViolationTelegram(chat, payload);
-    parentTelegramNotify = r.ok ? { status: "sent" } : { status: "failed", message: "Gagal mengirim notifikasi Telegram ke ortu." };
+    parentTelegramNotify = r.ok
+      ? { status: "sent" }
+      : { status: "failed", message: "Gagal mengirim notifikasi Telegram ke ortu." };
     if (!r.ok) console.error("[telegram] kirim ke ortu gagal:", r.error);
   }
 

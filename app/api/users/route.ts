@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireManageUsers, isAuthFail } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role } from "@/generated/prisma/client";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
 import { LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
-import {
-  canCreateUserWithRole,
-  canDeleteUser,
-  canManageUsers,
-  canModifyUser,
-} from "@/lib/staff-roles";
+import { canCreateUserWithRole, canDeleteUser, canModifyUser } from "@/lib/staff-roles";
 import { parseUserPhotoInput } from "@/lib/user-photo";
 import { validateNewPassword } from "@/lib/password-policy";
 import { ACTIVE_USER_WHERE, lifecycleFieldsForStatus, statusFromActiveToggle } from "@/lib/user-status";
@@ -23,10 +17,9 @@ import { recordDataAccessLog } from "@/lib/access-log";
 const VALID_ROLES = new Set<string>(Object.values(Role));
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageUsers(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageUsers();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
   const body = await req.json();
   const { name, email, password, role, nisn, nip, classId, active, photoData, jabatan } = body;
   if (!name || !email || !password) return NextResponse.json({ error: "Nama, email, password wajib" }, { status: 400 });
@@ -34,10 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
   }
   if (!canCreateUserWithRole(session.user.role, String(role))) {
-    return NextResponse.json(
-      { error: "Anda tidak boleh membuat akun dengan role tersebut." },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "Anda tidak boleh membuat akun dengan role tersebut." }, { status: 403 });
   }
   const nextPassword = validateNewPassword(password);
   if (!nextPassword.ok) return NextResponse.json({ error: nextPassword.error }, { status: 400 });
@@ -52,11 +42,7 @@ export async function POST(req: NextRequest) {
   const wantActive = active ?? true;
   const statusFields = lifecycleFieldsForStatus(statusFromActiveToggle(Boolean(wantActive)));
   const jabatanValue =
-    r === "STUDENT"
-      ? null
-      : typeof jabatan === "string" && jabatan.trim()
-        ? jabatan.trim().slice(0, 120)
-        : null;
+    r === "STUDENT" ? null : typeof jabatan === "string" && jabatan.trim() ? jabatan.trim().slice(0, 120) : null;
   const user = await prisma.user.create({
     data: {
       name,
@@ -93,16 +79,14 @@ export async function POST(req: NextRequest) {
   });
   const { password: _, parentTelegramLinkToken: linkTok, photoData: __, ...safe } = user;
   const bot = getTelegramBotUsername();
-  const ortuTelegramLink =
-    r === "STUDENT" && bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;
+  const ortuTelegramLink = r === "STUDENT" && bot && linkTok ? buildParentTelegramDeepLink(bot, linkTok) : undefined;
   return NextResponse.json({ ...safe, ortuTelegramLink }, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageUsers(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageUsers();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
 
   const body = await req.json().catch(() => ({}));
   const ids = Array.isArray(body?.ids) ? body.ids.filter((x: unknown) => typeof x === "string" && x.trim()) : [];
@@ -170,10 +154,9 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageUsers(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageUsers();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
 
   const body = await req.json().catch(() => ({}));
   const classId = typeof body?.classId === "string" && body.classId.trim() ? body.classId.trim() : null;

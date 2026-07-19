@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { canManageData } from "@/lib/staff-roles";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { isTelegramWebhookSecretValid, TELEGRAM_WEBHOOK_SECRET_HINT } from "@/lib/telegram-webhook-secret";
-import {
-  looksLikeTelegramBotToken,
-  sanitizeTelegramBotToken,
-  sanitizeTelegramWebhookSecret,
-} from "@/lib/telegram-env";
+import { looksLikeTelegramBotToken, sanitizeTelegramBotToken, sanitizeTelegramWebhookSecret } from "@/lib/telegram-env";
 
 const TG = "https://api.telegram.org";
 
@@ -15,10 +9,8 @@ const TG = "https://api.telegram.org";
  * Admin: mendaftarkan URL webhook Telegram hanya ke domain NEXTAUTH_URL.
  */
 export async function POST(_req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
 
   const token = sanitizeTelegramBotToken(process.env.TELEGRAM_BOT_TOKEN);
   if (!token) {
@@ -60,8 +52,7 @@ export async function POST(_req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "TELEGRAM_WEBHOOK_SECRET wajib diatur di environment sebelum set webhook. " +
-          TELEGRAM_WEBHOOK_SECRET_HINT,
+          "TELEGRAM_WEBHOOK_SECRET wajib diatur di environment sebelum set webhook. " + TELEGRAM_WEBHOOK_SECRET_HINT,
         webhookUrl,
       },
       { status: 400 }

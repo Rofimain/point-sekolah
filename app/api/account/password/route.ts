@@ -41,10 +41,7 @@ export async function PATCH(request: NextRequest) {
   const next = validateNewPassword(body?.newPassword);
   if (typeof currentPassword !== "string" || !next.ok) {
     recordFailedPasswordAttempt(session.user.id);
-    return NextResponse.json(
-      { error: next.ok ? "Password saat ini wajib diisi." : next.error },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: next.ok ? "Password saat ini wajib diisi." : next.error }, { status: 400 });
   }
   if (currentPassword === next.value) {
     return NextResponse.json({ error: "Password baru harus berbeda dari password saat ini." }, { status: 400 });
@@ -55,8 +52,7 @@ export async function PATCH(request: NextRequest) {
     select: { password: true, status: true },
   });
   const currentIsValid =
-    Boolean(user && canUserLogin(user.status)) &&
-    (await bcrypt.compare(currentPassword, user?.password ?? ""));
+    Boolean(user && canUserLogin(user.status)) && (await bcrypt.compare(currentPassword, user?.password ?? ""));
   if (!currentIsValid) {
     recordFailedPasswordAttempt(session.user.id);
     return NextResponse.json({ error: "Password saat ini tidak benar." }, { status: 400 });

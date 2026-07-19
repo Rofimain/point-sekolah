@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { applyQuietMonthReductionForAllStudents } from "@/lib/quiet-month-reduction";
-import { canManageData } from "@/lib/staff-roles";
 import { recordDataAccessLog } from "@/lib/access-log";
 
 /**
@@ -11,10 +9,9 @@ import { recordDataAccessLog } from "@/lib/access-log";
  * Termasuk catch-up jeda historis antar kejadian (≥ hari tenang) dan jendela last→now.
  */
 export async function POST() {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
 
   const applied = await applyQuietMonthReductionForAllStudents();
   const names =

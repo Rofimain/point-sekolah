@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { canManageData } from "@/lib/staff-roles";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { applyManualRemisiForStudent, getGrossPointsOnOrBefore } from "@/lib/manual-remisi";
 import {
   MANUAL_REMISI_TYPE,
@@ -17,10 +15,8 @@ const VALID_TYPES = new Set<string>(Object.values(MANUAL_REMISI_TYPE));
 
 /** Pratinjau: skor eligible sampai tanggal prestasi + potongan. */
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
 
   const sp = req.nextUrl.searchParams;
   const studentId = (sp.get("studentId") || "").trim();
@@ -64,10 +60,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
 
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") {
@@ -76,8 +71,7 @@ export async function POST(req: NextRequest) {
 
   const studentId = typeof body.studentId === "string" ? body.studentId.trim() : "";
   const type = typeof body.type === "string" ? body.type.trim() : "";
-  const achievementYmd =
-    typeof body.achievementYmd === "string" ? body.achievementYmd.trim() : "";
+  const achievementYmd = typeof body.achievementYmd === "string" ? body.achievementYmd.trim() : "";
 
   if (!studentId) return NextResponse.json({ error: "Siswa wajib dipilih" }, { status: 400 });
   if (!VALID_TYPES.has(type)) {
@@ -92,11 +86,8 @@ export async function POST(req: NextRequest) {
 
   const def = getManualRemisiDef(type);
   const customPercent =
-    body.customPercent != null && body.customPercent !== ""
-      ? Number(body.customPercent)
-      : undefined;
-  const multiplier =
-    body.multiplier != null && body.multiplier !== "" ? Number(body.multiplier) : undefined;
+    body.customPercent != null && body.customPercent !== "" ? Number(body.customPercent) : undefined;
+  const multiplier = body.multiplier != null && body.multiplier !== "" ? Number(body.multiplier) : undefined;
   const note = typeof body.note === "string" ? body.note : undefined;
   const customLabel = typeof body.customLabel === "string" ? body.customLabel : undefined;
 

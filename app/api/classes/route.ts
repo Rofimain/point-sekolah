@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManageData, isStaffRole } from "@/lib/staff-roles";
+import { isStaffRole } from "@/lib/staff-roles";
 import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function GET(_req: NextRequest) {
@@ -19,10 +20,9 @@ export async function GET(_req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
 
   const body = await req.json();
   const { name, grade, major, year } = body as { name?: string; grade?: string; major?: string; year?: string };
@@ -30,11 +30,14 @@ export async function POST(req: NextRequest) {
   const g = grade?.trim();
   const y = year?.trim();
   if (!n || !g || !y) {
-    return NextResponse.json({ error: "Nama kelas, tingkat (angkatan), dan tahun ajaran wajib diisi" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Nama kelas, tingkat (angkatan), dan tahun ajaran wajib diisi" },
+      { status: 400 }
+    );
   }
 
   const cls = await prisma.class.create({
-    data: { name: n, grade: g, major: (major?.trim() || "") || "", year: y },
+    data: { name: n, grade: g, major: major?.trim() || "" || "", year: y },
   });
   revalidateTag("sidebar-classes", { expire: 0 });
   await recordDataAccessLog({

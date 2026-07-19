@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireManageUsers, isAuthFail } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role, UserStatus } from "@/generated/prisma/client";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { assertCanDemoteSuperAdmin, LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
-import { canDeleteUser, canManageUsers, canModifyUser, canCreateUserWithRole, isAdminRole } from "@/lib/staff-roles";
+import { canDeleteUser, canModifyUser, canCreateUserWithRole, isAdminRole } from "@/lib/staff-roles";
 import { validateNewPassword } from "@/lib/password-policy";
 import { parseUserPhotoPatch } from "@/lib/user-photo";
-import {
-  ACTIVE_USER_WHERE,
-  lifecycleFieldsForStatus,
-  statusFromActiveToggle,
-} from "@/lib/user-status";
+import { ACTIVE_USER_WHERE, lifecycleFieldsForStatus, statusFromActiveToggle } from "@/lib/user-status";
 import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
 import { softDeleteUser } from "@/lib/user-soft-delete";
 import { recordDataAccessLog } from "@/lib/access-log";
@@ -23,10 +18,9 @@ const VALID_STATUSES = new Set<string>(Object.values(UserStatus));
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageUsers(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageUsers();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
   const existing = await prisma.user.findFirst({ where: { id, deletedAt: null } });
   if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
 
@@ -62,14 +56,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       { status: 403 }
     );
   }
-  if (
-    (adminEditingSelf || teacherEditingSelf) &&
-    (nextRole !== existing.role || nextStatus !== existing.status)
-  ) {
-    return NextResponse.json(
-      { error: "Anda tidak boleh mengubah role atau status akunnya sendiri." },
-      { status: 403 }
-    );
+  if ((adminEditingSelf || teacherEditingSelf) && (nextRole !== existing.role || nextStatus !== existing.status)) {
+    return NextResponse.json({ error: "Anda tidak boleh mengubah role atau status akunnya sendiri." }, { status: 403 });
   }
 
   if (existing.role === "SUPER_ADMIN" && nextRole !== "SUPER_ADMIN") {
@@ -106,9 +94,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.nip !== undefined) updateData.nip = body.nip || null;
   if (body.lastAcademicYear !== undefined) {
     updateData.lastAcademicYear =
-      typeof body.lastAcademicYear === "string" && body.lastAcademicYear.trim()
-        ? body.lastAcademicYear.trim()
-        : null;
+      typeof body.lastAcademicYear === "string" && body.lastAcademicYear.trim() ? body.lastAcademicYear.trim() : null;
   }
 
   if (nextStatus !== existing.status || body.active !== undefined || body.status !== undefined) {
@@ -129,9 +115,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     updateData.nisn = null;
     if (body.jabatan !== undefined) {
       updateData.jabatan =
-        typeof body.jabatan === "string" && body.jabatan.trim()
-          ? body.jabatan.trim().slice(0, 120)
-          : null;
+        typeof body.jabatan === "string" && body.jabatan.trim() ? body.jabatan.trim().slice(0, 120) : null;
     }
   }
 
@@ -191,10 +175,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageUsers(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageUsers();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
   const existing = await prisma.user.findFirst({
     where: { id, deletedAt: null },
     select: { id: true, role: true, name: true, email: true },

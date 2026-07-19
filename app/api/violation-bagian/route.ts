@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManageData, isStaffRole } from "@/lib/staff-roles";
+import { isStaffRole } from "@/lib/staff-roles";
 import { slugifyBagianId } from "@/lib/violation-sections";
 import { listViolationBagian } from "@/lib/violation-bagian";
 import { recordDataAccessLog } from "@/lib/access-log";
@@ -22,10 +23,9 @@ export async function GET() {
 
 /** Admin: tambah bagian baru. */
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
 
   const body = (await req.json().catch(() => ({}))) as { label?: string; id?: string };
   const label = body.label?.trim() || "";
@@ -35,10 +35,7 @@ export async function POST(req: NextRequest) {
 
   const id = (body.id?.trim() || slugifyBagianId(label)).toUpperCase();
   if (!/^[A-Z0-9_]{2,40}$/.test(id)) {
-    return NextResponse.json(
-      { error: "Kode bagian hanya huruf/angka/underscore (2–40 karakter)" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Kode bagian hanya huruf/angka/underscore (2–40 karakter)" }, { status: 400 });
   }
 
   const existing = await prisma.violationBagian.findUnique({ where: { id } });

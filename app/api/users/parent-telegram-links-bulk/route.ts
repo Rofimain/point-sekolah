@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { canManageData } from "@/lib/staff-roles";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
 import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
@@ -21,10 +19,8 @@ export type ParentTelegramLinkRow = {
  * Super Admin: token + tautan baru untuk banyak siswa sekaligus (urutan mengikuti ids).
  */
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
 
   const bot = getTelegramBotUsername();
   if (!bot) {

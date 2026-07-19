@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PointBadge, StatusBadge, statusRank } from "@/components/PointThresholdBadges";
 
 export type DashStudentRow = {
   id: string;
@@ -24,62 +25,6 @@ const TOP5_COLUMNS = [
   { key: "points", label: "Total Poin" },
   { key: "status", label: "Status" },
 ] as const;
-
-function PointBadge({ points, alertPoints, criticalPoints }: { points: number; alertPoints: number; criticalPoints: number }) {
-  const colors =
-    points >= criticalPoints
-      ? (["var(--danger-bg)", "var(--danger)"] as const)
-      : points >= alertPoints
-        ? (["var(--warning-bg)", "var(--warning)"] as const)
-        : (["var(--success-bg)", "var(--success)"] as const);
-  return (
-    <span
-      className="badge-soft"
-      style={{
-        background: colors[0],
-        color: colors[1],
-        borderColor: "color-mix(in srgb, currentColor 18%, transparent)",
-      }}
-    >
-      {points}
-    </span>
-  );
-}
-
-function statusRank(points: number, alertPoints: number, criticalPoints: number) {
-  if (points >= criticalPoints) return 2;
-  if (points >= alertPoints) return 1;
-  return 0;
-}
-
-function StatusBadge({
-  points,
-  alertPoints,
-  criticalPoints,
-}: {
-  points: number;
-  alertPoints: number;
-  criticalPoints: number;
-}) {
-  const status =
-    points >= criticalPoints
-      ? (["var(--danger-bg)", "var(--danger)", "Kritis"] as const)
-      : points >= alertPoints
-        ? (["var(--warning-bg)", "var(--warning)", "Perhatian"] as const)
-        : (["var(--success-bg)", "var(--success)", "Normal"] as const);
-  return (
-    <span
-      className="badge-soft px-2.5"
-      style={{
-        background: status[0],
-        color: status[1],
-        borderColor: "color-mix(in srgb, currentColor 18%, transparent)",
-      }}
-    >
-      {status[2]}
-    </span>
-  );
-}
 
 export function sortDashboardRows(rows: DashStudentRow[], sort: SortState, criticalPoints: number, alertPoints = 50) {
   const direction = sort.direction === "asc" ? 1 : -1;
@@ -164,7 +109,11 @@ export default function DashboardRankedTables({
     }
     if (key === "class") {
       return (
-        <td key={key} className="hidden px-3 py-3 text-xs sm:table-cell sm:px-4" style={{ color: "var(--text-secondary)" }}>
+        <td
+          key={key}
+          className="hidden px-3 py-3 text-xs sm:table-cell sm:px-4"
+          style={{ color: "var(--text-secondary)" }}
+        >
           {row.className || "—"}
         </td>
       );
@@ -185,7 +134,10 @@ export default function DashboardRankedTables({
 
   return (
     <>
-      <div className="mb-5 overflow-hidden rounded-xl border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+      <div
+        className="mb-5 overflow-hidden rounded-xl border"
+        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+      >
         <div className="border-b px-3 py-3 sm:px-4" style={{ borderColor: "var(--border)" }}>
           <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
             Siswa dengan poin efektif di atas {alertPoints}
@@ -225,7 +177,10 @@ export default function DashboardRankedTables({
         )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+      <div
+        className="overflow-hidden rounded-xl border"
+        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+      >
         <div className="border-b px-3 py-3 sm:px-4" style={{ borderColor: "var(--border)" }}>
           <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
             Siswa poin tertinggi (top 5)

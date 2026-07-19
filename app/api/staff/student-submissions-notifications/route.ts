@@ -69,8 +69,7 @@ export async function GET() {
   }));
 
   const latest = rows[0];
-  const revision =
-    latest != null ? `${latest.id}:${latest.createdAt.toISOString()}:${rows.length}` : "none";
+  const revision = latest != null ? `${latest.id}:${latest.createdAt.toISOString()}:${rows.length}` : "none";
 
   return NextResponse.json({ revision, items, since: since.toISOString() });
 }

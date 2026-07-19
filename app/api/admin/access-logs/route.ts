@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireSuperAdmin, isAuthFail } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { isSuperAdmin } from "@/lib/staff-roles";
 import { buildAccessLogWhere, parseAccessLogQuery } from "@/lib/access-log-query";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !isSuperAdmin(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireSuperAdmin();
+  if (isAuthFail(auth)) return auth.response;
 
   const q = parseAccessLogQuery(req.nextUrl.searchParams);
   const where = buildAccessLogWhere(q);

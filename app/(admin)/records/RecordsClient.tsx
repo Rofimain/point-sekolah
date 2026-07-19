@@ -14,19 +14,10 @@ import { calendarTodayYmd, dateToYmdInput } from "@/lib/incident-date";
 import { EvidencePreviewModal } from "@/components/records/EvidencePreviewModal";
 import { EvidenceMultiUploader } from "@/components/records/EvidenceMultiUploader";
 import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
+import { PointBadge, StatusBadge } from "@/components/PointThresholdBadges";
 import type { ViolationBagianRow } from "@/lib/violation-sections";
 
 const SESSION_SLOTS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
-
-function PointBadge({ points }: { points: number }) {
-  const c = points >= 75 ? ["var(--danger-bg)","var(--danger)"] : points >= 50 ? ["var(--warning-bg)","var(--warning)"] : ["var(--success-bg)","var(--success)"];
-  return <span className="badge-soft" style={{ background: c[0], color: c[1], borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }}>{points}</span>;
-}
-
-function StatusBadge({ points }: { points: number }) {
-  const s = points >= 75 ? ["var(--danger-bg)","var(--danger)","Kritis"] : points >= 50 ? ["var(--warning-bg)","var(--warning)","Perhatian"] : ["var(--success-bg)","var(--success)","Normal"];
-  return <span className="badge-soft px-2.5" style={{ background: s[0], color: s[1], borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }}>{s[2]}</span>;
-}
 
 export default function RecordsClient({
   rows,
@@ -102,9 +93,7 @@ export default function RecordsClient({
     setSearch(searchParams.search || "");
   }, [searchParams.search]);
 
-  const selectedClass = searchParams.classId
-    ? classes.find((c) => c.id === searchParams.classId) ?? null
-    : null;
+  const selectedClass = searchParams.classId ? (classes.find((c) => c.id === searchParams.classId) ?? null) : null;
 
   function openReceiptSheetForRecord(r: ViolationRecordListItem) {
     const details: QrisSuccessDetail[] = [
@@ -131,7 +120,10 @@ export default function RecordsClient({
 
   function navigate(params: Record<string, string>) {
     const sp = new URLSearchParams(searchParams);
-    Object.entries(params).forEach(([k, v]) => { if (v) sp.set(k, v); else sp.delete(k); });
+    Object.entries(params).forEach(([k, v]) => {
+      if (v) sp.set(k, v);
+      else sp.delete(k);
+    });
     sp.delete("page");
     router.push(`${pathname}?${sp.toString()}`);
   }
@@ -227,7 +219,9 @@ export default function RecordsClient({
     const vt = violationTypes.find((v: any) => v.id === addVtId);
     const pts = vt?.points ?? 0;
     if (violationNeedsEvidence(pts) && addEvidenceImages.length === 0 && addSignatureText.trim().length < 12) {
-      toast.error(`Di atas ${heavyViolationPointsThreshold()} poin wajib foto bukti dan/atau pengakuan murid (≥12 karakter).`);
+      toast.error(
+        `Di atas ${heavyViolationPointsThreshold()} poin wajib foto bukti dan/atau pengakuan murid (≥12 karakter).`
+      );
       return;
     }
     setLoading(true);
@@ -293,9 +287,11 @@ export default function RecordsClient({
     const res = await fetch(`/api/export?${sp.toString()}`);
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url;
+    const a = document.createElement("a");
+    a.href = url;
     a.download = `catatan-pelanggaran-${new Date().toISOString().split("T")[0]}.xlsx`;
-    a.click(); URL.revokeObjectURL(url);
+    a.click();
+    URL.revokeObjectURL(url);
     setExporting(false);
   }
 
@@ -308,9 +304,7 @@ export default function RecordsClient({
 
   return (
     <div>
-      {previewRecordId && (
-        <EvidencePreviewModal recordId={previewRecordId} onClose={() => setPreviewRecordId(null)} />
-      )}
+      {previewRecordId && <EvidencePreviewModal recordId={previewRecordId} onClose={() => setPreviewRecordId(null)} />}
       {successSheet && (
         <QrisStyleSuccessSheet
           open
@@ -335,7 +329,10 @@ export default function RecordsClient({
                 <span style={{ color: "var(--text-muted)" }}>/</span>
                 <span style={{ color: "var(--text-secondary)" }}>{selectedClass.name}</span>
               </nav>
-              <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>
+              <h1
+                className="font-serif text-xl font-semibold tracking-tight sm:text-2xl"
+                style={{ color: "var(--text-primary)" }}
+              >
                 Catatan · {selectedClass.name}
               </h1>
               <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
@@ -346,7 +343,10 @@ export default function RecordsClient({
             </>
           ) : (
             <>
-              <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>
+              <h1
+                className="font-serif text-xl font-semibold tracking-tight sm:text-2xl"
+                style={{ color: "var(--text-primary)" }}
+              >
                 Catatan Pelanggaran Siswa
               </h1>
               <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
@@ -374,15 +374,17 @@ export default function RecordsClient({
           >
             + Tambah Catatan
           </button>
-          {canManage && <button
-            type="button"
-            onClick={handleExport}
-            disabled={exporting}
-            className="w-full touch-manipulation rounded-lg border px-4 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-2"
-            style={{ background: "var(--success-bg)", color: "var(--success)", borderColor: "var(--success)" }}
-          >
-            {exporting ? "Mengekspor..." : "Export Excel"}
-          </button>}
+          {canManage && (
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting}
+              className="w-full touch-manipulation rounded-lg border px-4 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-2"
+              style={{ background: "var(--success-bg)", color: "var(--success)", borderColor: "var(--success)" }}
+            >
+              {exporting ? "Mengekspor..." : "Export Excel"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -517,7 +519,11 @@ export default function RecordsClient({
                             setAddModal(true);
                           }}
                           className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                          style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                          style={{
+                            borderColor: "var(--accent)",
+                            color: "var(--accent)",
+                            background: "var(--bg-primary)",
+                          }}
                         >
                           + Catatan
                         </button>
@@ -537,7 +543,10 @@ export default function RecordsClient({
                         <div className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
                           {r.student.class?.name || "—"} · {formatDate(r.date)}
                         </div>
-                        <div className="mt-1 text-xs leading-snug break-words" style={{ color: "var(--text-secondary)" }}>
+                        <div
+                          className="mt-1 text-xs leading-snug break-words"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           {r.violationType.name}
                         </div>
                       </div>
@@ -572,7 +581,11 @@ export default function RecordsClient({
                         type="button"
                         onClick={() => openReceiptSheetForRecord(r)}
                         className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium"
-                        style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                        style={{
+                          borderColor: "var(--border)",
+                          color: "var(--accent)",
+                          background: "var(--bg-primary)",
+                        }}
                       >
                         Bukti
                       </button>
@@ -588,7 +601,11 @@ export default function RecordsClient({
                             setEditEvidenceImages([]);
                           }}
                           className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                          style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                          style={{
+                            borderColor: "var(--border)",
+                            color: "var(--text-secondary)",
+                            background: "var(--bg-primary)",
+                          }}
                         >
                           Edit
                         </button>
@@ -598,7 +615,11 @@ export default function RecordsClient({
                           type="button"
                           onClick={() => handleDelete(r.id)}
                           className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                          style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
+                          style={{
+                            background: "var(--danger-bg)",
+                            color: "var(--danger)",
+                            borderColor: "var(--danger)",
+                          }}
                         >
                           Hapus
                         </button>
@@ -614,7 +635,17 @@ export default function RecordsClient({
               <table className="w-full min-w-[800px]">
                 <thead>
                   <tr style={{ background: "color-mix(in srgb, var(--bg-primary) 75%, var(--accent-light))" }}>
-                    {["Nama Siswa", "Kelas", "Pelanggaran", "Tanggal", "Poin", "Total Poin", "Status", "Bukti", "Aksi"].map((h) => (
+                    {[
+                      "Nama Siswa",
+                      "Kelas",
+                      "Pelanggaran",
+                      "Tanggal",
+                      "Poin",
+                      "Total Poin",
+                      "Status",
+                      "Bukti",
+                      "Aksi",
+                    ].map((h) => (
                       <th
                         key={h}
                         className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
@@ -632,10 +663,16 @@ export default function RecordsClient({
                       const totalPts = totalPointsMap[s.id] || 0;
                       return (
                         <tr key={`ph-${s.id}`} className="border-t" style={{ borderColor: "var(--border)" }}>
-                          <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
+                          <td
+                            className="px-4 py-3 text-xs font-medium whitespace-nowrap"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             {s.name}
                           </td>
-                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                          <td
+                            className="px-4 py-3 text-xs whitespace-nowrap"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
                             {s.class?.name || "—"}
                           </td>
                           <td className="px-4 py-3 text-xs italic" style={{ color: "var(--text-muted)" }}>
@@ -664,7 +701,11 @@ export default function RecordsClient({
                                 type="button"
                                 disabled
                                 className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium opacity-60 cursor-not-allowed"
-                                style={{ borderColor: "var(--border)", color: "var(--text-muted)", background: "var(--bg-primary)" }}
+                                style={{
+                                  borderColor: "var(--border)",
+                                  color: "var(--text-muted)",
+                                  background: "var(--bg-primary)",
+                                }}
                               >
                                 Bukti
                               </button>
@@ -681,7 +722,11 @@ export default function RecordsClient({
                                   setAddModal(true);
                                 }}
                                 className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                                style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                                style={{
+                                  borderColor: "var(--accent)",
+                                  color: "var(--accent)",
+                                  background: "var(--bg-primary)",
+                                }}
                               >
                                 + Catatan
                               </button>
@@ -694,7 +739,10 @@ export default function RecordsClient({
                     const totalPts = totalPointsMap[r.studentId] || 0;
                     return (
                       <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                        <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
+                        <td
+                          className="px-4 py-3 text-xs font-medium whitespace-nowrap"
+                          style={{ color: "var(--text-primary)" }}
+                        >
                           {r.student.name}
                         </td>
                         <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
@@ -737,7 +785,11 @@ export default function RecordsClient({
                               type="button"
                               onClick={() => openReceiptSheetForRecord(r)}
                               className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium"
-                              style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg-primary)" }}
+                              style={{
+                                borderColor: "var(--border)",
+                                color: "var(--accent)",
+                                background: "var(--bg-primary)",
+                              }}
                             >
                               Bukti
                             </button>
@@ -753,7 +805,11 @@ export default function RecordsClient({
                                   setEditEvidenceImages([]);
                                 }}
                                 className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                                style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                                style={{
+                                  borderColor: "var(--border)",
+                                  color: "var(--text-secondary)",
+                                  background: "var(--bg-primary)",
+                                }}
                               >
                                 Edit
                               </button>
@@ -763,7 +819,11 @@ export default function RecordsClient({
                                 type="button"
                                 onClick={() => handleDelete(r.id)}
                                 className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                                style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
+                                style={{
+                                  background: "var(--danger-bg)",
+                                  color: "var(--danger)",
+                                  borderColor: "var(--danger)",
+                                }}
                               >
                                 Hapus
                               </button>
@@ -779,11 +839,31 @@ export default function RecordsClient({
           </>
         )}
         {totalPages > 1 && (
-          <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
-            <span className="text-xs" style={{ color: "var(--text-muted)" }}>Halaman {page} dari {totalPages}</span>
+          <div
+            className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Halaman {page} dari {totalPages}
+            </span>
             <div className="flex flex-wrap gap-1">
-              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map(p => (
-                <button key={p} onClick={() => { const sp = new URLSearchParams(searchParams); sp.set("page", String(p)); router.push(`${pathname}?${sp.toString()}`); }} className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs" style={{ background: p === page ? "var(--accent)" : "var(--bg-primary)", color: p === page ? "white" : "var(--text-secondary)", border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}` }}>{p}</button>
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => {
+                    const sp = new URLSearchParams(searchParams);
+                    sp.set("page", String(p));
+                    router.push(`${pathname}?${sp.toString()}`);
+                  }}
+                  className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs"
+                  style={{
+                    background: p === page ? "var(--accent)" : "var(--bg-primary)",
+                    color: p === page ? "white" : "var(--text-secondary)",
+                    border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}`,
+                  }}
+                >
+                  {p}
+                </button>
               ))}
             </div>
           </div>
@@ -793,86 +873,163 @@ export default function RecordsClient({
       {/* Edit Modal */}
       {canManage && editModal && mounted
         ? createPortal(
-        <div
-          className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
-          onClick={() => setEditModal(null)}
-        >
-          <div
-            className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom sm:mx-0 sm:rounded-xl sm:p-6"
-            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-sm font-serif mb-4 pb-3 border-b" style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}>Edit Catatan — {editModal.student.name}</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Jenis Pelanggaran</label>
-                <ViolationTypePicker
-                  violationTypes={violationTypes}
-                  bagian={bagian}
-                  value={editVtId}
-                  onChange={(id) => {
-                    setEditVtId(id);
-                    const vt = violationTypes.find((v: any) => v.id === id);
-                    if (vt) setEditPoints(vt.points);
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Poin</label>
-                <input type="number" value={editPoints} onChange={(e) => setEditPoints(parseInt(e.target.value))} min={0} max={200} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Tanggal kejadian</label>
-                <input
-                  type="date"
-                  required
-                  value={editIncidentDate}
-                  onChange={(e) => setEditIncidentDate(e.target.value)}
-                  min="2015-01-01"
-                  max={calendarTodayYmd()}
-                  className="w-full px-3 py-2 rounded-lg border text-sm"
-                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                />
-                <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
-                  Tanggal kejadian (bukan tanggal input); dipakai hitung remisi.
-                </p>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Keterangan</label>
-                <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border text-sm resize-none" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-              </div>
-              <div className="rounded-lg border p-3 space-y-3" style={{ background: "var(--bg-primary)", borderColor: editNeedEvidence ? "var(--accent-border)" : "var(--border)" }}>
-                {editNeedEvidence ? (
-                  <p className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>
-                    Bukti (poin di atas {heavyTh}): foto dan/atau pengakuan teks
-                  </p>
-                ) : null}
-                <EvidenceMultiUploader
-                  images={editEvidenceImages}
-                  onChange={setEditEvidenceImages}
-                  disabled={loading}
-                />
-                <div>
-                  <label className="block text-[10px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                    Pengakuan / tanda tangan (teks)
-                  </label>
-                  <textarea
-                    value={editSignatureText}
-                    onChange={(e) => setEditSignatureText(e.target.value)}
-                    rows={2}
-                    placeholder="Pengakuan / nama lengkap murid (min. 12 karakter)"
-                    className="w-full px-3 py-2 rounded-lg border text-xs resize-none"
-                    style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                  />
+            <div
+              className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+              onClick={() => setEditModal(null)}
+            >
+              <div
+                className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom sm:mx-0 sm:rounded-xl sm:p-6"
+                style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3
+                  className="text-sm font-serif mb-4 pb-3 border-b"
+                  style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
+                >
+                  Edit Catatan — {editModal.student.name}
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label
+                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Jenis Pelanggaran
+                    </label>
+                    <ViolationTypePicker
+                      violationTypes={violationTypes}
+                      bagian={bagian}
+                      value={editVtId}
+                      onChange={(id) => {
+                        setEditVtId(id);
+                        const vt = violationTypes.find((v: any) => v.id === id);
+                        if (vt) setEditPoints(vt.points);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Poin
+                    </label>
+                    <input
+                      type="number"
+                      value={editPoints}
+                      onChange={(e) => setEditPoints(parseInt(e.target.value))}
+                      min={0}
+                      max={200}
+                      className="w-full px-3 py-2 rounded-lg border text-sm"
+                      style={{
+                        background: "var(--bg-primary)",
+                        borderColor: "var(--border)",
+                        color: "var(--text-primary)",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Tanggal kejadian
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={editIncidentDate}
+                      onChange={(e) => setEditIncidentDate(e.target.value)}
+                      min="2015-01-01"
+                      max={calendarTodayYmd()}
+                      className="w-full px-3 py-2 rounded-lg border text-sm"
+                      style={{
+                        background: "var(--bg-primary)",
+                        borderColor: "var(--border)",
+                        color: "var(--text-primary)",
+                      }}
+                    />
+                    <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                      Tanggal kejadian (bukan tanggal input); dipakai hitung remisi.
+                    </p>
+                  </div>
+                  <div>
+                    <label
+                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Keterangan
+                    </label>
+                    <textarea
+                      value={editNotes}
+                      onChange={(e) => setEditNotes(e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 rounded-lg border text-sm resize-none"
+                      style={{
+                        background: "var(--bg-primary)",
+                        borderColor: "var(--border)",
+                        color: "var(--text-primary)",
+                      }}
+                    />
+                  </div>
+                  <div
+                    className="rounded-lg border p-3 space-y-3"
+                    style={{
+                      background: "var(--bg-primary)",
+                      borderColor: editNeedEvidence ? "var(--accent-border)" : "var(--border)",
+                    }}
+                  >
+                    {editNeedEvidence ? (
+                      <p className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>
+                        Bukti (poin di atas {heavyTh}): foto dan/atau pengakuan teks
+                      </p>
+                    ) : null}
+                    <EvidenceMultiUploader
+                      images={editEvidenceImages}
+                      onChange={setEditEvidenceImages}
+                      disabled={loading}
+                    />
+                    <div>
+                      <label
+                        className="block text-[10px] font-semibold mb-1 uppercase tracking-wide"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Pengakuan / tanda tangan (teks)
+                      </label>
+                      <textarea
+                        value={editSignatureText}
+                        onChange={(e) => setEditSignatureText(e.target.value)}
+                        rows={2}
+                        placeholder="Pengakuan / nama lengkap murid (min. 12 karakter)"
+                        className="w-full px-3 py-2 rounded-lg border text-xs resize-none"
+                        style={{
+                          background: "var(--bg-secondary)",
+                          borderColor: "var(--border)",
+                          color: "var(--text-primary)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    onClick={() => setEditModal(null)}
+                    className="min-h-11 touch-manipulation px-4 py-2.5 rounded-lg border text-sm"
+                    style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleEdit}
+                    disabled={loading}
+                    className="min-h-11 touch-manipulation px-4 py-2.5 rounded-lg text-sm text-white disabled:opacity-60"
+                    style={{ background: "var(--accent)" }}
+                  >
+                    Simpan
+                  </button>
                 </div>
               </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setEditModal(null)} className="min-h-11 touch-manipulation px-4 py-2.5 rounded-lg border text-sm" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>Batal</button>
-              <button onClick={handleEdit} disabled={loading} className="min-h-11 touch-manipulation px-4 py-2.5 rounded-lg text-sm text-white disabled:opacity-60" style={{ background: "var(--accent)" }}>Simpan</button>
-            </div>
-          </div>
-        </div>,
+            </div>,
             document.body
           )
         : null}
@@ -880,157 +1037,196 @@ export default function RecordsClient({
       {/* Add Modal */}
       {addModal && mounted
         ? createPortal(
-        <div
-          className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center overflow-y-auto bg-black/55 p-0 sm:items-center sm:p-4`}
-          onClick={() => {
-            setAddModal(false);
-          }}
-        >
-          <div
-            className="my-0 max-h-[95dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-2xl sm:my-6 sm:rounded-2xl sm:p-6"
-            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start gap-3 mb-4 pb-4 border-b" style={{ borderColor: "var(--border)" }}>
+            <div
+              className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center overflow-y-auto bg-black/55 p-0 sm:items-center sm:p-4`}
+              onClick={() => {
+                setAddModal(false);
+              }}
+            >
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+                className="my-0 max-h-[95dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-2xl sm:my-6 sm:rounded-2xl sm:p-6"
+                style={{
+                  background: "var(--bg-secondary)",
+                  borderColor: "var(--border)",
+                  boxShadow: "0 24px 64px rgba(0,0,0,0.2)",
+                }}
+                onClick={(e) => e.stopPropagation()}
               >
-                +
-              </div>
-              <div>
-                <h3 className="text-base font-serif leading-tight" style={{ color: "var(--text-primary)" }}>
-                  Tambah catatan pelanggaran
-                </h3>
-                <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                  Pilih siswa dari daftar, lalu jenis pelanggaran. Total poin per siswa tampil sebagai panduan.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <AddRecordStudentPicker
-                students={studentsForPicker}
-                value={addStudentId}
-                onChange={setAddStudentId}
-                totalPointsMap={totalPointsMap}
-              />
-
-              <div>
-                <ViolationTypePicker
-                  label="Jenis pelanggaran"
-                  violationTypes={violationTypes}
-                  bagian={bagian}
-                  value={addVtId}
-                  onChange={setAddVtId}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                  Tanggal kejadian
-                </label>
-                <input
-                  type="date"
-                  value={addIncidentDate}
-                  onChange={(e) => setAddIncidentDate(e.target.value)}
-                  min="2015-01-01"
-                  max={calendarTodayYmd()}
-                  className="w-full px-3 py-2.5 rounded-xl border text-sm"
-                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                />
-                <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
-                  Sesuai hari kejadian asli (bukan hari input). Remisi dihitung dari tanggal ini; maks. hari ini (WIB).
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                  Sesi / waktu <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(opsional)</span>
-                </label>
-                <select
-                  value={addSession}
-                  onChange={(e) => setAddSession(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border text-sm"
-                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                >
-                  <option value="">— Tidak spesifik —</option>
-                  {SESSION_SLOTS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                  Keterangan <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(opsional)</span>
-                </label>
-                <textarea
-                  value={addNotes}
-                  onChange={(e) => setAddNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Detail kejadian, lokasi, dll."
-                  className="w-full px-3 py-2.5 rounded-xl border text-sm resize-none"
-                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                />
-              </div>
-
-              <div className="rounded-xl border p-3 space-y-3" style={{ background: "var(--bg-primary)", borderColor: addNeedEvidence ? "var(--accent-border)" : "var(--border)" }}>
-                  {addNeedEvidence ? (
-                    <p className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
-                      Bukti tambahan (wajib): pelanggaran di atas {heavyTh} poin
+                <div className="flex items-start gap-3 mb-4 pb-4 border-b" style={{ borderColor: "var(--border)" }}>
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                    style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+                  >
+                    +
+                  </div>
+                  <div>
+                    <h3 className="text-base font-serif leading-tight" style={{ color: "var(--text-primary)" }}>
+                      Tambah catatan pelanggaran
+                    </h3>
+                    <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                      Pilih siswa dari daftar, lalu jenis pelanggaran. Total poin per siswa tampil sebagai panduan.
                     </p>
-                  ) : (
-                    <p className="text-[11px] font-semibold" style={{ color: "var(--text-secondary)" }}>
-                      Foto bukti (opsional)
-                    </p>
-                  )}
-                  <EvidenceMultiUploader
-                    images={addEvidenceImages}
-                    onChange={setAddEvidenceImages}
-                    disabled={loading}
-                  />
-                  {addNeedEvidence ? (
-                    <div>
-                      <label className="block text-[10px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                        Pengakuan / tanda tangan (teks, min. 12 karakter)
-                      </label>
-                      <textarea
-                        value={addSignatureText}
-                        onChange={(e) => setAddSignatureText(e.target.value)}
-                        rows={2}
-                        className="w-full px-3 py-2 rounded-lg border text-xs resize-none"
-                        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                        placeholder="Nama lengkap & pengakuan"
-                      />
-                    </div>
-                  ) : null}
+                  </div>
                 </div>
-            </div>
 
-            <div className="flex justify-end gap-2 mt-6 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
-              <button
-                type="button"
-                onClick={() => setAddModal(false)}
-                className="min-h-11 touch-manipulation rounded-xl border px-4 py-2.5 text-sm font-medium"
-                style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleAdd}
-                disabled={loading || !addStudentId || !addVtId}
-                className="min-h-11 touch-manipulation rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ background: "var(--accent)" }}
-              >
-                {loading ? "Menyimpan…" : "Simpan catatan"}
-              </button>
-            </div>
-          </div>
-        </div>,
+                <div className="space-y-4">
+                  <AddRecordStudentPicker
+                    students={studentsForPicker}
+                    value={addStudentId}
+                    onChange={setAddStudentId}
+                    totalPointsMap={totalPointsMap}
+                  />
+
+                  <div>
+                    <ViolationTypePicker
+                      label="Jenis pelanggaran"
+                      violationTypes={violationTypes}
+                      bagian={bagian}
+                      value={addVtId}
+                      onChange={setAddVtId}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Tanggal kejadian
+                    </label>
+                    <input
+                      type="date"
+                      value={addIncidentDate}
+                      onChange={(e) => setAddIncidentDate(e.target.value)}
+                      min="2015-01-01"
+                      max={calendarTodayYmd()}
+                      className="w-full px-3 py-2.5 rounded-xl border text-sm"
+                      style={{
+                        background: "var(--bg-primary)",
+                        borderColor: "var(--border)",
+                        color: "var(--text-primary)",
+                      }}
+                    />
+                    <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                      Sesuai hari kejadian asli (bukan hari input). Remisi dihitung dari tanggal ini; maks. hari ini
+                      (WIB).
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Sesi / waktu <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(opsional)</span>
+                    </label>
+                    <select
+                      value={addSession}
+                      onChange={(e) => setAddSession(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl border text-sm"
+                      style={{
+                        background: "var(--bg-primary)",
+                        borderColor: "var(--border)",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <option value="">— Tidak spesifik —</option>
+                      {SESSION_SLOTS.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Keterangan <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(opsional)</span>
+                    </label>
+                    <textarea
+                      value={addNotes}
+                      onChange={(e) => setAddNotes(e.target.value)}
+                      rows={2}
+                      placeholder="Detail kejadian, lokasi, dll."
+                      className="w-full px-3 py-2.5 rounded-xl border text-sm resize-none"
+                      style={{
+                        background: "var(--bg-primary)",
+                        borderColor: "var(--border)",
+                        color: "var(--text-primary)",
+                      }}
+                    />
+                  </div>
+
+                  <div
+                    className="rounded-xl border p-3 space-y-3"
+                    style={{
+                      background: "var(--bg-primary)",
+                      borderColor: addNeedEvidence ? "var(--accent-border)" : "var(--border)",
+                    }}
+                  >
+                    {addNeedEvidence ? (
+                      <p className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
+                        Bukti tambahan (wajib): pelanggaran di atas {heavyTh} poin
+                      </p>
+                    ) : (
+                      <p className="text-[11px] font-semibold" style={{ color: "var(--text-secondary)" }}>
+                        Foto bukti (opsional)
+                      </p>
+                    )}
+                    <EvidenceMultiUploader
+                      images={addEvidenceImages}
+                      onChange={setAddEvidenceImages}
+                      disabled={loading}
+                    />
+                    {addNeedEvidence ? (
+                      <div>
+                        <label
+                          className="block text-[10px] font-semibold mb-1 uppercase tracking-wide"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
+                          Pengakuan / tanda tangan (teks, min. 12 karakter)
+                        </label>
+                        <textarea
+                          value={addSignatureText}
+                          onChange={(e) => setAddSignatureText(e.target.value)}
+                          rows={2}
+                          className="w-full px-3 py-2 rounded-lg border text-xs resize-none"
+                          style={{
+                            background: "var(--bg-secondary)",
+                            borderColor: "var(--border)",
+                            color: "var(--text-primary)",
+                          }}
+                          placeholder="Nama lengkap & pengakuan"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+                  <button
+                    type="button"
+                    onClick={() => setAddModal(false)}
+                    className="min-h-11 touch-manipulation rounded-xl border px-4 py-2.5 text-sm font-medium"
+                    style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAdd}
+                    disabled={loading || !addStudentId || !addVtId}
+                    className="min-h-11 touch-manipulation rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ background: "var(--accent)" }}
+                  >
+                    {loading ? "Menyimpan…" : "Simpan catatan"}
+                  </button>
+                </div>
+              </div>
+            </div>,
             document.body
           )
         : null}

@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { revalidateTag } from "next/cache";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManageData } from "@/lib/staff-roles";
 import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: rawId } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.role || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
+  const { session } = auth;
 
   const id = rawId?.trim();
   if (!id) {

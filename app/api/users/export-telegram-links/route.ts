@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { canManageData } from "@/lib/staff-roles";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import ExcelJS from "exceljs";
@@ -16,10 +14,8 @@ const MAX_ROWS = 15_000;
  * Query sama dengan filter daftar: search (nama), classId. Hanya role siswa.
  */
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
 
   const bot = getTelegramBotUsername();
   if (!bot) {
@@ -37,8 +33,7 @@ export async function GET(req: NextRequest) {
   if (roleFilter && roleFilter !== "STUDENT") {
     return NextResponse.json(
       {
-        error:
-          'Unduh ini khusus siswa. Di filter atas, pilih Role "Siswa" atau "Semua Role", lalu unduh lagi.',
+        error: 'Unduh ini khusus siswa. Di filter atas, pilih Role "Siswa" atau "Semua Role", lalu unduh lagi.',
       },
       { status: 400 }
     );

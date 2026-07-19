@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { canManageData } from "@/lib/staff-roles";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { looksLikeTelegramBotToken, sanitizeTelegramBotToken } from "@/lib/telegram-env";
 
 const TG = "https://api.telegram.org";
@@ -10,10 +8,8 @@ const TG = "https://api.telegram.org";
  * Super Admin: baca status webhook dari Telegram (URL terpasang, error terakhir, dll).
  */
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
 
   const token = sanitizeTelegramBotToken(process.env.TELEGRAM_BOT_TOKEN);
   if (!token) {

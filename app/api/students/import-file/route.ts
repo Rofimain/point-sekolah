@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
   }
 
   const name = (file instanceof File ? file.name : "").toLowerCase();
-  const isZip = name.endsWith(".zip") || file.type === "application/zip" || file.type === "application/x-zip-compressed";
+  const isZip =
+    name.endsWith(".zip") || file.type === "application/zip" || file.type === "application/x-zip-compressed";
   const maxBytes = isZip ? MAX_ZIP_BYTES : MAX_XLSX_BYTES;
   if (file.size > maxBytes) {
     return NextResponse.json(
@@ -45,10 +46,7 @@ export async function POST(req: NextRequest) {
     parsed = await parseStudentImportPackage(buf);
   } catch (e: unknown) {
     console.error("[students/import-file] parse gagal:", e);
-    return NextResponse.json(
-      { error: "Gagal membaca file. Pastikan format .xlsx atau .zip valid." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Gagal membaca file. Pastikan format .xlsx atau .zip valid." }, { status: 400 });
   }
 
   try {

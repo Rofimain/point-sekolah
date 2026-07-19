@@ -1,25 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import ExcelJS from "exceljs";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { canManageData } from "@/lib/staff-roles";
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireManageData();
+  if (isAuthFail(auth)) return auth.response;
 
   const { searchParams } = new URL(req.url);
   const grade = searchParams.get("grade");
   const classId = searchParams.get("classId");
   const search = searchParams.get("search");
 
-  const where: any = {};
+  const where: any = { deletedAt: null };
   if (search) where.student = { name: { contains: search, mode: "insensitive" } };
   if (classId) where.student = { ...where.student, classId };
   if (grade) where.student = { ...where.student, class: { grade } };
@@ -71,10 +67,19 @@ export async function GET(req: NextRequest) {
     const total = effectivePointsMap.get(r.studentId) || 0;
     const status = total >= 75 ? "Kritis" : total >= 50 ? "Perhatian" : "Normal";
     const row = sheet1.addRow({
-      no: i + 1, name: r.student.name, nisn: r.student.nisn || "—", class: r.student.class?.name || "—",
-      violation: r.violationType.name, category: catLabels[r.violationType.category] || r.violationType.category,
-      points: r.points, totalPoints: total, status, session: r.session || "—", notes: r.notes || "—",
-      date: format(r.date, "dd/MM/yyyy", { locale: localeId }), createdBy: r.createdByName || "—",
+      no: i + 1,
+      name: r.student.name,
+      nisn: r.student.nisn || "—",
+      class: r.student.class?.name || "—",
+      violation: r.violationType.name,
+      category: catLabels[r.violationType.category] || r.violationType.category,
+      points: r.points,
+      totalPoints: total,
+      status,
+      session: r.session || "—",
+      notes: r.notes || "—",
+      date: format(r.date, "dd/MM/yyyy", { locale: localeId }),
+      createdBy: r.createdByName || "—",
     });
     // Color rows based on status
     const bgColor = total >= 75 ? "FFFCE8E8" : total >= 50 ? "FFFFF8E8" : "FFF7FFF9";
@@ -122,10 +127,12 @@ export async function GET(req: NextRequest) {
     row.total = effectivePointsMap.get(id) ?? 0;
   });
 
-  Array.from(studentMap.values()).sort((a, b) => b.total - a.total).forEach((s, i) => {
-    const status = s.total >= 75 ? "Kritis" : s.total >= 50 ? "Perhatian" : "Normal";
-    sheet2.addRow({ no: i + 1, name: s.name, nisn: s.nisn, class: s.class, count: s.count, total: s.total, status });
-  });
+  Array.from(studentMap.values())
+    .sort((a, b) => b.total - a.total)
+    .forEach((s, i) => {
+      const status = s.total >= 75 ? "Kritis" : s.total >= 50 ? "Perhatian" : "Normal";
+      sheet2.addRow({ no: i + 1, name: s.name, nisn: s.nisn, class: s.class, count: s.count, total: s.total, status });
+    });
 
   const buffer = await workbook.xlsx.writeBuffer();
   const filename = `catatan-pelanggaran-${format(new Date(), "yyyyMMdd")}.xlsx`;

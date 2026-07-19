@@ -44,7 +44,7 @@ export async function GET() {
     "Cara impor siswa (halaman Data Siswa → tab Impor bulk):",
     "",
     "=== Format Excel (.xlsx) tanpa foto ===",
-    "1. Isi baris data di sheet \"Data siswa\" di bawah baris judul. Hapus baris contoh jika tidak dipakai.",
+    '1. Isi baris data di sheet "Data siswa" di bawah baris judul. Hapus baris contoh jika tidak dipakai.',
     "2. Kolom wajib: nama, email, nama_kelas. NISN dan password opsional.",
     "3. Login siswa memakai email (bukan NISN). NISN hanya data tambahan bila sudah ada.",
     "4. nama_kelas harus sama persis dengan nama kelas di Data Siswa → tab Kelas, contoh: X MIPA 1.",
