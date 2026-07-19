@@ -23,10 +23,20 @@ function assert(cond: boolean, msg: string) {
   }
 }
 
+const students = read("app/(admin)/students/StudentsClient.tsx");
+assert(students.includes("createPortal"), "Students modals use createPortal");
+assert(students.includes("FlashBanner"), "Students shows flash inside modals");
+assert(students.includes("!overlayOpen"), "Students page banner hidden while modal open");
+assert(students.includes("Z_MODAL_CLASS"), "Students modals use Z_MODAL_CLASS");
+
+const toaster = read("components/GlobalToaster.tsx");
+assert(toaster.includes("Z_INDEX.toast"), "GlobalToaster uses toast z-index above modal");
+
 const layers = read("lib/ui-layers.ts");
 assert(layers.includes("Z_MODAL_CLASS"), "ui-layers exports Z_MODAL_CLASS");
 assert(layers.includes("lockAppScroll"), "ui-layers exports lockAppScroll");
 assert(layers.includes("querySelector(\"main\")"), "lockAppScroll targets main");
+assert(layers.includes("toast: 300"), "ui-layers defines toast above modalElevated");
 
 const evidence = read("components/records/EvidencePreviewModal.tsx");
 assert(evidence.includes("createPortal"), "EvidencePreviewModal uses createPortal");

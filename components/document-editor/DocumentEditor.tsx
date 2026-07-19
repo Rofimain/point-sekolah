@@ -16,15 +16,20 @@ import { Color } from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Highlight from "@tiptap/extension-highlight";
 import FontFamily from "@tiptap/extension-font-family";
-import { Table } from "@tiptap/extension-table";
-import { TableRow } from "@tiptap/extension-table-row";
-import { TableCell } from "@tiptap/extension-table-cell";
-import { TableHeader } from "@tiptap/extension-table-header";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import Gapcursor from "@tiptap/extension-gapcursor";
 import { PlaceholderToken } from "@/components/document-editor/extensions/placeholder-token";
 import { PageBreak } from "@/components/document-editor/extensions/page-break";
 import { FontSize } from "@/components/document-editor/extensions/font-size";
+import {
+  DivBlock,
+  HeadingWithClass,
+  ParagraphWithClass,
+  TableCellWithClass,
+  TableHeaderWithClass,
+  TableRowWithClass,
+  TableWithClass,
+} from "@/components/document-editor/extensions/preserve-class";
 import { DocumentToolbar } from "@/components/document-editor/DocumentToolbar";
 import {
   buildDocumentPageCss,
@@ -75,9 +80,12 @@ export const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorPro
       editable,
       extensions: [
         StarterKit.configure({
-          heading: { levels: [1, 2, 3] },
+          heading: false,
+          paragraph: false,
           horizontalRule: false,
         }),
+        ParagraphWithClass,
+        HeadingWithClass.configure({ levels: [1, 2, 3] }),
         Underline,
         TextStyle,
         Color,
@@ -85,10 +93,11 @@ export const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorPro
         FontSize,
         Highlight.configure({ multicolor: true }),
         TextAlign.configure({ types: ["heading", "paragraph"] }),
-        Table.configure({ resizable: true }),
-        TableRow,
-        TableHeader,
-        TableCell,
+        TableWithClass,
+        TableRowWithClass,
+        TableHeaderWithClass,
+        TableCellWithClass,
+        DivBlock,
         HorizontalRule,
         Gapcursor,
         PlaceholderToken,

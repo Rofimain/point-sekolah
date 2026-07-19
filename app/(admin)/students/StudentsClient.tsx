@@ -18,6 +18,23 @@ import { lockAppScroll, Z_MODAL_CLASS, Z_MODAL_ELEVATED_CLASS } from "@/lib/ui-l
 
 const GRADES = ["X", "XI", "XII"] as const;
 
+type FlashMsg = { type: "ok" | "err"; text: string };
+
+function FlashBanner({ msg, className = "mb-4" }: { msg: FlashMsg; className?: string }) {
+  return (
+    <div
+      role="alert"
+      className={`rounded-xl px-4 py-3 text-sm ${className}`}
+      style={{
+        background: msg.type === "ok" ? "var(--success-bg)" : "var(--danger-bg)",
+        color: msg.type === "ok" ? "var(--success)" : "var(--danger)",
+      }}
+    >
+      {msg.text}
+    </div>
+  );
+}
+
 type ClassOpt = {
   id: string;
   name: string;
@@ -86,7 +103,7 @@ export default function StudentsClient({
   }
   const [search, setSearch] = useState(searchParams.search || "");
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [msg, setMsg] = useState<FlashMsg | null>(null);
 
   const [name, setName] = useState("");
   const [nisn, setNisn] = useState("");
@@ -117,12 +134,14 @@ export default function StudentsClient({
   const [deletingClassId, setDeletingClassId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  const overlayOpen = Boolean(tab) || classModalOpen;
+
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!classModalOpen && !tab) return;
+    if (!overlayOpen) return;
     return lockAppScroll();
-  }, [classModalOpen, tab]);
+  }, [overlayOpen]);
 
   useEffect(() => {
     setSearch(searchParams.search || "");
@@ -429,7 +448,10 @@ export default function StudentsClient({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setTabQuery("single")}
+              onClick={() => {
+                setMsg(null);
+                setTabQuery("single");
+              }}
               className="touch-manipulation min-w-0 flex-1 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors sm:flex-none sm:px-4 sm:py-2"
               style={{
                 background: tab === "single" ? "var(--accent)" : "var(--bg-secondary)",
@@ -441,7 +463,11 @@ export default function StudentsClient({
             </button>
             <button
               type="button"
-              onClick={() => setTabQuery("bulk")}
+              onClick={() => {
+                setMsg(null);
+                setBulkResult(null);
+                setTabQuery("bulk");
+              }}
               className="touch-manipulation min-w-0 flex-1 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors sm:flex-none sm:px-4 sm:py-2"
               style={{
                 background: tab === "bulk" ? "var(--accent)" : "var(--bg-secondary)",
@@ -453,7 +479,10 @@ export default function StudentsClient({
             </button>
             <button
               type="button"
-              onClick={() => setTabQuery("kelas")}
+              onClick={() => {
+                setMsg(null);
+                setTabQuery("kelas");
+              }}
               className="touch-manipulation min-w-0 flex-1 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors sm:flex-none sm:px-4 sm:py-2"
               style={{
                 background: tab === "kelas" ? "var(--accent)" : "var(--bg-secondary)",
@@ -467,17 +496,7 @@ export default function StudentsClient({
         </div>}
       </div>
 
-      {msg && (
-        <div
-          className="mb-4 rounded-xl px-4 py-3 text-sm"
-          style={{
-            background: msg.type === "ok" ? "var(--success-bg)" : "var(--danger-bg)",
-            color: msg.type === "ok" ? "var(--success)" : "var(--danger)",
-          }}
-        >
-          {msg.text}
-        </div>
-      )}
+      {msg && !overlayOpen && <FlashBanner msg={msg} />}
 
       <div id="daftar-siswa" className="mb-6 scroll-mt-4">
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border p-3" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
@@ -709,6 +728,7 @@ export default function StudentsClient({
             <p className="mb-4 text-xs" style={{ color: "var(--text-muted)" }}>
               Setelah tersimpan, kelas langsung bisa dipilih saat menambah siswa.
             </p>
+            {msg && <FlashBanner msg={msg} />}
             <div className="space-y-3">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
@@ -816,6 +836,7 @@ export default function StudentsClient({
                 Tutup
               </button>
             </div>
+            {msg && <FlashBanner msg={msg} />}
             <form onSubmit={submitSingle}>
           <div className="space-y-4">
             <div>
@@ -999,6 +1020,8 @@ export default function StudentsClient({
               </div>
             </div>
 
+            {msg && <FlashBanner msg={msg} />}
+
           <div
             className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-dashed p-4"
             style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
@@ -1174,6 +1197,11 @@ export default function StudentsClient({
             </button>
             </div>
           </div>
+          {msg && !classModalOpen && (
+            <div className="shrink-0 px-4 pt-2 sm:px-6">
+              <FlashBanner msg={msg} className="mb-2" />
+            </div>
+          )}
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-sheet-bottom pt-2 sm:px-6">
           <div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
             <div className="max-h-[min(55dvh,24rem)] overflow-x-auto overflow-y-auto">

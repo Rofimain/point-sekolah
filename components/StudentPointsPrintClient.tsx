@@ -267,19 +267,32 @@ export function StudentPointsPrintClient({
           }}
         />
       ) : selectedTemplate ? (
-        <DocumentPrintView
-          bodyHtml={selectedTemplate.body}
-          pageSettings={pageSettings}
-          vars={vars}
-          printId="student-letter-print"
-          variant="screen"
-        />
+        <>
+          <div className="no-print">
+            <DocumentPrintView
+              bodyHtml={selectedTemplate.body}
+              pageSettings={pageSettings}
+              vars={vars}
+              printId="student-letter-preview"
+              variant="screen"
+            />
+          </div>
+          <div className="hidden print:block">
+            <DocumentPrintView
+              bodyHtml={selectedTemplate.body}
+              pageSettings={pageSettings}
+              vars={vars}
+              printId="student-letter-print"
+              variant="print-surface"
+            />
+          </div>
+        </>
       ) : null}
 
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: white !important; }
+          html, body { background: white !important; margin: 0 !important; }
         }
       `}</style>
     </div>

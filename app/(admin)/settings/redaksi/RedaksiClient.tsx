@@ -247,7 +247,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
       title: title || "template",
       bodyHtml: editorRef.current?.getHTML() ?? body,
       pageSettings: editorRef.current?.getPageSettings() ?? pageSettings,
-      vars: null,
+      vars: buildSampleVars(),
     });
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -259,7 +259,12 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
   }
 
   function handlePrint() {
-    window.print();
+    // Pastikan user melihat versi terisi sebelum/ saat cetak (sama dengan pratinjau)
+    if (!showPreview) setShowPreview(true);
+    // Tunggu satu frame agar surface pratinjau ter-render, lalu print
+    requestAnimationFrame(() => {
+      window.setTimeout(() => window.print(), 50);
+    });
   }
 
   function onEditorChange(html: string, settings: DocumentPageSettings) {
@@ -609,12 +614,12 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                 </div>
               )}
 
-              {/* Satu surface cetak — sama HTML/CSS dengan pratinjau */}
+              {/* Satu surface cetak = sama dengan pratinjau (selalu terisi data contoh di redaksi) */}
               <div className="hidden print:block">
                 <DocumentPrintView
                   bodyHtml={body}
                   pageSettings={pageSettings}
-                  vars={showPreview ? previewVars : null}
+                  vars={previewVars}
                   printId="redaksi-print"
                   variant="print-surface"
                 />

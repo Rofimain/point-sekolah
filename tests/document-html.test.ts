@@ -61,6 +61,30 @@ test("page settings roundtrip", () => {
   assert.equal(box.heightMm, 216);
 });
 
+test("fillDocumentHtml fills placeholders inside letter tables", () => {
+  const html = plainTextToDocumentHtml(
+    `<table class="doc-sign-table"><tr><td>Kepala {{sekolah}}</td><td>{{kepala_sekolah}}</td></tr></table>`
+  );
+  const filled = fillDocumentHtml(html, {
+    sekolah: "SMA Contoh",
+    kepala_sekolah: "Drs. Contoh",
+  });
+  assert.match(filled, /SMA Contoh/);
+  assert.match(filled, /Drs\. Contoh/);
+  assert.doesNotMatch(filled, /\{\{/);
+});
+
+test("default templates use HTML letter layout tables", async () => {
+  const { DEFAULT_PRINT_TEMPLATES } = await import("../lib/print-templates");
+  const info = DEFAULT_PRINT_TEMPLATES.find((t) => t.slug === "info-poin");
+  assert.ok(info);
+  assert.match(info!.body, /doc-sign-table/);
+  assert.match(info!.body, /doc-letterhead-meta|doc-meta-table/);
+  const sp1 = DEFAULT_PRINT_TEMPLATES.find((t) => t.slug === "sp1");
+  assert.match(sp1!.body, /doc-sign-one-table|doc-sign-table/);
+  assert.match(sp1!.body, /doc-identity-table/);
+});
+
 test("buildSampleVars includes core keys", () => {
   const vars = buildSampleVars();
   assert.equal(vars.nama, "Budi Santoso");

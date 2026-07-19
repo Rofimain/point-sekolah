@@ -11,8 +11,10 @@
  * | sheetElevated      | 90    | Sheet di atas sheet lain |
  * | modal              | 100   | Dialog form (Records, Users, Violations, bukti) |
  * | modalElevated      | 200   | Dialog kritis (ubah password, sukses QRIS) |
+ * | toast              | 300   | Sonner toaster — selalu di atas modal |
  *
  * Aturan: modal aplikasi ≥ 100 agar selalu di atas TopBar (60).
+ * Feedback error/sukses di dalam modal (jangan banner halaman di belakang overlay).
  * Portal ke document.body wajib untuk overlay di dalam <main> yang di-scroll.
  */
 export const Z_INDEX = {
@@ -24,11 +26,13 @@ export const Z_INDEX = {
   sheetElevated: 90,
   modal: 100,
   modalElevated: 200,
+  toast: 300,
 } as const;
 
 /** Class Tailwind untuk z-index modal standar (di atas TopBar). */
 export const Z_MODAL_CLASS = "z-[100]";
 export const Z_MODAL_ELEVATED_CLASS = "z-[200]";
+export const Z_TOAST_CLASS = "z-[300]";
 
 let scrollLockCount = 0;
 let prevBodyOverflow = "";

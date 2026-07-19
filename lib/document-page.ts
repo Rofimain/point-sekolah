@@ -145,15 +145,49 @@ export function buildDocumentPageCss(settings: DocumentPageSettings, options?: {
   outline: none;
   min-width: 0;
 }
-.doc-page-body p { margin: 0 0 0.45em; }
+.doc-page-body p { margin: 0 0 0.45em; text-align: justify; }
 .doc-page-body p:empty { margin: 0; height: 0.7em; }
 .doc-page-body p.doc-sign-gap { margin: 0; height: 14mm; }
+.doc-page-body p.doc-title { text-align: center; font-weight: 700; font-size: 13pt; margin: 1em 0 0.75em; }
+.doc-page-body p.doc-subtitle { text-align: center; font-style: italic; margin-top: -0.4em; }
+.doc-page-body p.doc-align-right { text-align: right; }
+.doc-page-body p.doc-note { font-size: 10pt; margin-top: 1em; }
 .doc-page-body h1 { font-size: 16pt; font-weight: 700; margin: 0 0 0.5em; text-align: center; }
 .doc-page-body h2 { font-size: 13pt; font-weight: 700; margin: 0 0 0.45em; }
 .doc-page-body h3 { font-size: 12pt; font-weight: 700; margin: 0 0 0.4em; }
 .doc-page-body ul, .doc-page-body ol { margin: 0 0 0.45em; padding-left: 1.35em; }
-.doc-page-body table { border-collapse: collapse; width: 100%; margin: 0 0 0.45em; }
+.doc-page-body table { border-collapse: collapse; width: 100%; margin: 0 0 0.65em; }
 .doc-page-body td, .doc-page-body th { border: 1px solid #333; padding: 4px 8px; vertical-align: top; }
+.doc-page-body table.doc-meta-table,
+.doc-page-body table.doc-identity-table,
+.doc-page-body table.doc-letterhead-meta,
+.doc-page-body table.doc-sign-table {
+  border: none;
+  width: 100%;
+}
+.doc-page-body table.doc-meta-table td,
+.doc-page-body table.doc-identity-table td,
+.doc-page-body table.doc-letterhead-meta td,
+.doc-page-body table.doc-sign-table td {
+  border: none;
+  padding: 1px 0;
+  vertical-align: top;
+}
+.doc-page-body .doc-meta-label { width: 28mm; white-space: nowrap; }
+.doc-page-body .doc-meta-colon { width: 4mm; }
+.doc-page-body .doc-meta-left { width: 62%; }
+.doc-page-body .doc-meta-right { width: 38%; text-align: right; vertical-align: top; }
+.doc-page-body .doc-identity-table td:first-child { width: 42mm; white-space: nowrap; }
+.doc-page-body .doc-sign { margin-top: 8mm; }
+.doc-page-body .doc-sign-one { width: 55%; margin-left: auto; text-align: center; }
+.doc-page-body table.doc-sign-one-table { width: 48%; margin-left: auto; margin-top: 8mm; }
+.doc-page-body table.doc-sign-table { margin-top: 8mm; }
+.doc-page-body .doc-sign-space { height: 16mm; margin: 0; padding: 0; border: none; }
+.doc-page-body .doc-sign-role,
+.doc-page-body .doc-sign-name { text-align: center; margin: 0; }
+.doc-page-body .doc-sign-cell { width: 50%; text-align: center; }
+.doc-page-body .doc-sign-table td.doc-sign-cell:first-child:nth-last-child(3),
+.doc-page-body .doc-sign-table td.doc-sign-cell:first-child:nth-last-child(3) ~ td { width: 33.33%; }
 .doc-page-body hr { border: none; border-top: 1px solid #333; margin: 0.85em 0; }
 .doc-page-body .ProseMirror { outline: none; min-height: 40mm; }
 .doc-page-footer {
@@ -241,6 +275,14 @@ export function buildDocumentPageCss(settings: DocumentPageSettings, options?: {
     page-break-inside: avoid;
   }
   .doc-page-footer.doc-footer-pagenum-only { display: none !important; }
+  .doc-placeholder {
+    background: none !important;
+    border: none !important;
+    color: inherit !important;
+    font-family: inherit !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
   @page {
     size: ${pageSizeCss(settings)};
     margin: ${margins.top}mm ${margins.right}mm ${margins.bottom}mm ${margins.left}mm;

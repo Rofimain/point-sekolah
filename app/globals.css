@@ -237,10 +237,11 @@
   background: color-mix(in srgb, var(--text-muted) 55%, transparent);
 }
 
-/* Cetak/PDF: hanya isi surat — sembunyikan chrome aplikasi */
+/* Cetak/PDF: hanya isi surat — sembunyikan chrome aplikasi.
+   Margin kertas diatur per-dokumen lewat @page di DocumentPrintView (jangan override di sini). */
 @media print {
   @page {
-    margin: 12mm;
+    margin: 0;
   }
 
   html,
