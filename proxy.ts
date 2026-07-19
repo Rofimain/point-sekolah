@@ -44,7 +44,6 @@ export const proxy = withAuth(
       pathname.startsWith("/users") ||
       pathname.startsWith("/settings") ||
       pathname.startsWith("/access-log") ||
-      pathname.startsWith("/export") ||
       pathname.startsWith("/notifications") ||
       pathname.startsWith("/cetak-surat") ||
       pathname.startsWith("/classes");
@@ -78,7 +77,6 @@ export const proxy = withAuth(
           pathname.startsWith("/users") ||
           pathname.startsWith("/settings") ||
           pathname.startsWith("/access-log") ||
-          pathname.startsWith("/export") ||
           pathname.startsWith("/notifications") ||
           pathname.startsWith("/cetak-surat") ||
           pathname.startsWith("/classes")
@@ -104,7 +102,6 @@ export const config = {
     "/settings/:path*",
     "/access-log",
     "/access-log/:path*",
-    "/export/:path*",
     "/notifications/:path*",
     "/cetak-surat/:path*",
     "/classes/:path*",

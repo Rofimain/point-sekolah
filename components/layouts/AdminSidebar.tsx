@@ -400,26 +400,6 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             </SplitNavRow>
           )}
         </div>
-
-        {canManage && (
-          <div className="px-3 pb-2 pt-2">
-            <SectionLabel>Laporan</SectionLabel>
-            <SimpleNavLink
-              href="/export"
-              active={pathname.startsWith("/export")}
-              icon={
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                  <path
-                    d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              }
-              label="Export Excel"
-            />
-          </div>
-        )}
       </nav>
 
       <div className="border-t p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
