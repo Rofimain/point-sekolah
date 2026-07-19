@@ -21,15 +21,21 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   const secret = sanitizeTelegramWebhookSecret(process.env.TELEGRAM_WEBHOOK_SECRET);
-  if (secret) {
-    const hdr = req.headers.get("x-telegram-bot-api-secret-token");
-    if (hdr !== secret) {
-      console.warn(
-        "[telegram webhook] 403 — header X-Telegram-Bot-Api-Secret-Token tidak cocok TELEGRAM_WEBHOOK_SECRET. " +
-          "Setelah mengubah secret di environment, panggil lagi POST /api/telegram/set-webhook (Super Admin)."
-      );
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  if (!secret) {
+    console.error(
+      "[telegram webhook] TELEGRAM_WEBHOOK_SECRET belum diatur — menolak semua request. " +
+        "Set secret di environment lalu panggil ulang POST /api/telegram/set-webhook."
+    );
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const hdr = req.headers.get("x-telegram-bot-api-secret-token");
+  if (hdr !== secret) {
+    console.warn(
+      "[telegram webhook] 403 — header X-Telegram-Bot-Api-Secret-Token tidak cocok TELEGRAM_WEBHOOK_SECRET. " +
+        "Setelah mengubah secret di environment, panggil lagi POST /api/telegram/set-webhook (Super Admin)."
+    );
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   let update: { message?: { text?: string; chat?: { id?: number } } };

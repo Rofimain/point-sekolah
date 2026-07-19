@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
 import { slugifyPrintTemplate } from "@/lib/print-templates";
 import { serializePageSettings, parsePageSettings, type DocumentPageSettings } from "@/lib/document-page";
+import { plainTextToDocumentHtml } from "@/lib/document-html";
+import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -54,7 +56,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (typeof body.body !== "string") {
       return NextResponse.json({ error: "Isi template harus teks/HTML" }, { status: 400 });
     }
-    data.body = body.body;
+    data.body = sanitizeDocumentHtml(plainTextToDocumentHtml(body.body));
   }
 
   if (body.pageSettings !== undefined) {

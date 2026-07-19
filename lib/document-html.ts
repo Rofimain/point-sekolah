@@ -5,6 +5,7 @@ import {
   DEFAULT_PAGE_SETTINGS,
   parsePageSettings,
 } from "@/lib/document-page";
+import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 
 const PLACEHOLDER_RE = /\{\{\s*([a-z0-9_]+)\s*\}\}/gi;
 
@@ -26,7 +27,9 @@ function formatFilledValue(value: string): string {
 /** Konversi redaksi plain text lama → HTML dokumen dengan token placeholder. */
 export function plainTextToDocumentHtml(text: string): string {
   if (!text.trim()) return "<p></p>";
-  if (isLikelyHtmlDocument(text)) return ensurePlaceholderSpans(collapseEmptyParagraphs(text));
+  if (isLikelyHtmlDocument(text)) {
+    return sanitizeDocumentHtml(ensurePlaceholderSpans(collapseEmptyParagraphs(text)));
+  }
 
   const lines = text.replace(/\r\n/g, "\n").split("\n");
   const parts: string[] = [];
@@ -53,7 +56,7 @@ export function plainTextToDocumentHtml(text: string): string {
   else if (emptyRun === 2) parts.push("<p></p><p></p>");
   else if (emptyRun === 1) parts.push("<p></p>");
 
-  return parts.join("") || "<p></p>";
+  return sanitizeDocumentHtml(parts.join("") || "<p></p>");
 }
 
 /** Rapikan run <p></p> beruntun di HTML legacy. */
@@ -87,10 +90,11 @@ export function fillDocumentHtml(html: string, vars: Record<string, string>): st
       return value != null && value !== "" ? formatFilledValue(value) : escapeHtml(`{{${key}}}`);
     }
   );
-  return filledSpans.replace(PLACEHOLDER_RE, (_m, key: string) => {
+  const filled = filledSpans.replace(PLACEHOLDER_RE, (_m, key: string) => {
     const value = vars[key.toLowerCase()];
     return value != null && value !== "" ? formatFilledValue(value) : escapeHtml(`{{${key}}}`);
   });
+  return sanitizeDocumentHtml(filled);
 }
 
 export const SAMPLE_PRINT_VARS: Record<string, string> = {

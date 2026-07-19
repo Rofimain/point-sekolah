@@ -6,6 +6,7 @@ import { canManageData } from "@/lib/staff-roles";
 import { slugifyPrintTemplate } from "@/lib/print-templates";
 import { DEFAULT_PAGE_SETTINGS, serializePageSettings, parsePageSettings } from "@/lib/document-page";
 import { plainTextToDocumentHtml } from "@/lib/document-html";
+import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function GET() {
@@ -48,7 +49,9 @@ export async function POST(req: NextRequest) {
   }
 
   const templateBody =
-    typeof body.body === "string" ? plainTextToDocumentHtml(body.body) : "<p></p>";
+    typeof body.body === "string"
+      ? sanitizeDocumentHtml(plainTextToDocumentHtml(body.body))
+      : "<p></p>";
   const pageSettings =
     body.pageSettings != null
       ? typeof body.pageSettings === "string"

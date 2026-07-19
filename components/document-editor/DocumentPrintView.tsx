@@ -7,6 +7,7 @@ import {
   DEFAULT_PAGE_SETTINGS,
 } from "@/lib/document-page";
 import { fillDocumentHtml, plainTextToDocumentHtml } from "@/lib/document-html";
+import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 
 type Props = {
   bodyHtml: string;
@@ -26,7 +27,7 @@ function formatHf(raw: string, vars?: Record<string, string> | null): string {
   if (!raw?.trim()) return "";
   let html = plainTextToDocumentHtml(raw);
   if (vars) html = fillDocumentHtml(html, vars);
-  return html;
+  return sanitizeDocumentHtml(html);
 }
 
 /** Render dokumen — layout sama dengan text editor (satu CSS page model). */
@@ -42,7 +43,8 @@ export function DocumentPrintView({
   const css = useMemo(() => buildDocumentPageCss(pageSettings, { forPrint }), [pageSettings, forPrint]);
   const body = useMemo(() => {
     const base = plainTextToDocumentHtml(bodyHtml);
-    return vars ? fillDocumentHtml(base, vars) : base;
+    const filled = vars ? fillDocumentHtml(base, vars) : base;
+    return sanitizeDocumentHtml(filled);
   }, [bodyHtml, vars]);
   const header = useMemo(() => formatHf(pageSettings.headerHtml || "", vars), [pageSettings.headerHtml, vars]);
   const footer = useMemo(() => formatHf(pageSettings.footerHtml || "", vars), [pageSettings.footerHtml, vars]);

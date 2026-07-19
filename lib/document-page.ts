@@ -1,3 +1,5 @@
+import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
+
 export type PaperSize = "A4" | "Letter" | "Legal" | "F4";
 export type PageOrientation = "portrait" | "landscape";
 export type MarginPreset = "kop" | "normal" | "narrow" | "wide" | "custom";
@@ -77,8 +79,10 @@ export function parsePageSettings(raw: string | null | undefined): DocumentPageS
       orientation: parsed.orientation === "landscape" ? "landscape" : "portrait",
       margin: validMargin,
       customMarginMm: parsed.customMarginMm ?? DEFAULT_PAGE_SETTINGS.customMarginMm,
-      headerHtml: typeof parsed.headerHtml === "string" ? parsed.headerHtml : "",
-      footerHtml: typeof parsed.footerHtml === "string" ? parsed.footerHtml : "",
+      headerHtml:
+        typeof parsed.headerHtml === "string" ? sanitizeDocumentHtml(parsed.headerHtml) : "",
+      footerHtml:
+        typeof parsed.footerHtml === "string" ? sanitizeDocumentHtml(parsed.footerHtml) : "",
       showPageNumbers: parsed.showPageNumbers === true,
     };
   } catch {
@@ -87,7 +91,11 @@ export function parsePageSettings(raw: string | null | undefined): DocumentPageS
 }
 
 export function serializePageSettings(settings: DocumentPageSettings): string {
-  return JSON.stringify(settings);
+  return JSON.stringify({
+    ...settings,
+    headerHtml: sanitizeDocumentHtml(settings.headerHtml || ""),
+    footerHtml: sanitizeDocumentHtml(settings.footerHtml || ""),
+  });
 }
 
 /** CSS @page size string, e.g. "A4 portrait" or "216mm 330mm". */

@@ -37,6 +37,7 @@ import {
   DEFAULT_PAGE_SETTINGS,
 } from "@/lib/document-page";
 import { plainTextToDocumentHtml } from "@/lib/document-html";
+import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 
 export type DocumentEditorHandle = {
   getHTML: () => string;
@@ -237,7 +238,7 @@ export const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorPro
                 className={`doc-page-header${pageSettings.headerHtml?.trim() ? "" : " is-empty"}`}
                 dangerouslySetInnerHTML={{
                   __html: pageSettings.headerHtml?.trim()
-                    ? plainTextToDocumentHtml(pageSettings.headerHtml)
+                    ? sanitizeDocumentHtml(plainTextToDocumentHtml(pageSettings.headerHtml))
                     : "",
                 }}
               />
@@ -256,7 +257,7 @@ export const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorPro
                 <div
                   dangerouslySetInnerHTML={{
                     __html: pageSettings.footerHtml?.trim()
-                      ? plainTextToDocumentHtml(pageSettings.footerHtml)
+                      ? sanitizeDocumentHtml(plainTextToDocumentHtml(pageSettings.footerHtml))
                       : "",
                   }}
                 />

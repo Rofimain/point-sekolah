@@ -48,7 +48,10 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number) {
 async function embedImage(pdf: PDFDocument, dataUrl: string | null): Promise<PDFImage | null> {
   if (!dataUrl?.trim()) return null;
   const parsed = parseEvidenceImageDataUrl(dataUrl);
-  return parsed.mime === "image/png" ? pdf.embedPng(parsed.bytes) : pdf.embedJpg(parsed.bytes);
+  if (parsed.mime === "image/png") return pdf.embedPng(parsed.bytes);
+  if (parsed.mime === "image/jpeg") return pdf.embedJpg(parsed.bytes);
+  // pdf-lib tidak mendukung WebP — lewati (unggahan client biasanya sudah JPEG)
+  return null;
 }
 
 export async function createViolationEvidencePdf(record: ViolationEvidencePdfRecord): Promise<Uint8Array> {

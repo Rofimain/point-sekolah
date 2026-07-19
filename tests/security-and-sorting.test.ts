@@ -40,6 +40,20 @@ test("evidence parser accepts real PNG and rejects MIME spoofing", () => {
   assert.equal(parsed.mime, "image/png");
   assert.throws(() => parseEvidenceImageDataUrl(png.replace("image/png", "image/jpeg")));
   assert.throws(() => parseEvidenceImageDataUrl("data:image/svg+xml;base64,PHN2Zz4="));
+  assert.throws(() => parseEvidenceImageDataUrl("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"));
+});
+
+test("evidence parser accepts WebP magic bytes and rejects spoofed WebP", () => {
+  // Minimal RIFF/WEBP header + padding (not a real decodeable image, but magic matches)
+  const webpBytes = Buffer.from([
+    0x52, 0x49, 0x46, 0x46, 0x0a, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x00, 0x00,
+  ]);
+  const webp = `data:image/webp;base64,${webpBytes.toString("base64")}`;
+  const parsed = parseEvidenceImageDataUrl(webp);
+  assert.equal(parsed.mime, "image/webp");
+  assert.throws(() =>
+    parseEvidenceImageDataUrl(`data:image/webp;base64,${Buffer.from("not-webp-magic!!").toString("base64")}`)
+  );
 });
 
 test("password limiter blocks the sixth failed attempt", () => {

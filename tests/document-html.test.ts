@@ -108,3 +108,17 @@ test("buildStudentPrintVars", () => {
   assert.equal(vars.poin, "40");
   assert.equal(vars.kelas, "XI IPA 2");
 });
+
+test("sanitizeDocumentHtml strips script and event handlers from letter HTML", async () => {
+  const { sanitizeDocumentHtml } = await import("../lib/sanitize-document-html");
+  const dirty =
+    '<p style="color:red" onclick="alert(1)">Halo <script>alert(2)</script><strong>OK</strong></p>' +
+    '<img src=x onerror=alert(3) /><a href="javascript:alert(4)">x</a>';
+  const clean = sanitizeDocumentHtml(dirty);
+  assert.match(clean, /<strong>OK<\/strong>/);
+  assert.doesNotMatch(clean, /<script/i);
+  assert.doesNotMatch(clean, /onclick/i);
+  assert.doesNotMatch(clean, /<img/i);
+  assert.doesNotMatch(clean, /<a /i);
+  assert.doesNotMatch(clean, /javascript:/i);
+});

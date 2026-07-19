@@ -56,7 +56,18 @@ export async function POST(_req: NextRequest) {
   }
   const webhookUrl = new URL("/api/telegram/webhook", configuredUrl).toString();
   const secret = sanitizeTelegramWebhookSecret(process.env.TELEGRAM_WEBHOOK_SECRET);
-  if (secret && !isTelegramWebhookSecretValid(secret)) {
+  if (!secret) {
+    return NextResponse.json(
+      {
+        error:
+          "TELEGRAM_WEBHOOK_SECRET wajib diatur di environment sebelum set webhook. " +
+          TELEGRAM_WEBHOOK_SECRET_HINT,
+        webhookUrl,
+      },
+      { status: 400 }
+    );
+  }
+  if (!isTelegramWebhookSecretValid(secret)) {
     return NextResponse.json(
       {
         error: `TELEGRAM_WEBHOOK_SECRET tidak valid untuk Telegram. ${TELEGRAM_WEBHOOK_SECRET_HINT}`,
@@ -69,10 +80,8 @@ export async function POST(_req: NextRequest) {
   const body: Record<string, unknown> = {
     url: webhookUrl,
     allowed_updates: ["message"],
+    secret_token: secret,
   };
-  if (secret) {
-    body.secret_token = secret;
-  }
 
   let res: Response;
   try {
@@ -129,6 +138,6 @@ export async function POST(_req: NextRequest) {
   return NextResponse.json({
     ok: true,
     webhookUrl,
-    hint: secret ? "Header secret aktif" : "Set TELEGRAM_WEBHOOK_SECRET lalu panggil lagi untuk keamanan.",
+    hint: "Header secret aktif — webhook menolak request tanpa X-Telegram-Bot-Api-Secret-Token yang cocok.",
   });
 }
