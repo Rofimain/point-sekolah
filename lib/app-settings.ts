@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 export { APP_KEYS } from "@/lib/app-setting-keys";
 import { APP_KEYS } from "@/lib/app-setting-keys";
-import { AUTO_REMISI_PERCENT, AUTO_REMISI_QUIET_DAYS } from "@/lib/remisi-rules";
+import { AUTO_REMISI_QUIET_DAYS } from "@/lib/remisi-rules";
 
 const DEFAULTS: Record<string, string> = {
   [APP_KEYS.REDAKSI_PRINT]:
@@ -68,11 +68,6 @@ export function quietPeriodDaysFromEnv(): number {
 /** @deprecated Prefer AUTO_REMISI_QUIET_DAYS — remisi otomatis tidak lagi dari AppSetting. */
 export async function getQuietPeriodDays(): Promise<number> {
   return quietPeriodDaysFromEnv();
-}
-
-/** Aturan no.1 tetap 25%. */
-export async function getRemisiPercent(): Promise<number> {
-  return AUTO_REMISI_PERCENT;
 }
 
 export async function getPrintBlock(): Promise<{ redaksi: string }> {

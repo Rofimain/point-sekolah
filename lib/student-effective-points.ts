@@ -1,6 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getQuietPeriodDays, quietPeriodDaysFromEnv } from "@/lib/app-settings";
+import { getQuietPeriodDays } from "@/lib/app-settings";
 
 export { QUIET_MONTH_REASON } from "@/lib/point-adjustment-reason";
 export { getQuietPeriodDays };
@@ -12,15 +12,6 @@ export function isPointAdjustmentTableMissing(e: unknown): boolean {
     e.code === "P2021" &&
     (e.meta as { modelName?: string } | undefined)?.modelName === "PointAdjustment"
   );
-}
-
-/** Sync fallback env-only. Prefer getQuietPeriodDays() untuk nilai dari pengaturan sekolah. */
-export function quietPeriodDays(): number {
-  return quietPeriodDaysFromEnv();
-}
-
-export function quietPeriodMs(): number {
-  return quietPeriodDays() * 86400000;
 }
 
 export async function getGrossPointsByStudent(): Promise<Map<string, number>> {

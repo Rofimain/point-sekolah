@@ -1,11 +1,4 @@
-"use client";
-
-import { useMemo } from "react";
-import {
-  buildDocumentPageCss,
-  type DocumentPageSettings,
-  DEFAULT_PAGE_SETTINGS,
-} from "@/lib/document-page";
+import { buildDocumentPageCss, type DocumentPageSettings, DEFAULT_PAGE_SETTINGS } from "@/lib/document-page";
 import { fillDocumentHtml, plainTextToDocumentHtml } from "@/lib/document-html";
 import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 
@@ -40,14 +33,11 @@ export function DocumentPrintView({
   variant = "screen",
 }: Props) {
   const forPrint = variant === "print-surface";
-  const css = useMemo(() => buildDocumentPageCss(pageSettings, { forPrint }), [pageSettings, forPrint]);
-  const body = useMemo(() => {
-    const base = plainTextToDocumentHtml(bodyHtml);
-    const filled = vars ? fillDocumentHtml(base, vars) : base;
-    return sanitizeDocumentHtml(filled);
-  }, [bodyHtml, vars]);
-  const header = useMemo(() => formatHf(pageSettings.headerHtml || "", vars), [pageSettings.headerHtml, vars]);
-  const footer = useMemo(() => formatHf(pageSettings.footerHtml || "", vars), [pageSettings.footerHtml, vars]);
+  const css = buildDocumentPageCss(pageSettings, { forPrint });
+  const base = plainTextToDocumentHtml(bodyHtml);
+  const body = sanitizeDocumentHtml(vars ? fillDocumentHtml(base, vars) : base);
+  const header = formatHf(pageSettings.headerHtml || "", vars);
+  const footer = formatHf(pageSettings.footerHtml || "", vars);
   const hasHeader = Boolean(pageSettings.headerHtml?.trim());
   const hasFooter = Boolean(pageSettings.footerHtml?.trim());
   const showPageNum = pageSettings.showPageNumbers;

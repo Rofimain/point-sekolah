@@ -1,5 +1,3 @@
-"use client";
-
 import { getInitials } from "@/lib/utils";
 
 type UserAvatarProps = {
