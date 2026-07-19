@@ -8,7 +8,7 @@ import { recordDataAccessLog } from "@/lib/access-log";
 
 /**
  * Super admin / admin: jalankan remisi (sama logika dengan POST /api/cron/quiet-month-points).
- * Layak bila sudah ≥ hari tenang (pengaturan sekolah / POINT_REDUCTION_QUIET_DAYS) sejak tanggal kejadian terakhir.
+ * Termasuk catch-up jeda historis antar kejadian (≥ hari tenang) dan jendela last→now.
  */
 export async function POST() {
   const session = await getServerSession(authOptions);

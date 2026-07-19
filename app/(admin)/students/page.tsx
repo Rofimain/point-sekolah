@@ -5,6 +5,7 @@ import StudentsClient from "./StudentsClient";
 import type { Prisma } from "@/generated/prisma/client";
 import { indonesianAcademicYearLabel } from "@/lib/academic-year";
 import { isStaffRole } from "@/lib/staff-roles";
+import { getEffectivePointsMap } from "@/lib/student-effective-points";
 
 export default async function StudentsPage({
   searchParams,
@@ -32,7 +33,7 @@ export default async function StudentsPage({
     ];
   }
 
-  const [students, total, classes, latestClass] = await Promise.all([
+  const [students, total, classes, latestClass, effectivePointsMap] = await Promise.all([
     prisma.user.findMany({
       where,
       select: {
@@ -55,7 +56,13 @@ export default async function StudentsPage({
       orderBy: [{ grade: "asc" }, { name: "asc" }],
     }),
     prisma.class.findFirst({ orderBy: { createdAt: "desc" }, select: { year: true } }),
+    getEffectivePointsMap(),
   ]);
+
+  const totalPointsMap: Record<string, number> = {};
+  for (const s of students) {
+    totalPointsMap[s.id] = effectivePointsMap.get(s.id) ?? 0;
+  }
 
   const studentDomain = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
   const suggestedYear = latestClass?.year ?? indonesianAcademicYearLabel();
@@ -71,6 +78,7 @@ export default async function StudentsPage({
       studentDomain={studentDomain}
       viewerRole={session.user.role}
       suggestedYear={suggestedYear}
+      totalPointsMap={totalPointsMap}
     />
   );
 }

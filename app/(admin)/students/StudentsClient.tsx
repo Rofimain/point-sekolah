@@ -18,7 +18,44 @@ import { lockAppScroll, Z_MODAL_CLASS, Z_MODAL_ELEVATED_CLASS } from "@/lib/ui-l
 
 const GRADES = ["X", "XI", "XII"] as const;
 
+const WARNING_POINTS = parseInt(process.env.NEXT_PUBLIC_WARNING_POINTS || "50", 10);
+const CRITICAL_POINTS = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
+
 type FlashMsg = { type: "ok" | "err"; text: string };
+
+function PointBadge({ points }: { points: number }) {
+  const c =
+    points >= CRITICAL_POINTS
+      ? ["var(--danger-bg)", "var(--danger)"]
+      : points >= WARNING_POINTS
+        ? ["var(--warning-bg)", "var(--warning)"]
+        : ["var(--success-bg)", "var(--success)"];
+  return (
+    <span
+      className="badge-soft"
+      style={{ background: c[0], color: c[1], borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }}
+    >
+      {points}
+    </span>
+  );
+}
+
+function StatusBadge({ points }: { points: number }) {
+  const s =
+    points >= CRITICAL_POINTS
+      ? ["var(--danger-bg)", "var(--danger)", "Kritis"]
+      : points >= WARNING_POINTS
+        ? ["var(--warning-bg)", "var(--warning)", "Perhatian"]
+        : ["var(--success-bg)", "var(--success)", "Normal"];
+  return (
+    <span
+      className="badge-soft px-2.5"
+      style={{ background: s[0], color: s[1], borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }}
+    >
+      {s[2]}
+    </span>
+  );
+}
 
 function FlashBanner({ msg, className = "mb-4" }: { msg: FlashMsg; className?: string }) {
   return (
@@ -63,6 +100,7 @@ export default function StudentsClient({
   studentDomain,
   viewerRole,
   suggestedYear,
+  totalPointsMap = {},
 }: {
   students: StudentRow[];
   total: number;
@@ -73,6 +111,7 @@ export default function StudentsClient({
   studentDomain: string;
   viewerRole: string;
   suggestedYear: string;
+  totalPointsMap?: Record<string, number>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -601,6 +640,10 @@ export default function StudentsClient({
                       <div className="mt-0.5 break-all text-[11px]" style={{ color: "var(--text-muted)" }}>
                         {u.email}
                       </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <PointBadge points={totalPointsMap[u.id] ?? 0} />
+                        <StatusBadge points={totalPointsMap[u.id] ?? 0} />
+                      </div>
                       <Link
                         href={`/students/${u.id}/cetak`}
                         className="mt-2 inline-flex min-h-11 touch-manipulation items-center text-xs font-semibold hover:underline"
@@ -616,8 +659,8 @@ export default function StudentsClient({
             <thead>
               <tr style={{ background: "var(--bg-primary)" }}>
                 {(selectedClass
-                  ? ["Siswa", "NISN", "Email", "Status", "Cetak"]
-                  : ["Siswa", "NISN", "Email", "Kelas", "Status", "Cetak"]
+                  ? ["Siswa", "NISN", "Email", "Total poin", "Status", "Cetak"]
+                  : ["Siswa", "NISN", "Email", "Kelas", "Total poin", "Status", "Cetak"]
                 ).map((h) => (
                   <th
                     key={h}
@@ -657,6 +700,12 @@ export default function StudentsClient({
                         {u.class?.name ?? "—"}
                       </td>
                     )}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex flex-col items-start gap-1">
+                        <PointBadge points={totalPointsMap[u.id] ?? 0} />
+                        <StatusBadge points={totalPointsMap[u.id] ?? 0} />
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className="px-2 py-0.5 rounded text-[10px] font-semibold"

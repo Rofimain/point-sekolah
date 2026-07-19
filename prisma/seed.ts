@@ -219,7 +219,10 @@ async function main() {
     });
   }
   const adjTenang = await prisma.pointAdjustment.count({
-    where: { studentId: demoTenang.id, reason: QUIET_MONTH_REASON },
+    where: {
+      studentId: demoTenang.id,
+      OR: [{ reason: QUIET_MONTH_REASON }, { reason: { startsWith: `${QUIET_MONTH_REASON}|` } }],
+    },
   });
   if (adjTenang === 0) {
     const applied = await applyQuietMonthReductionForStudent(demoTenang.id);

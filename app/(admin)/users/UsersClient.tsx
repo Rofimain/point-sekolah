@@ -823,12 +823,20 @@ export default function UsersClient({
                     <button
                       type="button"
                       disabled={
+                        u.id === viewerId ||
                         !canDeleteUser(viewerRole, u.role) ||
                         (u.role === "SUPER_ADMIN" && superAdminTotal <= 1)
                       }
                       onClick={() => handleDelete(u.id, u.name)}
                       className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
                       style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
+                      title={
+                        u.id === viewerId
+                          ? "Tidak boleh menghapus akun sendiri"
+                          : u.role === "SUPER_ADMIN" && superAdminTotal <= 1
+                            ? "Tidak boleh menghapus satu-satunya akun Super Admin"
+                            : undefined
+                      }
                     >
                       Hapus
                     </button>
@@ -977,6 +985,7 @@ export default function UsersClient({
                           <button
                             type="button"
                             disabled={
+                              u.id === viewerId ||
                               !canDeleteUser(viewerRole, u.role) ||
                               (u.role === "SUPER_ADMIN" && superAdminTotal <= 1)
                             }
@@ -984,11 +993,13 @@ export default function UsersClient({
                             className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
                             style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
                             title={
-                              !canDeleteUser(viewerRole, u.role)
-                                ? "Admin tidak boleh menghapus akun Admin atau Super Admin"
-                                : u.role === "SUPER_ADMIN" && superAdminTotal <= 1
-                                  ? "Tidak boleh menghapus satu-satunya akun Super Admin"
-                                  : undefined
+                              u.id === viewerId
+                                ? "Tidak boleh menghapus akun sendiri"
+                                : !canDeleteUser(viewerRole, u.role)
+                                  ? "Admin tidak boleh menghapus akun Admin atau Super Admin"
+                                  : u.role === "SUPER_ADMIN" && superAdminTotal <= 1
+                                    ? "Tidak boleh menghapus satu-satunya akun Super Admin"
+                                    : undefined
                             }
                           >
                             Hapus

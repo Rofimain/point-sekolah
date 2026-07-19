@@ -1,16 +1,21 @@
 import { prisma } from "@/lib/prisma";
 import {
   calendarDaysSinceIncident,
-  dateInTimeZoneYmd,
   dateToYmdInput,
 } from "@/lib/incident-date";
+import { isPointAdjustmentTableMissing, getEffectivePointsBreakdown } from "@/lib/student-effective-points";
 import {
-  getEffectivePointsBreakdown,
-  isPointAdjustmentTableMissing,
+  buildQuietMonthReason,
+  isQuietMonthReason,
+  parseQuietMonthAnchor,
   QUIET_MONTH_REASON,
-} from "@/lib/student-effective-points";
+} from "@/lib/point-adjustment-reason";
 import { AUTO_REMISI_PERCENT } from "@/lib/remisi-rules";
 import { getQuietPeriodDays } from "@/lib/app-settings";
+import { findUnclaimedQuietGaps, isLastWindowClaimed } from "@/lib/quiet-month-gaps";
+
+export type { QuietGap } from "@/lib/quiet-month-gaps";
+export { findUnclaimedQuietGaps, isLastWindowClaimed } from "@/lib/quiet-month-gaps";
 
 /**
  * Tanggal KEJADIAN pelanggaran terakhir (kolom `date`), bukan `createdAt` / waktu input.
@@ -24,25 +29,46 @@ export async function getLastViolationDate(studentId: string): Promise<Date | nu
   return last?.date ?? null;
 }
 
-async function getLastQuietMonthAdjustmentAt(studentId: string): Promise<Date | null> {
+async function listQuietMonthAdjustments(
+  studentId: string
+): Promise<{ reason: string; createdAt: Date }[]> {
   try {
-    const last = await prisma.pointAdjustment.findFirst({
-      where: { studentId, reason: QUIET_MONTH_REASON },
-      orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
+    const rows = await prisma.pointAdjustment.findMany({
+      where: {
+        studentId,
+        OR: [
+          { reason: QUIET_MONTH_REASON },
+          { reason: { startsWith: `${QUIET_MONTH_REASON}|` } },
+        ],
+      },
+      select: { reason: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
     });
-    return last?.createdAt ?? null;
+    return rows.filter((r) => isQuietMonthReason(r.reason));
   } catch (e) {
-    if (isPointAdjustmentTableMissing(e)) return null;
+    if (isPointAdjustmentTableMissing(e)) return [];
     throw e;
   }
+}
+
+function claimedAnchorsFromAdjustments(rows: { reason: string }[]): Set<string> {
+  const set = new Set<string>();
+  for (const r of rows) {
+    const a = parseQuietMonthAnchor(r.reason);
+    if (a) set.add(a);
+  }
+  return set;
+}
+
+function legacyQuietAdjustments(rows: { reason: string; createdAt: Date }[]): { createdAt: Date }[] {
+  return rows.filter((r) => parseQuietMonthAnchor(r.reason) == null).map((r) => ({ createdAt: r.createdAt }));
 }
 
 /**
  * Aturan no.1 (otomatis, tidak perlu diatur):
  * - Ada poin pelanggaran (bruto) > 0
  * - ≥ 30 hari kalender tanpa pelanggaran sejak tanggal KEJADIAN terakhir
- * - Belum ada remisi periode tenang setelah tanggal kejadian terakhir
+ * - Belum ada remisi periode tenang untuk anchor kejadian terakhir
  * - Potongan 25% dari total skor pelanggaran bruto
  */
 export async function isEligibleForQuietMonthReduction(
@@ -51,6 +77,28 @@ export async function isEligibleForQuietMonthReduction(
 ): Promise<boolean> {
   const info = await getQuietMonthCountdown(studentId, now);
   return info != null && info.daysRemaining === 0;
+}
+
+/** True jika ada catch-up gap atau jendela last→now yang siap diremisi. */
+export async function hasAnyQuietMonthWork(
+  studentId: string,
+  now: Date = new Date()
+): Promise<boolean> {
+  const quietDays = await getQuietPeriodDays();
+  const records = await prisma.violationRecord.findMany({
+    where: { studentId },
+    select: { date: true, points: true },
+    orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+  });
+  if (records.length === 0) return false;
+
+  const adj = await listQuietMonthAdjustments(studentId);
+  const claimed = claimedAnchorsFromAdjustments(adj);
+  const ymds = records.map((r) => dateToYmdInput(r.date));
+  if (findUnclaimedQuietGaps({ incidentYmds: ymds, claimedAnchors: claimed, quietDays }).length > 0) {
+    return true;
+  }
+  return isEligibleForQuietMonthReduction(studentId, now);
 }
 
 /** Info hitungan mundur remisi otomatis untuk UI siswa. `null` = tidak perlu ditampilkan. */
@@ -64,8 +112,17 @@ export async function getQuietMonthCountdown(
   const lastVio = await getLastViolationDate(studentId);
   if (!lastVio) return null;
 
-  const lastAdj = await getLastQuietMonthAdjustmentAt(studentId);
-  if (lastAdj && dateInTimeZoneYmd(lastAdj) >= dateToYmdInput(lastVio)) return null;
+  const lastVioYmd = dateToYmdInput(lastVio);
+  const adj = await listQuietMonthAdjustments(studentId);
+  if (
+    isLastWindowClaimed({
+      lastVioYmd,
+      claimedAnchors: claimedAnchorsFromAdjustments(adj),
+      legacyQuietAdjustments: legacyQuietAdjustments(adj),
+    })
+  ) {
+    return null;
+  }
 
   const quietDays = await getQuietPeriodDays();
   const daysQuiet = calendarDaysSinceIncident(lastVio, now);
@@ -84,36 +141,30 @@ export type QuietMonthApplyResult = {
   pointsDelta: number;
   effectiveAfter: number;
   remisiPercent: number;
+  anchorYmd: string;
 };
 
-export async function applyQuietMonthReductionForStudent(
-  studentId: string,
-  now: Date = new Date()
-): Promise<QuietMonthApplyResult | null> {
-  if (!(await isEligibleForQuietMonthReduction(studentId, now))) return null;
-
-  const grossAgg = await prisma.violationRecord.aggregate({
-    where: { studentId },
-    _sum: { points: true },
-  });
-  const gross = grossAgg._sum.points ?? 0;
-  if (gross < 1) return null;
-
+async function createQuietAdjustment(opts: {
+  studentId: string;
+  anchorYmd: string;
+  grossForPercent: number;
+}): Promise<QuietMonthApplyResult | null> {
   const remisiPercent = AUTO_REMISI_PERCENT;
-  const deduct = Math.round(gross * (remisiPercent / 100));
+  const deduct = Math.round(opts.grossForPercent * (remisiPercent / 100));
   if (deduct < 1) return null;
 
-  const { effective } = await getEffectivePointsBreakdown(studentId);
-  const pointsDelta = -Math.min(deduct, effective, gross);
+  const { effective, gross: grossTotal } = await getEffectivePointsBreakdown(opts.studentId);
+  const pointsDelta = -Math.min(deduct, effective, grossTotal);
   if (pointsDelta >= 0) return null;
 
+  const reason = buildQuietMonthReason(opts.anchorYmd);
   try {
     await prisma.pointAdjustment.create({
       data: {
-        studentId,
+        studentId: opts.studentId,
         pointsDelta,
-        reason: QUIET_MONTH_REASON,
-        grossTotalBefore: gross,
+        reason,
+        grossTotalBefore: opts.grossForPercent,
       },
     });
   } catch (e) {
@@ -121,14 +172,103 @@ export async function applyQuietMonthReductionForStudent(
     throw e;
   }
 
-  const after = await getEffectivePointsBreakdown(studentId);
+  const after = await getEffectivePointsBreakdown(opts.studentId);
   return {
-    studentId,
-    grossTotalBefore: gross,
+    studentId: opts.studentId,
+    grossTotalBefore: opts.grossForPercent,
     pointsDelta,
     effectiveAfter: after.effective,
     remisiPercent,
+    anchorYmd: opts.anchorYmd,
   };
+}
+
+function grossThroughAnchor(
+  records: { date: Date; points: number }[],
+  anchorYmd: string
+): number {
+  let sum = 0;
+  for (const r of records) {
+    if (dateToYmdInput(r.date) <= anchorYmd) sum += r.points;
+  }
+  return sum;
+}
+
+/**
+ * Terapkan semua catch-up (jeda historis, tertua dulu) lalu jendela last→now bila eligible.
+ * Mengembalikan penyesuaian terakhir yang berhasil (kompatibel seed/caller lama).
+ */
+export async function applyQuietMonthReductionForStudent(
+  studentId: string,
+  now: Date = new Date()
+): Promise<QuietMonthApplyResult | null> {
+  const applied = await applyAllQuietMonthReductionsForStudent(studentId, now);
+  return applied.length > 0 ? applied[applied.length - 1]! : null;
+}
+
+export async function applyAllQuietMonthReductionsForStudent(
+  studentId: string,
+  now: Date = new Date()
+): Promise<QuietMonthApplyResult[]> {
+  const quietDays = await getQuietPeriodDays();
+  const records = await prisma.violationRecord.findMany({
+    where: { studentId },
+    select: { date: true, points: true },
+    orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+  });
+  if (records.length === 0) return [];
+
+  const out: QuietMonthApplyResult[] = [];
+  const adj = await listQuietMonthAdjustments(studentId);
+  const claimed = claimedAnchorsFromAdjustments(adj);
+
+  const ymds = records.map((r) => dateToYmdInput(r.date));
+  const gaps = findUnclaimedQuietGaps({
+    incidentYmds: ymds,
+    claimedAnchors: claimed,
+    quietDays,
+  });
+
+  for (const gap of gaps) {
+    const grossForPercent = grossThroughAnchor(records, gap.anchorYmd);
+    if (grossForPercent < 1) {
+      claimed.add(gap.anchorYmd);
+      continue;
+    }
+    const r = await createQuietAdjustment({
+      studentId,
+      anchorYmd: gap.anchorYmd,
+      grossForPercent,
+    });
+    if (r) {
+      out.push(r);
+      claimed.add(gap.anchorYmd);
+    }
+  }
+
+  if (await isEligibleForQuietMonthReduction(studentId, now)) {
+    const lastVio = await getLastViolationDate(studentId);
+    if (lastVio) {
+      const lastVioYmd = dateToYmdInput(lastVio);
+      if (!claimed.has(lastVioYmd)) {
+        const grossAgg = await prisma.violationRecord.aggregate({
+          where: { studentId },
+          _sum: { points: true },
+        });
+        const gross = grossAgg._sum.points ?? 0;
+        if (gross >= 1) {
+          const r = await createQuietAdjustment({
+            studentId,
+            anchorYmd: lastVioYmd,
+            grossForPercent: gross,
+          });
+          if (r) out.push(r);
+        }
+      }
+    }
+  }
+
+  return out;
 }
 
 export async function applyQuietMonthReductionForAllStudents(
@@ -140,8 +280,8 @@ export async function applyQuietMonthReductionForAllStudents(
   });
   const out: QuietMonthApplyResult[] = [];
   for (const s of students) {
-    const r = await applyQuietMonthReductionForStudent(s.id, now);
-    if (r) out.push(r);
+    const applied = await applyAllQuietMonthReductionsForStudent(s.id, now);
+    out.push(...applied);
   }
   return out;
 }
@@ -154,8 +294,36 @@ export async function previewEligibleQuietMonthStudents(
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
+  const quietDays = await getQuietPeriodDays();
   const out: { id: string; name: string; lastIncidentYmd: string; daysQuiet: number }[] = [];
   for (const s of students) {
+    const records = await prisma.violationRecord.findMany({
+      where: { studentId: s.id },
+      select: { date: true },
+      orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+    });
+    if (records.length === 0) continue;
+
+    const adj = await listQuietMonthAdjustments(s.id);
+    const claimed = claimedAnchorsFromAdjustments(adj);
+    const ymds = records.map((r) => dateToYmdInput(r.date));
+    const gaps = findUnclaimedQuietGaps({
+      incidentYmds: ymds,
+      claimedAnchors: claimed,
+      quietDays,
+    });
+
+    if (gaps.length > 0) {
+      const g = gaps[0]!;
+      out.push({
+        id: s.id,
+        name: s.name,
+        lastIncidentYmd: g.anchorYmd,
+        daysQuiet: g.daysQuiet,
+      });
+      continue;
+    }
+
     if (!(await isEligibleForQuietMonthReduction(s.id, now))) continue;
     const last = await getLastViolationDate(s.id);
     if (!last) continue;

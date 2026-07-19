@@ -3,10 +3,37 @@ import { parseManualRemisiReason } from "@/lib/remisi-rules";
 /** Di basis data: pengurangan 25% setelah periode tenang (aturan no.1). */
 export const QUIET_MONTH_REASON = "QUIET_MONTH_REDUCTION";
 
+const ANCHOR_PREFIX = "|anchor=";
+
+/** Reason dengan anchor tanggal kejadian yang mengawali jendela tenang. */
+export function buildQuietMonthReason(anchorYmd: string): string {
+  const ymd = anchorYmd.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+    return QUIET_MONTH_REASON;
+  }
+  return `${QUIET_MONTH_REASON}${ANCHOR_PREFIX}${ymd}`;
+}
+
+export function isQuietMonthReason(reason: string): boolean {
+  return reason === QUIET_MONTH_REASON || reason.startsWith(`${QUIET_MONTH_REASON}|`);
+}
+
+/** Anchor YYYY-MM-DD, atau `null` untuk reason lama tanpa anchor. */
+export function parseQuietMonthAnchor(reason: string): string | null {
+  if (!isQuietMonthReason(reason)) return null;
+  if (reason === QUIET_MONTH_REASON) return null;
+  const idx = reason.indexOf(ANCHOR_PREFIX);
+  if (idx < 0) return null;
+  const ymd = reason.slice(idx + ANCHOR_PREFIX.length).trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(ymd) ? ymd : null;
+}
+
 /** Label tampilan untuk nilai `reason` penyesuaian poin. */
 export function formatPointAdjustmentReason(reason: string): string {
-  if (reason === QUIET_MONTH_REASON) {
-    return "Remisi otomatis periode tenang (25%)";
+  if (isQuietMonthReason(reason)) {
+    const anchor = parseQuietMonthAnchor(reason);
+    const base = "Remisi otomatis periode tenang (25%)";
+    return anchor ? `${base} — sejak ${anchor}` : base;
   }
 
   const parsed = parseManualRemisiReason(reason);

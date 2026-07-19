@@ -177,6 +177,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const existing = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true, name: true, email: true } });
   if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
+  if (existing.id === session.user.id) {
+    return NextResponse.json({ error: "Tidak boleh menghapus akun sendiri." }, { status: 403 });
+  }
   if (!canDeleteUser(session.user.role, existing.role)) {
     return NextResponse.json({ error: "Admin tidak boleh menghapus akun Admin atau Super Admin." }, { status: 403 });
   }
