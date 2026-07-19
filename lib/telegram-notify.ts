@@ -18,9 +18,7 @@ function escapeHtml(s: string): string {
 }
 
 function buildMessage(p: ParentViolationNotifyPayload): string {
-  const who =
-    p.recordedByStaffName?.trim() ||
-    "Siswa (laporan mandiri)";
+  const who = p.recordedByStaffName?.trim() || "Siswa (laporan mandiri)";
   const lines = [
     "<b>Notifikasi pelanggaran</b>",
     "",
@@ -31,7 +29,10 @@ function buildMessage(p: ParentViolationNotifyPayload): string {
   ];
   if (p.sessionSlot?.trim()) lines.push(`<b>Sesi:</b> ${escapeHtml(p.sessionSlot.trim())}`);
   if (p.notes?.trim()) lines.push(`<b>Catatan:</b> ${escapeHtml(p.notes.trim())}`);
-  lines.push("", `<i>${escapeHtml(new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }))}</i>`);
+  lines.push(
+    "",
+    `<i>${escapeHtml(new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }))}</i>`
+  );
   return lines.join("\n");
 }
 

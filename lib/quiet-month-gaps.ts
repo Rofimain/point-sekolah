@@ -1,7 +1,4 @@
-import {
-  calendarDaysBetweenYmd,
-  dateInTimeZoneYmd,
-} from "@/lib/incident-date";
+import { calendarDaysBetweenYmd, dateInTimeZoneYmd } from "@/lib/incident-date";
 
 export type QuietGap = {
   anchorYmd: string;

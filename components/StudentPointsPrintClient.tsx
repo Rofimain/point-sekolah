@@ -3,17 +3,11 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { PrintButton } from "@/components/PrintButton";
-import {
-  StudentPointsPrintArticle,
-  type StudentPointsPrintArticleProps,
-} from "@/components/StudentPointsPrintArticle";
+import { StudentPointsPrintArticle, type StudentPointsPrintArticleProps } from "@/components/StudentPointsPrintArticle";
 import { DocumentPrintView } from "@/components/document-editor";
 import { parsePageSettings, type DocumentPageSettings } from "@/lib/document-page";
 import { buildStudentPrintVars } from "@/lib/student-print-vars";
-import {
-  extractPlaceholderKeys,
-  TEMPLATE_OFFICIAL_PLACEHOLDERS,
-} from "@/lib/print-templates";
+import { extractPlaceholderKeys, TEMPLATE_OFFICIAL_PLACEHOLDERS } from "@/lib/print-templates";
 
 export type LetterTemplateOption = {
   id: string;
@@ -47,12 +41,7 @@ const AUTO_FILLED_KEYS = new Set([
   "alamat",
 ]);
 
-function field(
-  label: string,
-  value: string,
-  onChange: (v: string) => void,
-  placeholder?: string
-) {
+function field(label: string, value: string, onChange: (v: string) => void, placeholder?: string) {
   return (
     <div>
       <label
@@ -118,11 +107,7 @@ export function StudentPointsPrintClient({
   const overrideKeys = useMemo(() => {
     if (isPointsDoc) return new Set<string>();
     const official = TEMPLATE_OFFICIAL_PLACEHOLDERS[slug];
-    const keys = official
-      ? [...official]
-      : selectedTemplate
-        ? extractPlaceholderKeys(selectedTemplate.body)
-        : [];
+    const keys = official ? [...official] : selectedTemplate ? extractPlaceholderKeys(selectedTemplate.body) : [];
     return new Set(keys.filter((k) => !AUTO_FILLED_KEYS.has(k)));
   }, [isPointsDoc, slug, selectedTemplate]);
 
@@ -135,10 +120,7 @@ export function StudentPointsPrintClient({
   );
 
   const daftarPelanggaran = useMemo(
-    () =>
-      articleProps.history.records
-        .map((r, i) => `${i + 1}. ${r.violationName} (${r.points} poin)`)
-        .join("\n"),
+    () => articleProps.history.records.map((r, i) => `${i + 1}. ${r.violationName} (${r.points} poin)`).join("\n"),
     [articleProps.history.records]
   );
 
@@ -220,7 +202,11 @@ export function StudentPointsPrintClient({
             {articleProps.studentName}
           </p>
           <p className="text-[11px]" style={{ color: "var(--text-secondary)" }}>
-            {[articleProps.classNameLabel, articleProps.nisn ? `NISN ${articleProps.nisn}` : null, `${articleProps.breakdown.effective} poin`]
+            {[
+              articleProps.classNameLabel,
+              articleProps.nisn ? `NISN ${articleProps.nisn}` : null,
+              `${articleProps.breakdown.effective} poin`,
+            ]
               .filter(Boolean)
               .join(" · ")}
           </p>
@@ -289,8 +275,7 @@ export function StudentPointsPrintClient({
                 {needs("periode_akhir") && field("Periode akhir", periodeAkhir, setPeriodeAkhir)}
                 {needs("batas_remisi") && field("Batas remisi", batasRemisi, setBatasRemisi)}
                 {needs("jenis_sp") && field("Jenis SP", jenisSp, setJenisSp, "SP-2")}
-                {needs("tanggal_perjanjian") &&
-                  field("Tanggal perjanjian", tanggalPerjanjian, setTanggalPerjanjian)}
+                {needs("tanggal_perjanjian") && field("Tanggal perjanjian", tanggalPerjanjian, setTanggalPerjanjian)}
               </div>
             </>
           )}

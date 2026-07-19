@@ -75,7 +75,10 @@ export function AddRecordStudentPicker({
 
   return (
     <div ref={rootRef} className="relative">
-      <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+      <label
+        className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+        style={{ color: "var(--text-secondary)" }}
+      >
         Pilih siswa
       </label>
       <button
@@ -110,7 +113,10 @@ export function AddRecordStudentPicker({
               const pts = totalPointsMap[selected.id] ?? 0;
               const [bg, fg] = totalBadgeStyle(pts);
               return (
-                <span className="flex-shrink-0 px-2 py-1 rounded-lg text-[10px] font-bold" style={{ background: bg, color: fg }}>
+                <span
+                  className="flex-shrink-0 px-2 py-1 rounded-lg text-[10px] font-bold"
+                  style={{ background: bg, color: fg }}
+                >
                   {pts} poin
                 </span>
               );
@@ -180,13 +186,7 @@ export function AddRecordStudentPicker({
                         if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent";
                       }}
                     >
-                      <UserAvatar
-                        name={s.name}
-                        userId={s.id}
-                        photoPresent={s.photoPresent}
-                        size="lg"
-                        rounded="lg"
-                      />
+                      <UserAvatar name={s.name} userId={s.id} photoPresent={s.photoPresent} size="lg" rounded="lg" />
                       <span className="flex-1 min-w-0">
                         <span className="block text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
                           {s.name}
@@ -196,7 +196,10 @@ export function AddRecordStudentPicker({
                           {s.nisn ? ` · NISN ${s.nisn}` : " · NISN belum diisi"}
                         </span>
                       </span>
-                      <span className="flex-shrink-0 px-2 py-0.5 rounded-md text-[10px] font-bold tabular-nums" style={{ background: bg, color: fg }}>
+                      <span
+                        className="flex-shrink-0 px-2 py-0.5 rounded-md text-[10px] font-bold tabular-nums"
+                        style={{ background: bg, color: fg }}
+                      >
                         {pts}p
                       </span>
                     </button>

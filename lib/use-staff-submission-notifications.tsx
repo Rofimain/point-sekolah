@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   loadStaffSubmissionReadIds,
   persistStaffSubmissionReadIds,
@@ -36,8 +27,7 @@ type StaffSubmissionNotificationsValue = {
   lastFetchedAt: Date | null;
 };
 
-const StaffSubmissionNotificationsContext =
-  createContext<StaffSubmissionNotificationsValue | null>(null);
+const StaffSubmissionNotificationsContext = createContext<StaffSubmissionNotificationsValue | null>(null);
 
 export function StaffSubmissionNotificationsProvider({ children }: { children: ReactNode }) {
   const [readSet, setReadSet] = useState<Set<string>>(() => new Set());
@@ -102,9 +92,7 @@ export function StaffSubmissionNotificationsProvider({ children }: { children: R
     function armTimer() {
       clearTimer();
       const ms =
-        typeof document !== "undefined" && document.hidden
-          ? STAFF_SUBMISSION_POLL_HIDDEN_MS
-          : STAFF_SUBMISSION_POLL_MS;
+        typeof document !== "undefined" && document.hidden ? STAFF_SUBMISSION_POLL_HIDDEN_MS : STAFF_SUBMISSION_POLL_MS;
       pollTimerRef.current = setInterval(poll, ms);
     }
 
@@ -140,9 +128,7 @@ export function StaffSubmissionNotificationsProvider({ children }: { children: R
 export function useStaffSubmissionNotifications(): StaffSubmissionNotificationsValue {
   const ctx = useContext(StaffSubmissionNotificationsContext);
   if (!ctx) {
-    throw new Error(
-      "useStaffSubmissionNotifications must be used within StaffSubmissionNotificationsProvider"
-    );
+    throw new Error("useStaffSubmissionNotifications must be used within StaffSubmissionNotificationsProvider");
   }
   return ctx;
 }

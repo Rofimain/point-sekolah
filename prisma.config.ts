@@ -8,9 +8,6 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url:
-      process.env.DIRECT_URL ??
-      process.env.DATABASE_URL ??
-      "postgresql://build:build@127.0.0.1:5432/build",
+    url: process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? "postgresql://build:build@127.0.0.1:5432/build",
   },
 });

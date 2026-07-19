@@ -47,10 +47,7 @@ export type GoogleReadinessRow = {
 };
 
 /** Audit kesiapan Google — tidak mengubah data. */
-export async function auditGoogleReadiness(opts?: {
-  take?: number;
-  role?: string;
-}): Promise<{
+export async function auditGoogleReadiness(opts?: { take?: number; role?: string }): Promise<{
   summary: {
     total: number;
     linked: number;

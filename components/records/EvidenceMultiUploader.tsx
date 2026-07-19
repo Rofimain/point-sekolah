@@ -17,13 +17,7 @@ type Props = {
   hint?: string;
 };
 
-export function EvidenceMultiUploader({
-  images,
-  onChange,
-  disabled,
-  label = "Foto bukti",
-  hint,
-}: Props) {
+export function EvidenceMultiUploader({ images, onChange, disabled, label = "Foto bukti", hint }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = "evidence-multi-uploader-input";
   const [busy, setBusy] = useState(false);
@@ -68,10 +62,7 @@ export function EvidenceMultiUploader({
         })(),
         {
           loading: selected.length > 1 ? `Mengompres ${selected.length} foto…` : "Mengompres foto…",
-          success: (r) =>
-            r.count > 1
-              ? `${r.count} foto siap (total ~${r.kb} KB)`
-              : `Foto siap (~${r.kb} KB)`,
+          success: (r) => (r.count > 1 ? `${r.count} foto siap (total ~${r.kb} KB)` : `Foto siap (~${r.kb} KB)`),
           error: (err: unknown) => (err instanceof Error ? err.message : "Gagal memproses gambar"),
         }
       );
@@ -108,7 +99,11 @@ export function EvidenceMultiUploader({
               className="relative rounded-lg border"
               style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
             >
-              <img src={src} alt={`Foto bukti pelanggaran ${index + 1}`} className="aspect-square w-full rounded-lg object-cover" />
+              <img
+                src={src}
+                alt={`Foto bukti pelanggaran ${index + 1}`}
+                className="aspect-square w-full rounded-lg object-cover"
+              />
               <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
                 {index + 1}
               </span>

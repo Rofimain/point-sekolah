@@ -789,7 +789,8 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
     name: "Menggunakan jaket/sweater atau sejenisnya yang tidak sesuai seragam jaket almamater",
     section: "KERAPIHAN",
     points: 10,
-    description: "1× poin + disita; 2× poin + perjanjian + disita 1 pekan (diambil ortu); 3× poin + disita tidak dikembalikan",
+    description:
+      "1× poin + disita; 2× poin + perjanjian + disita 1 pekan (diambil ortu); 3× poin + disita tidak dikembalikan",
     sortOrder: 215,
   },
   {
@@ -815,8 +816,7 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
     name: "Ukuran baju/rok/celana/kemeja ketat atau panjangnya tidak sesuai ketentuan sekolah",
     section: "KERAPIHAN",
     points: 10,
-    description:
-      "1× poin + celana/rok dicoret; 2× poin + surat perjanjian; 3× poin + digunting + dipulangkan + disita",
+    description: "1× poin + celana/rok dicoret; 2× poin + surat perjanjian; 3× poin + digunting + dipulangkan + disita",
     sortOrder: 218,
   },
   {
@@ -910,17 +910,15 @@ export const PASAL_15_VIOLATIONS: Pasal15ViolationSeed[] = [
     description: "Tidak dilayani (tanda tangan surat, legalisir ijazah, dll.)",
     sortOrder: 229,
   },
-].map(
-  (v): Pasal15ViolationSeed => ({
-    id: v.id,
-    code: v.code,
-    name: `[${v.code}] ${v.name}`,
-    section: v.section as ViolationSection,
-    points: v.points,
-    description: v.description,
-    sortOrder: v.sortOrder,
-  })
-);
+].map((v): Pasal15ViolationSeed => ({
+  id: v.id,
+  code: v.code,
+  name: `[${v.code}] ${v.name}`,
+  section: v.section as ViolationSection,
+  points: v.points,
+  description: v.description,
+  sortOrder: v.sortOrder,
+}));
 
 export function pasal15ToCreateInput(v: Pasal15ViolationSeed) {
   const name = v.name;

@@ -137,9 +137,7 @@ export function extractPlaceholderKeys(body: string): string[] {
 export function findUnrecognizedPlaceholders(body: string, slug?: string): string[] {
   const used = extractPlaceholderKeys(body);
   const official =
-    slug && TEMPLATE_OFFICIAL_PLACEHOLDERS[slug]
-      ? new Set(TEMPLATE_OFFICIAL_PLACEHOLDERS[slug])
-      : ALL_OFFICIAL_KEYS;
+    slug && TEMPLATE_OFFICIAL_PLACEHOLDERS[slug] ? new Set(TEMPLATE_OFFICIAL_PLACEHOLDERS[slug]) : ALL_OFFICIAL_KEYS;
   return used.filter((k) => !official.has(k));
 }
 

@@ -28,12 +28,13 @@ const CRITICAL = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
 const WARNING = parseInt(process.env.NEXT_PUBLIC_WARNING_POINTS || "50", 10);
 
 function PointBadge({ points }: { points: number }) {
-  const color =
-    points >= CRITICAL ? "var(--danger)" : points >= WARNING ? "var(--warning)" : "var(--success)";
-  const bg =
-    points >= CRITICAL ? "var(--danger-bg)" : points >= WARNING ? "var(--warning-bg)" : "var(--success-bg)";
+  const color = points >= CRITICAL ? "var(--danger)" : points >= WARNING ? "var(--warning)" : "var(--success)";
+  const bg = points >= CRITICAL ? "var(--danger-bg)" : points >= WARNING ? "var(--warning-bg)" : "var(--success-bg)";
   return (
-    <span className="inline-flex items-center justify-center w-9 h-5 rounded-full text-xs font-bold" style={{ background: bg, color }}>
+    <span
+      className="inline-flex items-center justify-center w-9 h-5 rounded-full text-xs font-bold"
+      style={{ background: bg, color }}
+    >
       {points}
     </span>
   );
@@ -124,7 +125,8 @@ export default function StudentFormClient({
   const threshold = heavyViolationPointsThreshold();
 
   const pointStatus = totalPoints >= CRITICAL ? "kritis" : totalPoints >= WARNING ? "perhatian" : "aman";
-  const pointColor = pointStatus === "kritis" ? "var(--danger)" : pointStatus === "perhatian" ? "var(--warning)" : "var(--success)";
+  const pointColor =
+    pointStatus === "kritis" ? "var(--danger)" : pointStatus === "perhatian" ? "var(--warning)" : "var(--success)";
 
   const sortedTypes = useMemo(() => {
     return [...violationTypes].sort((a, b) => {
@@ -168,7 +170,9 @@ export default function StudentFormClient({
       return;
     }
     if (needEvidence && evidenceImages.length === 0 && signatureText.trim().length < 12) {
-      setError(`Pelanggaran di atas ${threshold} poin wajib foto bukti dan/atau pengakuan tertulis (minimal 12 karakter).`);
+      setError(
+        `Pelanggaran di atas ${threshold} poin wajib foto bukti dan/atau pengakuan tertulis (minimal 12 karakter).`
+      );
       return;
     }
     setLoading(true);
@@ -254,7 +258,10 @@ export default function StudentFormClient({
       )}
       <TopBar />
       <div className="mx-auto max-w-2xl px-3 pt-4 pb-safe-bottom sm:px-5 sm:pt-5">
-        <div className="mb-4 flex items-center gap-3 rounded-xl p-3 sm:gap-4 sm:p-4" style={{ background: "var(--bg-sidebar)" }}>
+        <div
+          className="mb-4 flex items-center gap-3 rounded-xl p-3 sm:gap-4 sm:p-4"
+          style={{ background: "var(--bg-sidebar)" }}
+        >
           <UserAvatar
             name={session.user.name || "Siswa"}
             userId={session.user.id}
@@ -314,7 +321,11 @@ export default function StudentFormClient({
         {remisiCountdown && (
           <div
             className="p-3 rounded-lg text-[11px] mb-4 leading-relaxed"
-            style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid var(--accent-border)" }}
+            style={{
+              background: "var(--accent-light)",
+              color: "var(--accent)",
+              border: "1px solid var(--accent-border)",
+            }}
           >
             {remisiCountdown.daysRemaining > 0 ? (
               <>
@@ -355,7 +366,10 @@ export default function StudentFormClient({
         )}
 
         {tab === "tata" && (
-          <div className="rounded-xl border overflow-hidden mb-6" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+          <div
+            className="rounded-xl border overflow-hidden mb-6"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+          >
             <div className="px-4 py-3 border-b space-y-3" style={{ borderColor: "var(--border)" }}>
               <div>
                 <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
@@ -385,7 +399,11 @@ export default function StudentFormClient({
                   }}
                   placeholder="Cari no / nama pelanggaran…"
                   className="min-h-11 min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"
-                  style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                  style={{
+                    background: "var(--bg-primary)",
+                    borderColor: "var(--border)",
+                    color: "var(--text-primary)",
+                  }}
                 />
                 <button
                   type="submit"
@@ -420,11 +438,17 @@ export default function StudentFormClient({
                                 {code || "—"}
                               </span>
                               <div className="min-w-0">
-                                <div className="text-xs font-medium break-words" style={{ color: "var(--text-primary)" }}>
+                                <div
+                                  className="text-xs font-medium break-words"
+                                  style={{ color: "var(--text-primary)" }}
+                                >
                                   {title || v.name}
                                 </div>
                                 {v.description && (
-                                  <div className="text-[10px] mt-0.5 break-words" style={{ color: "var(--text-muted)" }}>
+                                  <div
+                                    className="text-[10px] mt-0.5 break-words"
+                                    style={{ color: "var(--text-muted)" }}
+                                  >
                                     {v.description}
                                   </div>
                                 )}
@@ -432,7 +456,10 @@ export default function StudentFormClient({
                             </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
                               <CategoryBadge category={v.category} />
-                              <span className="text-xs font-bold tabular-nums" style={{ color: "var(--text-secondary)" }}>
+                              <span
+                                className="text-xs font-bold tabular-nums"
+                                style={{ color: "var(--text-secondary)" }}
+                              >
                                 {v.points} poin
                               </span>
                             </div>
@@ -456,18 +483,31 @@ export default function StudentFormClient({
           <>
             <div
               className="p-3 rounded-lg text-xs mb-5"
-              style={{ background: "var(--warning-bg)", color: "var(--warning)", borderLeft: "3px solid var(--warning)" }}
+              style={{
+                background: "var(--warning-bg)",
+                color: "var(--warning)",
+                borderLeft: "3px solid var(--warning)",
+              }}
             >
               Pengisian bersifat resmi. Anda atau guru dapat mencatat pelanggaran. Di atas {threshold} poin, lampirkan
               bukti foto dan/atau pengakuan tertulis (nama lengkap).
             </div>
 
-            <div className="mb-5 rounded-xl border p-4 sm:p-5" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+            <div
+              className="mb-5 rounded-xl border p-4 sm:p-5"
+              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            >
               <h2
                 className="text-sm font-serif mb-4 pb-3 border-b"
                 style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
               >
-                Formulir pelaporan — {new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                Formulir pelaporan —{" "}
+                {new Date().toLocaleDateString("id-ID", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -491,7 +531,10 @@ export default function StudentFormClient({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  <label
+                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     Tanggal kejadian *
                   </label>
                   <input
@@ -502,7 +545,11 @@ export default function StudentFormClient({
                     min="2015-01-01"
                     max={calendarTodayYmd()}
                     className="w-full px-3 py-2.5 rounded-lg border text-sm"
-                    style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                    style={{
+                      background: "var(--bg-primary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text-primary)",
+                    }}
                   />
                   <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
                     Sesuai hari kejadian asli (bukan hari input). Remisi periode tenang dihitung dari tanggal ini. Jika
@@ -511,14 +558,21 @@ export default function StudentFormClient({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  <label
+                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     Sesi / jam pelajaran
                   </label>
                   <select
                     value={sessionSlot}
                     onChange={(e) => setSessionSlot(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-lg border text-sm"
-                    style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                    style={{
+                      background: "var(--bg-primary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text-primary)",
+                    }}
                   >
                     <option value="">— Pilih sesi —</option>
                     {SESSIONS.map((s) => (
@@ -530,7 +584,10 @@ export default function StudentFormClient({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                  <label
+                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     Keterangan tambahan
                   </label>
                   <textarea
@@ -539,7 +596,11 @@ export default function StudentFormClient({
                     placeholder="Tuliskan keterangan atau alasan jika ada..."
                     rows={3}
                     className="w-full px-3 py-2.5 rounded-lg border text-sm resize-none"
-                    style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                    style={{
+                      background: "var(--bg-primary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text-primary)",
+                    }}
                   />
                 </div>
 
@@ -551,13 +612,12 @@ export default function StudentFormClient({
                     <div className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
                       Bukti tambahan (wajib salah satu atau keduanya)
                     </div>
-                    <EvidenceMultiUploader
-                      images={evidenceImages}
-                      onChange={setEvidenceImages}
-                      disabled={loading}
-                    />
+                    <EvidenceMultiUploader images={evidenceImages} onChange={setEvidenceImages} disabled={loading} />
                     <div>
-                      <label className="block text-[10px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                      <label
+                        className="block text-[10px] font-semibold mb-1 uppercase tracking-wide"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         Pengakuan / tanda tangan digital (teks)
                       </label>
                       <textarea
@@ -566,14 +626,21 @@ export default function StudentFormClient({
                         placeholder={`Contoh: Saya menyatakan telah melanggar tata tertib. (nama lengkap, min. 12 karakter)`}
                         rows={2}
                         className="w-full px-3 py-2 rounded-lg border text-xs resize-none"
-                        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                        style={{
+                          background: "var(--bg-secondary)",
+                          borderColor: "var(--border)",
+                          color: "var(--text-primary)",
+                        }}
                       />
                     </div>
                   </div>
                 )}
 
                 {error && (
-                  <div className="p-3 rounded-lg text-xs" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
+                  <div
+                    className="p-3 rounded-lg text-xs"
+                    style={{ background: "var(--danger-bg)", color: "var(--danger)" }}
+                  >
                     {error}
                   </div>
                 )}
@@ -590,7 +657,11 @@ export default function StudentFormClient({
                       setIncidentDate(calendarTodayYmd());
                     }}
                     className="min-h-11 touch-manipulation px-4 py-2.5 rounded-lg border text-sm"
-                    style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+                    style={{
+                      background: "var(--bg-primary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text-secondary)",
+                    }}
                   >
                     Batal
                   </button>
@@ -606,7 +677,10 @@ export default function StudentFormClient({
               </form>
             </div>
 
-            <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+            <div
+              className="rounded-xl border overflow-hidden"
+              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            >
               <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
                 <h3 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
                   Riwayat pelanggaran saya
@@ -627,11 +701,17 @@ export default function StudentFormClient({
                             <div className="text-[11px] tabular-nums" style={{ color: "var(--text-muted)" }}>
                               {formatDate(r.date)}
                             </div>
-                            <div className="mt-0.5 text-xs leading-snug break-words" style={{ color: "var(--text-primary)" }}>
+                            <div
+                              className="mt-0.5 text-xs leading-snug break-words"
+                              style={{ color: "var(--text-primary)" }}
+                            >
                               {r.violationType.name}
                             </div>
                             {r.notes ? (
-                              <div className="mt-1 text-[11px] leading-snug break-words" style={{ color: "var(--text-muted)" }}>
+                              <div
+                                className="mt-1 text-[11px] leading-snug break-words"
+                                style={{ color: "var(--text-muted)" }}
+                              >
                                 {r.notes}
                               </div>
                             ) : null}
@@ -664,19 +744,34 @@ export default function StudentFormClient({
                     <table className="w-full min-w-[520px]">
                       <thead>
                         <tr style={{ background: "var(--bg-primary)" }}>
-                          <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                          <th
+                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
+                            style={{ color: "var(--text-muted)" }}
+                          >
                             Tanggal
                           </th>
-                          <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
+                          <th
+                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase"
+                            style={{ color: "var(--text-muted)" }}
+                          >
                             Pelanggaran
                           </th>
-                          <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                          <th
+                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
+                            style={{ color: "var(--text-muted)" }}
+                          >
                             Poin
                           </th>
-                          <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                          <th
+                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
+                            style={{ color: "var(--text-muted)" }}
+                          >
                             Ket.
                           </th>
-                          <th className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                          <th
+                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
+                            style={{ color: "var(--text-muted)" }}
+                          >
                             Laporan
                           </th>
                         </tr>
@@ -684,16 +779,25 @@ export default function StudentFormClient({
                       <tbody>
                         {records.map((r: any) => (
                           <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                            <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                            <td
+                              className="px-4 py-3 text-xs whitespace-nowrap"
+                              style={{ color: "var(--text-secondary)" }}
+                            >
                               {formatDate(r.date)}
                             </td>
-                            <td className="px-4 py-3 text-xs max-w-[16rem] break-words" style={{ color: "var(--text-primary)" }}>
+                            <td
+                              className="px-4 py-3 text-xs max-w-[16rem] break-words"
+                              style={{ color: "var(--text-primary)" }}
+                            >
                               {r.violationType.name}
                             </td>
                             <td className="px-4 py-3">
                               <PointBadge points={r.points} />
                             </td>
-                            <td className="px-4 py-3 text-xs max-w-[10rem] break-words" style={{ color: "var(--text-muted)" }}>
+                            <td
+                              className="px-4 py-3 text-xs max-w-[10rem] break-words"
+                              style={{ color: "var(--text-muted)" }}
+                            >
                               {r.notes || "—"}
                             </td>
                             <td className="px-4 py-3">
@@ -733,8 +837,8 @@ export default function StudentFormClient({
                   Riwayat remisi & penyesuaian poin
                 </h3>
                 <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                  Daftar pengurangan atau penyesuaian (remisi periode tenang, juara, hafalan, dll.). Ini terpisah dari tabel
-                  pelanggaran di atas.
+                  Daftar pengurangan atau penyesuaian (remisi periode tenang, juara, hafalan, dll.). Ini terpisah dari
+                  tabel pelanggaran di atas.
                 </p>
               </div>
               {pointAdjustments.length === 0 ? (
@@ -747,7 +851,10 @@ export default function StudentFormClient({
                     {pointAdjustments.map((a) => (
                       <li key={a.id} className="px-4 py-3 space-y-1.5" style={{ borderColor: "var(--border)" }}>
                         <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1 text-[11px] tabular-nums" style={{ color: "var(--text-muted)" }}>
+                          <div
+                            className="min-w-0 flex-1 text-[11px] tabular-nums"
+                            style={{ color: "var(--text-muted)" }}
+                          >
                             {formatInputDateTime(a.createdAt)}
                           </div>
                           <AdjustmentDelta delta={a.pointsDelta} />
@@ -794,16 +901,25 @@ export default function StudentFormClient({
                       <tbody>
                         {pointAdjustments.map((a) => (
                           <tr key={a.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                            <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
+                            <td
+                              className="px-4 py-3 text-xs whitespace-nowrap"
+                              style={{ color: "var(--text-secondary)" }}
+                            >
                               {formatInputDateTime(a.createdAt)}
                             </td>
                             <td className="px-4 py-3 text-right">
                               <AdjustmentDelta delta={a.pointsDelta} />
                             </td>
-                            <td className="px-4 py-3 text-xs text-right tabular-nums" style={{ color: "var(--text-muted)" }}>
+                            <td
+                              className="px-4 py-3 text-xs text-right tabular-nums"
+                              style={{ color: "var(--text-muted)" }}
+                            >
                               {a.grossTotalBefore}
                             </td>
-                            <td className="px-4 py-3 text-xs leading-snug break-words" style={{ color: "var(--text-primary)" }}>
+                            <td
+                              className="px-4 py-3 text-xs leading-snug break-words"
+                              style={{ color: "var(--text-primary)" }}
+                            >
                               {formatPointAdjustmentReason(a.reason)}
                             </td>
                           </tr>

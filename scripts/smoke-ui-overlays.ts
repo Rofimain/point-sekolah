@@ -35,7 +35,7 @@ assert(toaster.includes("Z_INDEX.toast"), "GlobalToaster uses toast z-index abov
 const layers = read("lib/ui-layers.ts");
 assert(layers.includes("Z_MODAL_CLASS"), "ui-layers exports Z_MODAL_CLASS");
 assert(layers.includes("lockAppScroll"), "ui-layers exports lockAppScroll");
-assert(layers.includes("querySelector(\"main\")"), "lockAppScroll targets main");
+assert(layers.includes('querySelector("main")'), "lockAppScroll targets main");
 assert(layers.includes("toast: 300"), "ui-layers defines toast above modalElevated");
 
 const evidence = read("components/records/EvidencePreviewModal.tsx");
@@ -77,7 +77,10 @@ assert(topbar.includes("sr-only sm:not-sr-only"), "TopBar compact icon-only acti
 
 const uploader = read("components/records/EvidenceMultiUploader.tsx");
 assert(uploader.includes("min-h-11 min-w-11"), "Evidence Hapus touch target 44px");
-assert(!uploader.includes("overflow-hidden rounded-lg border"), "Evidence tile not clipping Hapus with overflow-hidden");
+assert(
+  !uploader.includes("overflow-hidden rounded-lg border"),
+  "Evidence tile not clipping Hapus with overflow-hidden"
+);
 
 const student = read("app/(student)/form/StudentFormClient.tsx");
 assert(student.includes("md:hidden"), "Student history uses md card breakpoint");
@@ -90,7 +93,10 @@ assert(bell.includes("Z_INDEX.dropdown"), "Notification bell uses dropdown z-ind
 assert(bell.includes("visualViewport"), "Notification bell respects visualViewport (iOS)");
 assert(bell.includes("orientationchange"), "Notification bell repositions on orientation change");
 assert(bell.includes("useLayoutEffect"), "Notification bell places panel before paint");
-assert(!/useState<CSSProperties>/.test(bell) && !/panelStyle/.test(bell), "Notification bell has no legacy panelStyle state");
+assert(
+  !/useState<CSSProperties>/.test(bell) && !/panelStyle/.test(bell),
+  "Notification bell has no legacy panelStyle state"
+);
 assert((bell.match(/createPortal\(/g) || []).length === 1, "Notification bell has single createPortal call");
 
 const globals = read("app/globals.css");

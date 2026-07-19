@@ -69,7 +69,10 @@ export async function createViolationEvidencePdf(record: ViolationEvidencePdfRec
     page = pdf.addPage(pageSize);
     y = pageSize[1] - margin;
   };
-  const drawTextLines = (text: string, options?: { font?: PDFFont; size?: number; color?: ReturnType<typeof rgb>; gap?: number }) => {
+  const drawTextLines = (
+    text: string,
+    options?: { font?: PDFFont; size?: number; color?: ReturnType<typeof rgb>; gap?: number }
+  ) => {
     const font = options?.font ?? regular;
     const size = options?.size ?? 10;
     const gap = options?.gap ?? 4;
@@ -82,7 +85,13 @@ export async function createViolationEvidencePdf(record: ViolationEvidencePdfRec
   };
   const drawField = (label: string, value: string | null | undefined) => {
     ensureSpace(32);
-    page.drawText(printable(label).toUpperCase(), { x: margin, y, size: 7.5, font: bold, color: rgb(0.42, 0.42, 0.42) });
+    page.drawText(printable(label).toUpperCase(), {
+      x: margin,
+      y,
+      size: 7.5,
+      font: bold,
+      color: rgb(0.42, 0.42, 0.42),
+    });
     y -= 12;
     drawTextLines(printable(value), { size: 10, gap: 3 });
     y -= 5;
@@ -91,14 +100,22 @@ export async function createViolationEvidencePdf(record: ViolationEvidencePdfRec
   drawTextLines(SCHOOL_NAME, { font: bold, size: 15, color: rgb(0.05, 0.35, 0.25), gap: 5 });
   drawTextLines("BUKTI LAPORAN PELANGGARAN", { font: bold, size: 12, gap: 5 });
   y -= 4;
-  page.drawLine({ start: { x: margin, y }, end: { x: pageSize[0] - margin, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
+  page.drawLine({
+    start: { x: margin, y },
+    end: { x: pageSize[0] - margin, y },
+    thickness: 1,
+    color: rgb(0.8, 0.8, 0.8),
+  });
   y -= 18;
 
   drawField("Nama siswa", record.student.name);
   drawField("NISN / kelas", [record.student.nisn, record.student.class?.name].filter(Boolean).join(" / "));
   drawField("Pelanggaran", record.violationType.name);
   drawField("Poin", `${record.points} poin`);
-  drawField("Tanggal kejadian", record.date.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }));
+  drawField(
+    "Tanggal kejadian",
+    record.date.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })
+  );
   drawField("Sesi", record.session);
   drawField("Diinput oleh", record.createdByName);
   drawField("Keterangan", record.notes);
@@ -118,7 +135,12 @@ export async function createViolationEvidencePdf(record: ViolationEvidencePdfRec
     page.drawText(label, { x: margin, y, size: 7.5, font: bold, color: rgb(0.42, 0.42, 0.42) });
     y -= 14;
     const dimensions = evidence.scaleToFit(contentWidth, Math.min(330, y - margin));
-    page.drawImage(evidence, { x: margin, y: y - dimensions.height, width: dimensions.width, height: dimensions.height });
+    page.drawImage(evidence, {
+      x: margin,
+      y: y - dimensions.height,
+      width: dimensions.width,
+      height: dimensions.height,
+    });
     y -= dimensions.height + 18;
   }
 
@@ -131,7 +153,12 @@ export async function createViolationEvidencePdf(record: ViolationEvidencePdfRec
       const image = await embedImage(pdf, signature);
       if (image) {
         const dimensions = image.scaleToFit(contentWidth, Math.min(150, y - margin));
-        page.drawImage(image, { x: margin, y: y - dimensions.height, width: dimensions.width, height: dimensions.height });
+        page.drawImage(image, {
+          x: margin,
+          y: y - dimensions.height,
+          width: dimensions.width,
+          height: dimensions.height,
+        });
         y -= dimensions.height;
       }
     } else {
@@ -155,12 +182,13 @@ export async function createViolationEvidencePdf(record: ViolationEvidencePdfRec
 }
 
 export function evidencePdfFilename(studentName: string, recordId: string) {
-  const slug = studentName
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 50) || "siswa";
+  const slug =
+    studentName
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 50) || "siswa";
   return `bukti-pelanggaran-${slug}-${recordId.slice(-8)}.pdf`;
 }

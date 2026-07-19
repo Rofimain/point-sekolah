@@ -6,11 +6,7 @@ import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/li
 import { isStaffRole } from "@/lib/staff-roles";
 import { StudentPointsDetailView } from "@/components/StudentPointsDetailView";
 
-export default async function StaffStudentPointsDetailPage({
-  params,
-}: {
-  params: Promise<{ studentId: string }>;
-}) {
+export default async function StaffStudentPointsDetailPage({ params }: { params: Promise<{ studentId: string }> }) {
   const session = await getSafeServerSession();
   if (!session || !isStaffRole(session.user.role)) redirect("/admin/login");
 

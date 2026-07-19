@@ -30,7 +30,10 @@ export function isDefaultStudentPasswordConfigError(e: unknown): boolean {
 export const DEFAULT_STUDENT_PASSWORD = process.env.DEFAULT_STUDENT_PASSWORD?.trim() || "Siswa@123456";
 
 export function studentEmailFromNisn(nisn: string, domain: string): string {
-  const local = nisn.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const local = nisn
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
   if (!local) throw new Error("NISN tidak valid untuk membuat email");
   return `${local}@${domain}`;
 }

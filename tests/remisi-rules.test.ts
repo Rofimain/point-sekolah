@@ -53,10 +53,7 @@ test("build/parse manual remisi reason with asOf and custom label", () => {
 
 test("formatPointAdjustmentReason labels", () => {
   assert.match(formatPointAdjustmentReason(QUIET_MONTH_REASON), /otomatis/i);
-  assert.match(
-    formatPointAdjustmentReason("QUIET_MONTH_REDUCTION|anchor=2026-05-01"),
-    /2026-05-01/
-  );
+  assert.match(formatPointAdjustmentReason("QUIET_MONTH_REDUCTION|anchor=2026-05-01"), /2026-05-01/);
   assert.match(
     formatPointAdjustmentReason(
       buildManualRemisiReason(MANUAL_REMISI_TYPE.KHOTIB_JUMAT, {

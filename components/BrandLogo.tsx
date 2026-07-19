@@ -3,15 +3,7 @@ import { cn } from "@/lib/utils";
 
 export const BRAND_LOGO_ALT = "Yayasan Pesantren Islam Al Azhar";
 
-export function BrandLogo({
-  size,
-  className,
-  priority,
-}: {
-  size: number;
-  className?: string;
-  priority?: boolean;
-}) {
+export function BrandLogo({ size, className, priority }: { size: number; className?: string; priority?: boolean }) {
   return (
     <Image
       src="/brand-logo.png"

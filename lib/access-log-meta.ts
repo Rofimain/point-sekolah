@@ -1,10 +1,7 @@
 import type { AccessLogPortal } from "@/generated/prisma/client";
 
 /** Portal login dari provider NextAuth credentials / google. */
-export function portalFromAuthProvider(
-  provider: string,
-  googlePortal?: "student" | "staff" | null
-): AccessLogPortal {
+export function portalFromAuthProvider(provider: string, googlePortal?: "student" | "staff" | null): AccessLogPortal {
   if (provider === "student-login") return "STUDENT";
   if (provider === "admin-login") return "STAFF";
   if (provider === "google") {
@@ -26,9 +23,11 @@ export type AccessLogActor = {
   role?: string | null;
 };
 
-export function accessLogActorFromSession(session: {
-  user?: { id?: string | null; name?: string | null; role?: string | null } | null;
-} | null): AccessLogActor | null {
+export function accessLogActorFromSession(
+  session: {
+    user?: { id?: string | null; name?: string | null; role?: string | null } | null;
+  } | null
+): AccessLogActor | null {
   if (!session?.user?.id) return null;
   return {
     id: session.user.id,

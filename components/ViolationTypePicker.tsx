@@ -35,7 +35,10 @@ function matchesQuery(v: PickerViolationType, q: string, bagian: ViolationBagian
   ]
     .join(" ")
     .toLowerCase();
-  return t.split(/\s+/).filter(Boolean).every((p) => blob.includes(p));
+  return t
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((p) => blob.includes(p));
 }
 
 export function ViolationTypePicker({
@@ -75,10 +78,7 @@ export function ViolationTypePicker({
     });
   }, [violationTypes, bagian]);
 
-  const filtered = useMemo(
-    () => sorted.filter((v) => matchesQuery(v, q, bagian)),
-    [sorted, q, bagian]
-  );
+  const filtered = useMemo(() => sorted.filter((v) => matchesQuery(v, q, bagian)), [sorted, q, bagian]);
 
   const grouped = useMemo(() => groupByViolationSection(filtered, bagian), [filtered, bagian]);
   const sectionKeys = useMemo(() => grouped.map((g) => g.section || "lainnya"), [grouped]);

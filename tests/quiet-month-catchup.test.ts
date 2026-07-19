@@ -7,10 +7,7 @@ import {
   parseQuietMonthAnchor,
   QUIET_MONTH_REASON,
 } from "../lib/point-adjustment-reason";
-import {
-  findUnclaimedQuietGaps,
-  isLastWindowClaimed,
-} from "../lib/quiet-month-gaps";
+import { findUnclaimedQuietGaps, isLastWindowClaimed } from "../lib/quiet-month-gaps";
 
 test("build/parse quiet month reason with anchor", () => {
   const r = buildQuietMonthReason("2026-05-01");

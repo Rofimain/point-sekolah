@@ -67,8 +67,7 @@ async function convertHeicIfNeeded(file: File): Promise<File> {
       quality: 0.9,
     });
     const blob = Array.isArray(result) ? result[0] : result;
-    const name =
-      file.name.replace(/\.(heic|heif)$/i, ".jpg").trim() || `photo-${Date.now()}.jpg`;
+    const name = file.name.replace(/\.(heic|heif)$/i, ".jpg").trim() || `photo-${Date.now()}.jpg`;
     return new File([blob], name, { type: "image/jpeg", lastModified: Date.now() });
   } catch (e) {
     console.warn("[compress-image] heic2any:", e);

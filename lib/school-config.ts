@@ -10,9 +10,7 @@ export function getSchoolName(): string {
 
 export function getSchoolNameShort(): string {
   return (
-    process.env.NEXT_PUBLIC_SCHOOL_NAME_SHORT?.trim() ||
-    process.env.NEXT_PUBLIC_SCHOOL_SHORT?.trim() ||
-    getSchoolName()
+    process.env.NEXT_PUBLIC_SCHOOL_NAME_SHORT?.trim() || process.env.NEXT_PUBLIC_SCHOOL_SHORT?.trim() || getSchoolName()
   );
 }
 

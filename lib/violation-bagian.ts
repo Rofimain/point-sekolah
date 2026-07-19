@@ -2,9 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { DEFAULT_VIOLATION_BAGIAN, type ViolationBagianRow } from "@/lib/violation-sections";
 
 /** Baca master bagian; fallback ke default jika tabel belum ada / kosong. */
-export async function listViolationBagian(opts?: {
-  includeInactive?: boolean;
-}): Promise<ViolationBagianRow[]> {
+export async function listViolationBagian(opts?: { includeInactive?: boolean }): Promise<ViolationBagianRow[]> {
   try {
     const rows = await prisma.violationBagian.findMany({
       where: opts?.includeInactive ? undefined : { active: true },

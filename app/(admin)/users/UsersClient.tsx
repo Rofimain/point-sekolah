@@ -29,15 +29,19 @@ function RoleBadge({ role }: { role: string }) {
     ADMIN: ["var(--success-bg)", "var(--success)"],
     SUPER_ADMIN: ["var(--danger-bg)", "var(--danger)"],
   };
-  const [bg, color] = c[role] || ["var(--bg-tertiary)","var(--text-muted)"];
-  return <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: bg, color }}>{getRoleLabel(role)}</span>;
+  const [bg, color] = c[role] || ["var(--bg-tertiary)", "var(--text-muted)"];
+  return (
+    <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: bg, color }}>
+      {getRoleLabel(role)}
+    </span>
+  );
 }
 
 const emptyForm = {
   name: "",
   email: "",
   password: "",
-  role: "STUDENT" as typeof ROLES[number],
+  role: "STUDENT" as (typeof ROLES)[number],
   nisn: "",
   nip: "",
   jabatan: "",
@@ -123,7 +127,6 @@ function kelasAtauNip(u: {
   return parts.length ? parts.join(" · ") : "—";
 }
 
-
 export default function UsersClient({
   users,
   total,
@@ -165,8 +168,12 @@ export default function UsersClient({
 
   function navigate(params: Record<string, string>) {
     const sp = new URLSearchParams(searchParams);
-    Object.entries(params).forEach(([k, v]) => { if (v) sp.set(k, v); else sp.delete(k); });
-    sp.delete("page"); router.push(`${pathname}?${sp.toString()}`);
+    Object.entries(params).forEach(([k, v]) => {
+      if (v) sp.set(k, v);
+      else sp.delete(k);
+    });
+    sp.delete("page");
+    router.push(`${pathname}?${sp.toString()}`);
   }
 
   function openAdd() {
@@ -216,9 +223,16 @@ export default function UsersClient({
   }
 
   async function handleSave() {
-    if (!form.name.trim() || !form.email.trim()) { setError("Nama dan email wajib diisi"); return; }
-    if (modal === "add" && !form.password) { setError("Password wajib diisi untuk user baru"); return; }
-    setLoading(true); setError("");
+    if (!form.name.trim() || !form.email.trim()) {
+      setError("Nama dan email wajib diisi");
+      return;
+    }
+    if (modal === "add" && !form.password) {
+      setError("Password wajib diisi untuk user baru");
+      return;
+    }
+    setLoading(true);
+    setError("");
     try {
       const body: any = {
         name: form.name,
@@ -242,7 +256,11 @@ export default function UsersClient({
       }
       const url = modal === "add" ? "/api/users" : `/api/users/${modal.id}`;
       const method = modal === "add" ? "POST" : "PATCH";
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Gagal menyimpan");
       if (modal === "add" && data.ortuTelegramLink && form.role === "STUDENT") {
@@ -254,9 +272,13 @@ export default function UsersClient({
         }
       }
       toast.success(modal === "add" ? "Pengguna ditambahkan." : "Data pengguna disimpan.");
-      setModal(null); router.refresh();
-    } catch (err: any) { setError(err.message); }
-    finally { setLoading(false); }
+      setModal(null);
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleDelete(id: string, name: string) {
@@ -384,13 +406,14 @@ export default function UsersClient({
   const selectedUsers = useMemo(() => {
     const m = new Map<string, any>();
     users.forEach((u: any) => m.set(u.id, u));
-    return Array.from(selectedIds).map((id) => m.get(id)).filter(Boolean);
+    return Array.from(selectedIds)
+      .map((id) => m.get(id))
+      .filter(Boolean);
   }, [selectedIds, users]);
 
   const selectedCount = selectedIds.size;
   const selectableUsers = users.filter((u: any) => canModifyUser(viewerRole, u.role));
-  const allOnPageSelected =
-    selectableUsers.length > 0 && selectableUsers.every((u: any) => selectedIds.has(u.id));
+  const allOnPageSelected = selectableUsers.length > 0 && selectableUsers.every((u: any) => selectedIds.has(u.id));
   const someOnPageSelected = selectableUsers.some((u: any) => selectedIds.has(u.id));
 
   function toggleSelectOne(id: string) {
@@ -456,9 +479,7 @@ export default function UsersClient({
         return;
       }
       const header = "nama\tnisn\tkelas\ttautan_telegram_ortu";
-      const lines = links.map(
-        (l) => `${l.name}\t${l.nisn || "—"}\t${l.className || "—"}\t${l.url}`
-      );
+      const lines = links.map((l) => `${l.name}\t${l.nisn || "—"}\t${l.className || "—"}\t${l.url}`);
       const text = [header, ...lines].join("\n");
       try {
         await navigator.clipboard.writeText(text);
@@ -529,12 +550,19 @@ export default function UsersClient({
     <div>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>Manajemen Pengguna</h1>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>CRUD akun siswa, guru, dan super admin</p>
+          <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>
+            Manajemen Pengguna
+          </h1>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+            CRUD akun siswa, guru, dan super admin
+          </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
           {selectedCount > 0 ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+            <div
+              className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2"
+              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            >
               <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
                 {selectedCount} terpilih
               </span>
@@ -581,42 +609,46 @@ export default function UsersClient({
                 disabled={loading}
                 onClick={() => setSelectedIds(new Set())}
                 className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-60"
-                style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                style={{
+                  borderColor: "var(--border)",
+                  color: "var(--text-secondary)",
+                  background: "var(--bg-primary)",
+                }}
               >
                 Clear
               </button>
             </div>
           ) : null}
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => void runGoogleReadinessAudit()}
-            className="w-full shrink-0 touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-1.5"
-            style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
-            title="Ringkasan kesiapan Google login (tanpa ubah data)"
-          >
-            Audit Google
-          </button>
-          <button
-            type="button"
-            disabled={exportingTelLinks}
-            onClick={() => void downloadTelegramLinksExcel()}
-            className="w-full shrink-0 touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-1.5"
-            style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
-            title="Semua siswa yang cocok filter pencarian & kelas (bukan hanya halaman ini)"
-          >
-            {exportingTelLinks ? "Mengunduh…" : "Unduh Excel tautan ortu"}
-          </button>
-          <button
-            type="button"
-            onClick={openAdd}
-            className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
-            style={{ background: "var(--accent)" }}
-          >
-            + Tambah Pengguna
-          </button>
-        </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void runGoogleReadinessAudit()}
+              className="w-full shrink-0 touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-1.5"
+              style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+              title="Ringkasan kesiapan Google login (tanpa ubah data)"
+            >
+              Audit Google
+            </button>
+            <button
+              type="button"
+              disabled={exportingTelLinks}
+              onClick={() => void downloadTelegramLinksExcel()}
+              className="w-full shrink-0 touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-1.5"
+              style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-primary)" }}
+              title="Semua siswa yang cocok filter pencarian & kelas (bukan hanya halaman ini)"
+            >
+              {exportingTelLinks ? "Mengunduh…" : "Unduh Excel tautan ortu"}
+            </button>
+            <button
+              type="button"
+              onClick={openAdd}
+              className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
+              style={{ background: "var(--accent)" }}
+            >
+              + Tambah Pengguna
+            </button>
+          </div>
         </div>
       </div>
 
@@ -628,17 +660,39 @@ export default function UsersClient({
           ["Admin", "ADMIN", "var(--success)"],
           ["Super Admin", "SUPER_ADMIN", "var(--danger)"],
         ].map(([label, role, color]) => (
-          <div key={role} className="rounded-xl border p-3 sm:p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-            <div className="text-[10px] sm:text-xs mb-1 leading-tight" style={{ color: "var(--text-muted)" }}>{label}</div>
-            <div className="text-xl font-serif sm:text-2xl" style={{ color: color as string }}>{users.filter((u: any) => u.role === role).length + (total > 20 ? "+" : "")}</div>
+          <div
+            key={role}
+            className="rounded-xl border p-3 sm:p-4"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+          >
+            <div className="text-[10px] sm:text-xs mb-1 leading-tight" style={{ color: "var(--text-muted)" }}>
+              {label}
+            </div>
+            <div className="text-xl font-serif sm:text-2xl" style={{ color: color as string }}>
+              {users.filter((u: any) => u.role === role).length + (total > 20 ? "+" : "")}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="rounded-xl border p-3 mb-4 flex flex-wrap gap-2" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-        <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && navigate({ search: search.trim() })} placeholder="Cari nama..." className="px-3 py-2 rounded-lg border text-xs flex-1 min-w-40" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-        <button type="button" onClick={() => navigate({ search: search.trim() })} className="btn-primary px-4 py-2 text-xs">
+      <div
+        className="rounded-xl border p-3 mb-4 flex flex-wrap gap-2"
+        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+      >
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && navigate({ search: search.trim() })}
+          placeholder="Cari nama..."
+          className="px-3 py-2 rounded-lg border text-xs flex-1 min-w-40"
+          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+        />
+        <button
+          type="button"
+          onClick={() => navigate({ search: search.trim() })}
+          className="btn-primary px-4 py-2 text-xs"
+        >
           Cari
         </button>
         <select
@@ -712,7 +766,10 @@ export default function UsersClient({
         ) : null}
       </div>
 
-      <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+      <div
+        className="rounded-xl border overflow-hidden"
+        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+      >
         {users.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
             Tidak ada pengguna
@@ -720,7 +777,10 @@ export default function UsersClient({
         ) : (
           <>
             {/* Mobile: select-all bar + cards */}
-            <div className="flex items-center gap-2 border-b px-4 py-2 md:hidden" style={{ borderColor: "var(--border)" }}>
+            <div
+              className="flex items-center gap-2 border-b px-4 py-2 md:hidden"
+              style={{ borderColor: "var(--border)" }}
+            >
               <label className="inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center">
                 <input
                   type="checkbox"
@@ -740,11 +800,7 @@ export default function UsersClient({
             </div>
             <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
               {users.map((u: any) => (
-                <li
-                  key={u.id}
-                  className="space-y-2.5 px-4 py-3"
-                  style={{ opacity: u.active ? 1 : 0.6 }}
-                >
+                <li key={u.id} className="space-y-2.5 px-4 py-3" style={{ opacity: u.active ? 1 : 0.6 }}>
                   <div className="flex items-start gap-3">
                     <label className="inline-flex min-h-11 min-w-11 shrink-0 cursor-pointer touch-manipulation items-center justify-center">
                       <input
@@ -796,13 +852,14 @@ export default function UsersClient({
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <button
-                      disabled={
-                        !canModifyUser(viewerRole, u.role) &&
-                        !(viewerRole === "ADMIN" && u.id === viewerId)
-                      }
+                      disabled={!canModifyUser(viewerRole, u.role) && !(viewerRole === "ADMIN" && u.id === viewerId)}
                       onClick={() => openEdit(u)}
                       className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
-                      style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                      style={{
+                        borderColor: "var(--border)",
+                        color: "var(--text-secondary)",
+                        background: "var(--bg-primary)",
+                      }}
                     >
                       Edit
                     </button>
@@ -831,8 +888,14 @@ export default function UsersClient({
                       }
                       onClick={() => void unlinkGoogle(u.id, u.name)}
                       className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
-                      style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
-                      title={u.googleSub ? "Putus tautan Google (relink = login Google lagi)" : "Belum terhubung Google"}
+                      style={{
+                        borderColor: "var(--border)",
+                        color: "var(--text-secondary)",
+                        background: "var(--bg-primary)",
+                      }}
+                      title={
+                        u.googleSub ? "Putus tautan Google (relink = login Google lagi)" : "Belum terhubung Google"
+                      }
                     >
                       Unlink Google
                     </button>
@@ -865,7 +928,10 @@ export default function UsersClient({
               <table className="w-full min-w-[720px]">
                 <thead>
                   <tr style={{ background: "var(--bg-primary)" }}>
-                    <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                    <th
+                      className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
+                      style={{ color: "var(--text-muted)" }}
+                    >
                       <label className="inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center">
                         <input
                           type="checkbox"
@@ -879,16 +945,26 @@ export default function UsersClient({
                         />
                       </label>
                     </th>
-                    {["Nama", "Email", "Role", metaColumnLabel, "Ortu (Telegram)", "Status", "Google", "Aksi"].map((h) => (
-                      <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
-                        {h}
-                      </th>
-                    ))}
+                    {["Nama", "Email", "Role", metaColumnLabel, "Ortu (Telegram)", "Status", "Google", "Aksi"].map(
+                      (h) => (
+                        <th
+                          key={h}
+                          className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {h}
+                        </th>
+                      )
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((u: any) => (
-                    <tr key={u.id} className="border-t" style={{ borderColor: "var(--border)", opacity: u.active ? 1 : 0.6 }}>
+                    <tr
+                      key={u.id}
+                      className="border-t"
+                      style={{ borderColor: "var(--border)", opacity: u.active ? 1 : 0.6 }}
+                    >
                       <td className="px-4 py-3">
                         <label className="inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center">
                           <input
@@ -909,7 +985,10 @@ export default function UsersClient({
                             cacheKey={u.updatedAt ? String(u.updatedAt) : undefined}
                             size="sm"
                           />
-                          <span className="text-xs font-medium whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
+                          <span
+                            className="text-xs font-medium whitespace-nowrap"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             {u.name}
                           </span>
                         </div>
@@ -954,12 +1033,15 @@ export default function UsersClient({
                         <div className="flex flex-wrap gap-1.5">
                           <button
                             disabled={
-                              !canModifyUser(viewerRole, u.role) &&
-                              !(viewerRole === "ADMIN" && u.id === viewerId)
+                              !canModifyUser(viewerRole, u.role) && !(viewerRole === "ADMIN" && u.id === viewerId)
                             }
                             onClick={() => openEdit(u)}
                             className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
-                            style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                            style={{
+                              borderColor: "var(--border)",
+                              color: "var(--text-secondary)",
+                              background: "var(--bg-primary)",
+                            }}
                           >
                             Edit
                           </button>
@@ -993,8 +1075,16 @@ export default function UsersClient({
                             }
                             onClick={() => void unlinkGoogle(u.id, u.name)}
                             className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
-                            style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
-                            title={u.googleSub ? "Putus tautan Google (relink = login Google lagi)" : "Belum terhubung Google"}
+                            style={{
+                              borderColor: "var(--border)",
+                              color: "var(--text-secondary)",
+                              background: "var(--bg-primary)",
+                            }}
+                            title={
+                              u.googleSub
+                                ? "Putus tautan Google (relink = login Google lagi)"
+                                : "Belum terhubung Google"
+                            }
                           >
                             Unlink
                           </button>
@@ -1007,7 +1097,11 @@ export default function UsersClient({
                             }
                             onClick={() => handleDelete(u.id, u.name)}
                             className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
-                            style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}
+                            style={{
+                              background: "var(--danger-bg)",
+                              color: "var(--danger)",
+                              borderColor: "var(--danger)",
+                            }}
                             title={
                               u.id === viewerId
                                 ? "Tidak boleh menghapus akun sendiri"
@@ -1030,11 +1124,31 @@ export default function UsersClient({
           </>
         )}
         {totalPages > 1 && (
-          <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4" style={{ borderColor: "var(--border)" }}>
-            <span className="text-xs" style={{ color: "var(--text-muted)" }}>Halaman {page} dari {totalPages} · {total} pengguna</span>
+          <div
+            className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Halaman {page} dari {totalPages} · {total} pengguna
+            </span>
             <div className="flex flex-wrap gap-1">
-              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map(p => (
-                <button key={p} onClick={() => { const sp = new URLSearchParams(searchParams); sp.set("page", String(p)); router.push(`${pathname}?${sp.toString()}`); }} className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs" style={{ background: p === page ? "var(--accent)" : "var(--bg-primary)", color: p === page ? "white" : "var(--text-secondary)", border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}` }}>{p}</button>
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => {
+                    const sp = new URLSearchParams(searchParams);
+                    sp.set("page", String(p));
+                    router.push(`${pathname}?${sp.toString()}`);
+                  }}
+                  className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs"
+                  style={{
+                    background: p === page ? "var(--accent)" : "var(--bg-primary)",
+                    color: p === page ? "white" : "var(--text-secondary)",
+                    border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}`,
+                  }}
+                >
+                  {p}
+                </button>
               ))}
             </div>
           </div>
@@ -1044,212 +1158,372 @@ export default function UsersClient({
       {/* Modal */}
       {modal && mounted
         ? createPortal(
-        <div
-          className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
-          onClick={() => setModal(null)}
-        >
-          <div
-            className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom sm:rounded-xl sm:p-6"
-            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-sm font-serif mb-4 pb-3 border-b" style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}>{modal === "add" ? "Tambah Pengguna Baru" : `Edit: ${modal.name}`}</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-4 rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
-                <UserAvatar
-                  name={form.name || "User"}
-                  userId={modal === "add" ? undefined : modal.id}
-                  photoPresent={modal !== "add" && !!modal.photoPresent && photoDraft !== ""}
-                  previewSrc={photoDraft && photoDraft !== "" ? photoDraft : null}
-                  cacheKey={modal !== "add" && modal.updatedAt ? String(modal.updatedAt) : undefined}
-                  size="lg"
-                />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                    Foto profil
-                  </p>
-                  <input
-                    ref={photoInputRef}
-                    type="file"
-                    accept="image/*,.heic,.heif"
-                    className="w-full text-xs"
-                    disabled={photoBusy || loading}
-                    onChange={(e) => void onPhotoFile(e.target.files?.[0] ?? null)}
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    {(photoDraft || (modal !== "add" && modal.photoPresent && photoDraft !== "")) && (
-                      <button
-                        type="button"
-                        disabled={photoBusy || loading}
-                        onClick={() => setPhotoDraft("")}
-                        className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                        style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
-                      >
-                        Hapus foto
-                      </button>
-                    )}
-                    {photoDraft !== null && (
-                      <button
-                        type="button"
-                        disabled={photoBusy || loading}
-                        onClick={() => setPhotoDraft(null)}
-                        className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                        style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
-                      >
-                        Batalkan perubahan foto
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                    {photoBusy ? "Mengompres foto…" : "JPG/PNG/HEIC · otomatis dikompres. Kosongkan jika tidak diubah."}
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Nama Lengkap *</label>
-                  <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Email *</label>
-                  <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} type="email" className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-                  <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>Siswa: @{STUDENT_DOMAIN} · Guru/Admin: @{STAFF_DOMAIN}</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Password {modal !== "add" && "(kosongkan jika tidak diubah)"}</label>
-                  <input value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} type="password" placeholder="••••••••" className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Role</label>
-                  <select
-                    value={form.role}
-                    onChange={e => setForm({ ...form, role: e.target.value as any })}
-                    disabled={
-                      modal !== "add" &&
-                      ((!isSuperAdmin(viewerRole) && (modal?.role === "ADMIN" || modal?.role === "SUPER_ADMIN")) ||
-                        (modal?.role === "SUPER_ADMIN" && superAdminTotal <= 1))
-                    }
-                    className="w-full px-3 py-2 rounded-lg border text-sm disabled:opacity-60"
-                    style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                    title={
-                      modal !== "add" && modal?.role === "SUPER_ADMIN" && superAdminTotal <= 1
-                        ? "Tambah Super Admin lain dulu — role tidak boleh diturunkan jika hanya ada 1 Super Admin"
-                        : undefined
-                    }
+            <div
+              className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+              onClick={() => setModal(null)}
+            >
+              <div
+                className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom sm:rounded-xl sm:p-6"
+                style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3
+                  className="text-sm font-serif mb-4 pb-3 border-b"
+                  style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
+                >
+                  {modal === "add" ? "Tambah Pengguna Baru" : `Edit: ${modal.name}`}
+                </h3>
+                <div className="space-y-3">
+                  <div
+                    className="flex items-center gap-4 rounded-lg border p-3"
+                    style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
                   >
-                    {ROLES.filter(
-                      (r) =>
-                        canCreateUserWithRole(viewerRole, r) ||
-                        (modal !== "add" && form.role === r)
-                    ).map(r => (
-                      <option key={r} value={r}>{getRoleLabel(r)}</option>
-                    ))}
-                  </select>
-                </div>
-                {form.role === "STUDENT" && (
-                  <>
-                  <div>
-                    <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                      NISN <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opsional)</span>
-                    </label>
-                    <input value={form.nisn} onChange={e => setForm({ ...form, nisn: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
-                  </div>
-                  <div className="col-span-2 rounded-lg border p-3 text-[11px] leading-relaxed" style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
-                    <strong style={{ color: "var(--text-secondary)" }}>Telegram ortu (webhook)</strong>
-                    <p className="mt-1">
-                      Tidak perlu isi manual. Setiap siswa punya tautan unik ke bot sekolah; ortu buka link lalu ketuk Start — chat ID tersimpan otomatis.
-                    </p>
-                    {modal === "add" ? (
-                      <p className="mt-2" style={{ color: "var(--accent)" }}>
-                        Setelah Anda simpan siswa baru, tautan ortu otomatis disalin untuk dikirim ke orang tua (pastikan env bot & webhook aktif).
+                    <UserAvatar
+                      name={form.name || "User"}
+                      userId={modal === "add" ? undefined : modal.id}
+                      photoPresent={modal !== "add" && !!modal.photoPresent && photoDraft !== ""}
+                      previewSrc={photoDraft && photoDraft !== "" ? photoDraft : null}
+                      cacheKey={modal !== "add" && modal.updatedAt ? String(modal.updatedAt) : undefined}
+                      size="lg"
+                    />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <p
+                        className="text-xs font-semibold uppercase tracking-wide"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Foto profil
                       </p>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          disabled={loading || !modal?.id}
-                          onClick={() => void copyOrtuLink(modal.id)}
-                          className="mt-3 w-full rounded-lg border px-3 py-2 text-left text-xs font-semibold"
-                          style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-secondary)" }}
-                        >
-                          Salin tautan Telegram ortu
-                        </button>
-                        <p className="mt-2 text-[10px]">
-                          Perlu tautan baru setelah ortu salah akun? Tombol ini membuat token baru (tautan lama tidak dipakai lagi).
-                        </p>
-                      </>
-                    )}
-                  </div>
-                  </>
-                )}
-                {form.role === "STUDENT" && (
-                  <div>
-                    <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                      Kelas
-                    </label>
-                    <select value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}>
-                      <option value="">— Pilih kelas —</option>
-                      {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-                )}
-                {form.role !== "STUDENT" && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>NIP</label>
-                      <input value={form.nip} onChange={e => setForm({ ...form, nip: e.target.value })} className="w-full px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }} />
+                      <input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/*,.heic,.heif"
+                        className="w-full text-xs"
+                        disabled={photoBusy || loading}
+                        onChange={(e) => void onPhotoFile(e.target.files?.[0] ?? null)}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        {(photoDraft || (modal !== "add" && modal.photoPresent && photoDraft !== "")) && (
+                          <button
+                            type="button"
+                            disabled={photoBusy || loading}
+                            onClick={() => setPhotoDraft("")}
+                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                            style={{
+                              borderColor: "var(--danger)",
+                              color: "var(--danger)",
+                              background: "var(--danger-bg)",
+                            }}
+                          >
+                            Hapus foto
+                          </button>
+                        )}
+                        {photoDraft !== null && (
+                          <button
+                            type="button"
+                            disabled={photoBusy || loading}
+                            onClick={() => setPhotoDraft(null)}
+                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
+                            style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+                          >
+                            Batalkan perubahan foto
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                        {photoBusy
+                          ? "Mengompres foto…"
+                          : "JPG/PNG/HEIC · otomatis dikompres. Kosongkan jika tidak diubah."}
+                      </p>
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold mb-1 uppercase tracking-wide" htmlFor="user-jabatan" style={{ color: "var(--text-secondary)" }}>
-                        Jabatan (opsional)
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="col-span-2">
+                      <label
+                        className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Nama Lengkap *
                       </label>
                       <input
-                        id="user-jabatan"
-                        value={form.jabatan}
-                        onChange={(e) => setForm({ ...form, jabatan: e.target.value })}
-                        placeholder="Contoh: Piket, Wali Kelas X IPA 1"
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
                         className="w-full px-3 py-2 rounded-lg border text-sm"
-                        style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                        style={{
+                          background: "var(--bg-primary)",
+                          borderColor: "var(--border)",
+                          color: "var(--text-primary)",
+                        }}
                       />
-                      <p className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
-                        Label tampilan saja — tidak mengubah hak akses.
+                    </div>
+                    <div className="col-span-2">
+                      <label
+                        className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Email *
+                      </label>
+                      <input
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        type="email"
+                        className="w-full px-3 py-2 rounded-lg border text-sm"
+                        style={{
+                          background: "var(--bg-primary)",
+                          borderColor: "var(--border)",
+                          color: "var(--text-primary)",
+                        }}
+                      />
+                      <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                        Siswa: @{STUDENT_DOMAIN} · Guru/Admin: @{STAFF_DOMAIN}
                       </p>
                     </div>
-                  </>
-                )}
-                <div className="col-span-2 flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="activeCheck"
-                    checked={form.active}
-                    disabled={
-                      (!isSuperAdmin(viewerRole) && modal !== "add" && modal?.role === "ADMIN") ||
-                      modal !== "add" &&
-                      form.role === "SUPER_ADMIN" &&
-                      modal?.role === "SUPER_ADMIN" &&
-                      modal?.active &&
-                      activeSuperAdminCount <= 1
-                    }
-                    onChange={e => setForm({ ...form, active: e.target.checked })}
-                  />
-                  <label htmlFor="activeCheck" className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                    Akun aktif
-                    {modal !== "add" && form.role === "SUPER_ADMIN" && modal?.active && activeSuperAdminCount <= 1 ? (
-                      <span className="block text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
-                        Nonaktifkan hanya jika sudah ada Super Admin aktif lain.
-                      </span>
-                    ) : null}
-                  </label>
+                    <div>
+                      <label
+                        className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Password {modal !== "add" && "(kosongkan jika tidak diubah)"}
+                      </label>
+                      <input
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        type="password"
+                        placeholder="••••••••"
+                        className="w-full px-3 py-2 rounded-lg border text-sm"
+                        style={{
+                          background: "var(--bg-primary)",
+                          borderColor: "var(--border)",
+                          color: "var(--text-primary)",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Role
+                      </label>
+                      <select
+                        value={form.role}
+                        onChange={(e) => setForm({ ...form, role: e.target.value as any })}
+                        disabled={
+                          modal !== "add" &&
+                          ((!isSuperAdmin(viewerRole) && (modal?.role === "ADMIN" || modal?.role === "SUPER_ADMIN")) ||
+                            (modal?.role === "SUPER_ADMIN" && superAdminTotal <= 1))
+                        }
+                        className="w-full px-3 py-2 rounded-lg border text-sm disabled:opacity-60"
+                        style={{
+                          background: "var(--bg-primary)",
+                          borderColor: "var(--border)",
+                          color: "var(--text-primary)",
+                        }}
+                        title={
+                          modal !== "add" && modal?.role === "SUPER_ADMIN" && superAdminTotal <= 1
+                            ? "Tambah Super Admin lain dulu — role tidak boleh diturunkan jika hanya ada 1 Super Admin"
+                            : undefined
+                        }
+                      >
+                        {ROLES.filter(
+                          (r) => canCreateUserWithRole(viewerRole, r) || (modal !== "add" && form.role === r)
+                        ).map((r) => (
+                          <option key={r} value={r}>
+                            {getRoleLabel(r)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {form.role === "STUDENT" && (
+                      <>
+                        <div>
+                          <label
+                            className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            NISN <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opsional)</span>
+                          </label>
+                          <input
+                            value={form.nisn}
+                            onChange={(e) => setForm({ ...form, nisn: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg border text-sm"
+                            style={{
+                              background: "var(--bg-primary)",
+                              borderColor: "var(--border)",
+                              color: "var(--text-primary)",
+                            }}
+                          />
+                        </div>
+                        <div
+                          className="col-span-2 rounded-lg border p-3 text-[11px] leading-relaxed"
+                          style={{
+                            borderColor: "var(--border)",
+                            background: "var(--bg-primary)",
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          <strong style={{ color: "var(--text-secondary)" }}>Telegram ortu (webhook)</strong>
+                          <p className="mt-1">
+                            Tidak perlu isi manual. Setiap siswa punya tautan unik ke bot sekolah; ortu buka link lalu
+                            ketuk Start — chat ID tersimpan otomatis.
+                          </p>
+                          {modal === "add" ? (
+                            <p className="mt-2" style={{ color: "var(--accent)" }}>
+                              Setelah Anda simpan siswa baru, tautan ortu otomatis disalin untuk dikirim ke orang tua
+                              (pastikan env bot & webhook aktif).
+                            </p>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                disabled={loading || !modal?.id}
+                                onClick={() => void copyOrtuLink(modal.id)}
+                                className="mt-3 w-full rounded-lg border px-3 py-2 text-left text-xs font-semibold"
+                                style={{
+                                  borderColor: "var(--accent)",
+                                  color: "var(--accent)",
+                                  background: "var(--bg-secondary)",
+                                }}
+                              >
+                                Salin tautan Telegram ortu
+                              </button>
+                              <p className="mt-2 text-[10px]">
+                                Perlu tautan baru setelah ortu salah akun? Tombol ini membuat token baru (tautan lama
+                                tidak dipakai lagi).
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    )}
+                    {form.role === "STUDENT" && (
+                      <div>
+                        <label
+                          className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
+                          Kelas
+                        </label>
+                        <select
+                          value={form.classId}
+                          onChange={(e) => setForm({ ...form, classId: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg border text-sm"
+                          style={{
+                            background: "var(--bg-primary)",
+                            borderColor: "var(--border)",
+                            color: "var(--text-primary)",
+                          }}
+                        >
+                          <option value="">— Pilih kelas —</option>
+                          {classes.map((c: any) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    {form.role !== "STUDENT" && (
+                      <>
+                        <div>
+                          <label
+                            className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            NIP
+                          </label>
+                          <input
+                            value={form.nip}
+                            onChange={(e) => setForm({ ...form, nip: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg border text-sm"
+                            style={{
+                              background: "var(--bg-primary)",
+                              borderColor: "var(--border)",
+                              color: "var(--text-primary)",
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label
+                            className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                            htmlFor="user-jabatan"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            Jabatan (opsional)
+                          </label>
+                          <input
+                            id="user-jabatan"
+                            value={form.jabatan}
+                            onChange={(e) => setForm({ ...form, jabatan: e.target.value })}
+                            placeholder="Contoh: Piket, Wali Kelas X IPA 1"
+                            className="w-full px-3 py-2 rounded-lg border text-sm"
+                            style={{
+                              background: "var(--bg-primary)",
+                              borderColor: "var(--border)",
+                              color: "var(--text-primary)",
+                            }}
+                          />
+                          <p className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            Label tampilan saja — tidak mengubah hak akses.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    <div className="col-span-2 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="activeCheck"
+                        checked={form.active}
+                        disabled={
+                          (!isSuperAdmin(viewerRole) && modal !== "add" && modal?.role === "ADMIN") ||
+                          (modal !== "add" &&
+                            form.role === "SUPER_ADMIN" &&
+                            modal?.role === "SUPER_ADMIN" &&
+                            modal?.active &&
+                            activeSuperAdminCount <= 1)
+                        }
+                        onChange={(e) => setForm({ ...form, active: e.target.checked })}
+                      />
+                      <label htmlFor="activeCheck" className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                        Akun aktif
+                        {modal !== "add" &&
+                        form.role === "SUPER_ADMIN" &&
+                        modal?.active &&
+                        activeSuperAdminCount <= 1 ? (
+                          <span className="block text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                            Nonaktifkan hanya jika sudah ada Super Admin aktif lain.
+                          </span>
+                        ) : null}
+                      </label>
+                    </div>
+                  </div>
+                  {error && (
+                    <div
+                      className="p-3 rounded-lg text-xs"
+                      style={{ background: "var(--danger-bg)", color: "var(--danger)" }}
+                    >
+                      ⚠ {error}
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    onClick={() => setModal(null)}
+                    className="px-4 py-2 rounded-lg border text-sm"
+                    style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="px-4 py-2 rounded-lg text-sm text-white disabled:opacity-60"
+                    style={{ background: "var(--accent)" }}
+                  >
+                    Simpan
+                  </button>
                 </div>
               </div>
-              {error && <div className="p-3 rounded-lg text-xs" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>⚠ {error}</div>}
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setModal(null)} className="px-4 py-2 rounded-lg border text-sm" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>Batal</button>
-              <button onClick={handleSave} disabled={loading} className="px-4 py-2 rounded-lg text-sm text-white disabled:opacity-60" style={{ background: "var(--accent)" }}>Simpan</button>
-            </div>
-          </div>
-        </div>,
+            </div>,
             document.body
           )
         : null}

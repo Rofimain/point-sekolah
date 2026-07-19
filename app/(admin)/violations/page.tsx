@@ -13,11 +13,5 @@ export default async function ViolationsPage() {
     getSafeServerSession(),
     listViolationBagian(),
   ]);
-  return (
-    <ViolationsClient
-      violations={violations}
-      bagian={bagian}
-      canManage={canManageData(session?.user?.role)}
-    />
-  );
+  return <ViolationsClient violations={violations} bagian={bagian} canManage={canManageData(session?.user?.role)} />;
 }

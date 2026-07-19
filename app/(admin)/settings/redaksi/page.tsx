@@ -85,10 +85,5 @@ export default async function RedaksiPage() {
     if (!isPrintTemplateTableMissing(e)) throw e;
   }
 
-  return (
-    <RedaksiClient
-      key={initial.map((t) => `${t.id}:${String(t.updatedAt)}`).join("|")}
-      initial={initial}
-    />
-  );
+  return <RedaksiClient key={initial.map((t) => `${t.id}:${String(t.updatedAt)}`).join("|")} initial={initial} />;
 }

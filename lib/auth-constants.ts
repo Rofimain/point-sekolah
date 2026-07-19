@@ -1,8 +1,7 @@
 /** Pesan generik — hindari user enumeration (akun ada vs password salah). */
 export const AUTH_GENERIC_CREDENTIALS_ERROR = "Email/NISN/NIP atau password salah.";
 
-export const AUTH_ACCOUNT_UNAVAILABLE_ERROR =
-  "Akun tidak dapat digunakan. Hubungi Administrator.";
+export const AUTH_ACCOUNT_UNAVAILABLE_ERROR = "Akun tidak dapat digunakan. Hubungi Administrator.";
 
 export const AUTH_LOCKED_ERROR = "Terlalu banyak percobaan. Coba lagi nanti.";
 

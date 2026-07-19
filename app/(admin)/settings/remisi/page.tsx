@@ -2,10 +2,7 @@ import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
-import {
-  getAdjustmentSumByStudent,
-  getGrossPointsByStudent,
-} from "@/lib/student-effective-points";
+import { getAdjustmentSumByStudent, getGrossPointsByStudent } from "@/lib/student-effective-points";
 import RemisiClient from "./RemisiClient";
 
 export default async function RemisiPage() {

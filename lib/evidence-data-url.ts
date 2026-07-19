@@ -53,10 +53,7 @@ function isWebpMagic(bytes: Uint8Array): boolean {
   );
 }
 
-export function parseEvidenceImageDataUrl(
-  value: string,
-  maxBytes = MAX_EVIDENCE_IMAGE_BYTES
-): ParsedEvidenceImage {
+export function parseEvidenceImageDataUrl(value: string, maxBytes = MAX_EVIDENCE_IMAGE_BYTES): ParsedEvidenceImage {
   const match = IMAGE_DATA_URL.exec(value.trim());
   if (!match || !ALLOWED_MIME.has(match[1])) {
     throw new Error("Format gambar bukti tidak valid.");

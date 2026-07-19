@@ -10,15 +10,7 @@ import {
   type PaperSize,
 } from "@/lib/document-page";
 
-const FONTS = [
-  "Times New Roman",
-  "Arial",
-  "Georgia",
-  "Calibri",
-  "Courier New",
-  "Tahoma",
-  "Verdana",
-];
+const FONTS = ["Times New Roman", "Arial", "Georgia", "Calibri", "Courier New", "Tahoma", "Verdana"];
 
 const FONT_SIZES = ["10pt", "11pt", "12pt", "14pt", "16pt", "18pt", "20pt", "24pt"];
 
@@ -67,8 +59,7 @@ function Sep() {
 export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, onOpenHeaderFooter }: Props) {
   if (!editor) return null;
 
-  const update = (patch: Partial<DocumentPageSettings>) =>
-    onPageSettingsChange({ ...pageSettings, ...patch });
+  const update = (patch: Partial<DocumentPageSettings>) => onPageSettingsChange({ ...pageSettings, ...patch });
 
   return (
     <div
@@ -76,10 +67,18 @@ export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, on
       style={{ background: "var(--bg-primary)", borderColor: "var(--border)" }}
     >
       <div className="flex flex-wrap items-center gap-0.5">
-        <ToolBtn title="Undo (Ctrl+Z)" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>
+        <ToolBtn
+          title="Undo (Ctrl+Z)"
+          disabled={!editor.can().undo()}
+          onClick={() => editor.chain().focus().undo().run()}
+        >
           ↶
         </ToolBtn>
-        <ToolBtn title="Redo (Ctrl+Y)" disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()}>
+        <ToolBtn
+          title="Redo (Ctrl+Y)"
+          disabled={!editor.can().redo()}
+          onClick={() => editor.chain().focus().redo().run()}
+        >
           ↷
         </ToolBtn>
         <Sep />
@@ -113,10 +112,18 @@ export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, on
         </select>
         <Sep />
 
-        <ToolBtn title="Bold (Ctrl+B)" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+        <ToolBtn
+          title="Bold (Ctrl+B)"
+          active={editor.isActive("bold")}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
           <span className="font-bold">B</span>
         </ToolBtn>
-        <ToolBtn title="Italic (Ctrl+I)" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+        <ToolBtn
+          title="Italic (Ctrl+I)"
+          active={editor.isActive("italic")}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+        >
           <span className="italic">I</span>
         </ToolBtn>
         <ToolBtn
@@ -126,11 +133,19 @@ export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, on
         >
           <span className="underline">U</span>
         </ToolBtn>
-        <ToolBtn title="Strikethrough" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
+        <ToolBtn
+          title="Strikethrough"
+          active={editor.isActive("strike")}
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+        >
           <span className="line-through">S</span>
         </ToolBtn>
 
-        <label className="inline-flex h-8 items-center gap-1 px-1 text-[10px]" style={{ color: "var(--text-secondary)" }} title="Warna teks">
+        <label
+          className="inline-flex h-8 items-center gap-1 px-1 text-[10px]"
+          style={{ color: "var(--text-secondary)" }}
+          title="Warna teks"
+        >
           A
           <input
             type="color"
@@ -139,7 +154,11 @@ export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, on
             onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
           />
         </label>
-        <label className="inline-flex h-8 items-center gap-1 px-1 text-[10px]" style={{ color: "var(--text-secondary)" }} title="Highlight">
+        <label
+          className="inline-flex h-8 items-center gap-1 px-1 text-[10px]"
+          style={{ color: "var(--text-secondary)" }}
+          title="Highlight"
+        >
           H
           <input
             type="color"
@@ -150,7 +169,11 @@ export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, on
         </label>
         <Sep />
 
-        <ToolBtn title="Rata kiri" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+        <ToolBtn
+          title="Rata kiri"
+          active={editor.isActive({ textAlign: "left" })}
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        >
           ☰
         </ToolBtn>
         <ToolBtn
@@ -192,7 +215,12 @@ export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, on
           onChange={(e) => {
             const v = e.target.value;
             if (v === "p") editor.chain().focus().setParagraph().run();
-            else editor.chain().focus().toggleHeading({ level: Number(v.slice(1)) as 1 | 2 | 3 }).run();
+            else
+              editor
+                .chain()
+                .focus()
+                .toggleHeading({ level: Number(v.slice(1)) as 1 | 2 | 3 })
+                .run();
           }}
         >
           <option value="p">Normal</option>
@@ -228,9 +256,7 @@ export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, on
         </ToolBtn>
         <ToolBtn
           title="Tabel 3×3"
-          onClick={() =>
-            editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-          }
+          onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
         >
           ▦
         </ToolBtn>
@@ -296,7 +322,11 @@ export function DocumentToolbar({ editor, pageSettings, onPageSettingsChange, on
                   min={0}
                   step={1}
                   className="h-7 w-12 rounded border px-1 text-[11px]"
-                  style={{ borderColor: "var(--border)", background: "var(--bg-secondary)", color: "var(--text-primary)" }}
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "var(--bg-secondary)",
+                    color: "var(--text-primary)",
+                  }}
                   value={pageSettings.customMarginMm?.[side] ?? MARGIN_PRESETS_MM.kop[side]}
                   onChange={(e) =>
                     update({

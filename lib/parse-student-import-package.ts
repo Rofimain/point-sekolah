@@ -3,11 +3,7 @@ import ExcelJS from "exceljs";
 import { worksheetToBulkRows } from "@/lib/parse-student-excel-sheet";
 import type { BulkStudentRow } from "@/lib/students-bulk-run";
 import { imageBufferToPhotoDataUrl } from "@/lib/user-photo";
-import {
-  assignPhotosToRows,
-  photoStemFromFilename,
-  type PhotoMatchInput,
-} from "@/lib/student-photo-match";
+import { assignPhotosToRows, photoStemFromFilename, type PhotoMatchInput } from "@/lib/student-photo-match";
 
 export type StudentImportPackageResult = {
   rows: BulkStudentRow[];
@@ -91,9 +87,7 @@ export async function parseStudentImportPackage(buf: Buffer): Promise<StudentImp
   } else if (looksLikeWorkbookOnly) {
     workbookBuf = buf;
   } else {
-    throw new Error(
-      "ZIP harus berisi satu file .xlsx plus folder foto/ (nama file = nama siswa atau NISN)"
-    );
+    throw new Error("ZIP harus berisi satu file .xlsx plus folder foto/ (nama file = nama siswa atau NISN)");
   }
 
   const wb = new ExcelJS.Workbook();

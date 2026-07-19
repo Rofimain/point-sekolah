@@ -9,9 +9,13 @@ export function cellStr(cell: ExcelJS.Cell): string {
   if (typeof v === "object" && v !== null) {
     if ("text" in v && typeof (v as { text?: string }).text === "string") return (v as { text: string }).text.trim();
     if ("richText" in v && Array.isArray((v as { richText?: { text: string }[] }).richText)) {
-      return (v as { richText: { text: string }[] }).richText.map((t) => t.text).join("").trim();
+      return (v as { richText: { text: string }[] }).richText
+        .map((t) => t.text)
+        .join("")
+        .trim();
     }
-    if ("result" in v && (v as { result?: unknown }).result != null) return String((v as { result: unknown }).result).trim();
+    if ("result" in v && (v as { result?: unknown }).result != null)
+      return String((v as { result: unknown }).result).trim();
   }
   return String(v).trim();
 }

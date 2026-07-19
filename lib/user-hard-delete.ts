@@ -5,9 +5,7 @@ import { assertCanDeleteSuperAdmin } from "@/lib/super-admin-policy";
  * Hapus permanen user + data terkait (catatan pelanggaran, bukti, remisi, audit lifecycle).
  * Auth login events: userId di-null-kan (onDelete SetNull).
  */
-export async function hardDeleteUser(opts: {
-  userId: string;
-}): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function hardDeleteUser(opts: { userId: string }): Promise<{ ok: true } | { ok: false; error: string }> {
   const existing = await prisma.user.findUnique({
     where: { id: opts.userId },
     select: { id: true, role: true },

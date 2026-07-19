@@ -1,8 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import {
-  getEffectivePointsBreakdown,
-  isPointAdjustmentTableMissing,
-} from "@/lib/student-effective-points";
+import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 import {
   buildManualRemisiReason,
   getManualRemisiDef,

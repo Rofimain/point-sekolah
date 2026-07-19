@@ -34,7 +34,10 @@ export default function AdminChrome({
 
   return (
     <StaffSubmissionNotificationsProvider>
-      <div className="flex min-h-[100dvh] flex-col print:block print:h-auto print:min-h-0" style={{ background: "transparent" }}>
+      <div
+        className="flex min-h-[100dvh] flex-col print:block print:h-auto print:min-h-0"
+        style={{ background: "transparent" }}
+      >
         <div className="no-print print-hide">
           <TopBar
             adminNav={{ open: navOpen, onToggle: () => setNavOpen((v) => !v) }}

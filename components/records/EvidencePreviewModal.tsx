@@ -85,9 +85,16 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
         style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex items-start justify-between gap-2 border-b pb-3" style={{ borderColor: "var(--border)" }}>
+        <div
+          className="mb-3 flex items-start justify-between gap-2 border-b pb-3"
+          style={{ borderColor: "var(--border)" }}
+        >
           <div className="min-w-0 flex-1">
-            <h2 id="evidence-preview-title" className="text-sm font-serif font-semibold" style={{ color: "var(--text-primary)" }}>
+            <h2
+              id="evidence-preview-title"
+              className="text-sm font-serif font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
               Pratinjau bukti
             </h2>
             {data && (
@@ -164,7 +171,10 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
 
         {activeImg && (
           <div className="mb-4">
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            <p
+              className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide"
+              style={{ color: "var(--text-muted)" }}
+            >
               Foto bukti{images.length > 1 ? ` (${activeIdx + 1}/${images.length})` : ""}
             </p>
             <img
@@ -194,7 +204,10 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
 
         {sig && (
           <div>
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            <p
+              className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide"
+              style={{ color: "var(--text-muted)" }}
+            >
               Pengakuan / tanda tangan
             </p>
             {isImageDataUrl(sig) ? (

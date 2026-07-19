@@ -6,10 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { QrisStyleSuccessSheet } from "@/components/QrisStyleSuccessSheet";
 import { useStaffSubmissionNotifications } from "@/lib/use-staff-submission-notifications";
-import {
-  notificationSourceLabel,
-  type StudentSubmissionNotification,
-} from "@/lib/staff-submission-notifications";
+import { notificationSourceLabel, type StudentSubmissionNotification } from "@/lib/staff-submission-notifications";
 import { formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
 import { Z_INDEX } from "@/lib/ui-layers";
 import UserAvatar from "@/components/ui/UserAvatar";
@@ -151,7 +148,14 @@ export function StaffSubmissionBell() {
           title="Notifikasi catatan pelanggaran"
           onClick={() => setOpen((v) => !v)}
         >
-          <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <svg
+            className="h-[18px] w-[18px]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden
+          >
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -236,7 +240,9 @@ export function StaffSubmissionBell() {
                             </span>
                           </span>
                           {!isRead ? (
-                            <span className="shrink-0 self-center text-[10px] font-medium uppercase text-blue-500">Baru</span>
+                            <span className="shrink-0 self-center text-[10px] font-medium uppercase text-blue-500">
+                              Baru
+                            </span>
                           ) : null}
                         </button>
                       </li>

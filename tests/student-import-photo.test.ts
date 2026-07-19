@@ -2,11 +2,7 @@ import test from "node:test";
 import assert from "assert/strict";
 import JSZip from "jszip";
 import ExcelJS from "exceljs";
-import {
-  imageBufferToPhotoDataUrl,
-  nisnFromPhotoFilename,
-  parseUserPhotoInput,
-} from "../lib/user-photo";
+import { imageBufferToPhotoDataUrl, nisnFromPhotoFilename, parseUserPhotoInput } from "../lib/user-photo";
 import { parseStudentImportPackage } from "../lib/parse-student-import-package";
 import { scoreNamePhotoMatch } from "../lib/student-photo-match";
 

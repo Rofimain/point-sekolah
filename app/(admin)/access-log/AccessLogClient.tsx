@@ -105,12 +105,15 @@ export default function AccessLogClient() {
     <div>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>
+          <h1
+            className="font-serif text-xl font-semibold tracking-tight sm:text-2xl"
+            style={{ color: "var(--text-primary)" }}
+          >
             Log akses
           </h1>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Riwayat login (portal siswa &amp; staf) dan perubahan data. Hanya Super Admin. Disimpan 12 bulan;
-            lebih tua dihapus otomatis tiap hari.
+            Riwayat login (portal siswa &amp; staf) dan perubahan data. Hanya Super Admin. Disimpan 12 bulan; lebih tua
+            dihapus otomatis tiap hari.
           </p>
         </div>
         <button
@@ -187,7 +190,10 @@ export default function AccessLogClient() {
             <option value="SYSTEM">Sistem</option>
           </select>
         </label>
-        <label className="text-[10px] font-semibold uppercase tracking-wide sm:col-span-2" style={{ color: "var(--text-secondary)" }}>
+        <label
+          className="text-[10px] font-semibold uppercase tracking-wide sm:col-span-2"
+          style={{ color: "var(--text-secondary)" }}
+        >
           Cari
           <input
             value={filters.q}
@@ -206,12 +212,19 @@ export default function AccessLogClient() {
         {loading ? "Memuat…" : `${data?.total ?? 0} entri`}
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border" style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
+      <div
+        className="overflow-x-auto rounded-2xl border"
+        style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}
+      >
         <table className="w-full min-w-[880px] text-left text-sm">
           <thead>
             <tr style={{ background: "var(--bg-primary)" }}>
               {["Waktu", "Portal", "Kategori", "Aksi", "Pelaku", "Ringkasan", "IP"].map((h) => (
-                <th key={h} className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                <th
+                  key={h}
+                  className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   {h}
                 </th>
               ))}
@@ -252,7 +265,10 @@ export default function AccessLogClient() {
                 <td className="max-w-xs px-3 py-2.5 text-xs leading-snug" style={{ color: "var(--text-primary)" }}>
                   {row.summary}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 font-mono text-[10px]" style={{ color: "var(--text-muted)" }}>
+                <td
+                  className="whitespace-nowrap px-3 py-2.5 font-mono text-[10px]"
+                  style={{ color: "var(--text-muted)" }}
+                >
                   {row.ip || "—"}
                 </td>
               </tr>

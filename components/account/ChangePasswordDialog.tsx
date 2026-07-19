@@ -5,13 +5,7 @@ import { createPortal } from "react-dom";
 import { signOut } from "next-auth/react";
 import { lockAppScroll, Z_MODAL_ELEVATED_CLASS } from "@/lib/ui-layers";
 
-export function ChangePasswordDialog({
-  role,
-  onClose,
-}: {
-  role: string;
-  onClose: () => void;
-}) {
+export function ChangePasswordDialog({ role, onClose }: { role: string; onClose: () => void }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -63,7 +57,11 @@ export function ChangePasswordDialog({
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h2 id="change-password-title" className="font-serif text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+            <h2
+              id="change-password-title"
+              className="font-serif text-lg font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
               Ubah password
             </h2>
             <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
@@ -121,11 +119,18 @@ export function ChangePasswordDialog({
           </label>
         </div>
         {error ? (
-          <p className="mt-3 rounded-lg px-3 py-2 text-xs break-words" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
+          <p
+            className="mt-3 rounded-lg px-3 py-2 text-xs break-words"
+            style={{ background: "var(--danger-bg)", color: "var(--danger)" }}
+          >
             {error}
           </p>
         ) : null}
-        <button type="submit" disabled={loading} className="btn-primary mt-5 min-h-11 w-full touch-manipulation px-4 py-3 text-sm disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary mt-5 min-h-11 w-full touch-manipulation px-4 py-3 text-sm disabled:opacity-60"
+        >
           {loading ? "Menyimpan..." : "Simpan password baru"}
         </button>
       </form>

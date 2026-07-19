@@ -9,22 +9,14 @@ import {
   findUnrecognizedPlaceholders,
   sortPrintTemplates,
 } from "@/lib/print-templates";
-import {
-  DocumentEditor,
-  DocumentPrintView,
-  type DocumentEditorHandle,
-} from "@/components/document-editor";
+import { DocumentEditor, DocumentPrintView, type DocumentEditorHandle } from "@/components/document-editor";
 import {
   DEFAULT_PAGE_SETTINGS,
   parsePageSettings,
   serializePageSettings,
   type DocumentPageSettings,
 } from "@/lib/document-page";
-import {
-  buildPrintableDocumentHtml,
-  buildSampleVars,
-  plainTextToDocumentHtml,
-} from "@/lib/document-html";
+import { buildPrintableDocumentHtml, buildSampleVars, plainTextToDocumentHtml } from "@/lib/document-html";
 
 export type PrintTemplateRow = {
   id: string;
@@ -62,10 +54,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
   const [newTitle, setNewTitle] = useState("");
   const [copyFromId, setCopyFromId] = useState("");
 
-  const selected = useMemo(
-    () => templates.find((t) => t.id === selectedId) ?? null,
-    [templates, selectedId]
-  );
+  const selected = useMemo(() => templates.find((t) => t.id === selectedId) ?? null, [templates, selectedId]);
 
   const selectedSettingsJson = selected ? serializePageSettings(parsePageSettings(selected.pageSettings)) : "";
   const currentSettingsJson = serializePageSettings(pageSettings);
@@ -178,9 +167,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
         body: JSON.stringify({
           title: titleValue,
           body: source?.body ?? "",
-          pageSettings: source?.pageSettings
-            ? parsePageSettings(source.pageSettings)
-            : DEFAULT_PAGE_SETTINGS,
+          pageSettings: source?.pageSettings ? parsePageSettings(source.pageSettings) : DEFAULT_PAGE_SETTINGS,
         }),
       });
       const d = await res.json().catch(() => ({}));
@@ -274,11 +261,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
       setBody(html);
       setPageSettings(settings);
       setTemplates((prev) =>
-        prev.map((t) =>
-          t.id === selectedId
-            ? { ...t, body: html, pageSettings: serializePageSettings(settings) }
-            : t
-        )
+        prev.map((t) => (t.id === selectedId ? { ...t, body: html, pageSettings: serializePageSettings(settings) } : t))
       );
       return;
     }
@@ -297,10 +280,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
 
   const previewVars = useMemo(() => buildSampleVars(), []);
 
-  const unrecognizedPlaceholders = useMemo(
-    () => findUnrecognizedPlaceholders(body, slug),
-    [body, slug]
-  );
+  const unrecognizedPlaceholders = useMemo(() => findUnrecognizedPlaceholders(body, slug), [body, slug]);
 
   const suggestedPlaceholders = useMemo(() => {
     const official = TEMPLATE_OFFICIAL_PLACEHOLDERS[slug];
@@ -345,19 +325,30 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
           </div>
 
           {adding && (
-            <div className="mb-3 space-y-2 rounded-lg border p-2" style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}>
+            <div
+              className="mb-3 space-y-2 rounded-lg border p-2"
+              style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
+            >
               <input
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 placeholder="Judul jenis surat"
                 className="w-full rounded-md border px-2 py-1.5 text-xs"
-                style={{ borderColor: "var(--border)", background: "var(--bg-secondary)", color: "var(--text-primary)" }}
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--bg-secondary)",
+                  color: "var(--text-primary)",
+                }}
               />
               <select
                 value={copyFromId}
                 onChange={(e) => setCopyFromId(e.target.value)}
                 className="w-full rounded-md border px-2 py-1.5 text-xs"
-                style={{ borderColor: "var(--border)", background: "var(--bg-secondary)", color: "var(--text-primary)" }}
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--bg-secondary)",
+                  color: "var(--text-primary)",
+                }}
               >
                 <option value="">Mulai kosong</option>
                 {templates.map((t) => (
@@ -427,149 +418,177 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
             </p>
           ) : (
             <>
-                <div className={showPreview ? "no-print hidden" : "no-print space-y-3"}>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                        Judul
-                      </label>
-                      <input
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className="w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                        Slug
-                      </label>
-                      <input
-                        value={slug}
-                        onChange={(e) => setSlug(e.target.value)}
-                        className="w-full rounded-lg border px-3 py-2 text-sm"
-                        style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
-                      />
-                    </div>
-                  </div>
-
+              <div className={showPreview ? "no-print hidden" : "no-print space-y-3"}>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <div className="mb-1.5 flex items-center justify-between gap-2">
-                      <label className="block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                        Isi redaksi
-                      </label>
-                      <span
-                        className="text-[10px] font-semibold"
-                        style={{
-                          color:
-                            saveStatus === "saved"
-                              ? "var(--success)"
-                              : saveStatus === "unsaved"
-                                ? "var(--warning)"
-                                : saveStatus === "error"
-                                  ? "var(--danger)"
-                                  : "var(--text-muted)",
-                        }}
-                      >
-                        {statusLabel}
-                      </span>
-                    </div>
-                    <DocumentEditor
-                      key={editorKey}
-                      ref={editorRef}
-                      initialHtml={body}
-                      initialPageSettings={pageSettings}
-                      onChange={onEditorChange}
-                      onSaveRequest={() => void saveCurrent()}
+                    <label
+                      className="mb-1 block text-[11px] font-semibold uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Judul
+                    </label>
+                    <input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full rounded-lg border px-3 py-2 text-sm"
+                      style={{
+                        borderColor: "var(--border)",
+                        background: "var(--bg-primary)",
+                        color: "var(--text-primary)",
+                      }}
                     />
                   </div>
-
                   <div>
-                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                      Sisipkan placeholder
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {suggestedPlaceholders.map((p) => (
-                        <button
-                          key={p.key}
-                          type="button"
-                          title={p.label}
-                          onClick={() => insertPlaceholder(p.key)}
-                          className="rounded-md border px-2 py-1 text-[10px] font-mono"
-                          style={{
-                            borderColor: "var(--border)",
-                            color: "var(--text-secondary)",
-                            background: "var(--bg-primary)",
-                            opacity: TEMPLATE_OFFICIAL_PLACEHOLDERS[slug]?.includes(p.key) === false ? 0.65 : 1,
-                          }}
-                        >
-                          {`{{${p.key}}}`}
-                        </button>
-                      ))}
-                    </div>
-                    {unrecognizedPlaceholders.length > 0 && (
-                      <p className="mt-2 text-[11px] leading-relaxed" style={{ color: "var(--warning)" }}>
-                        Peringatan: token tidak ada di daftar resmi jenis surat ini:{" "}
-                        {unrecognizedPlaceholders.map((k) => `{{${k}}}`).join(", ")}. Tidak memblokir simpan —
-                        boleh tetap dipakai jika sengaja.
-                      </p>
-                    )}
+                    <label
+                      className="mb-1 block text-[11px] font-semibold uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Slug
+                    </label>
+                    <input
+                      value={slug}
+                      onChange={(e) => setSlug(e.target.value)}
+                      className="w-full rounded-lg border px-3 py-2 text-sm"
+                      style={{
+                        borderColor: "var(--border)",
+                        background: "var(--bg-primary)",
+                        color: "var(--text-primary)",
+                      }}
+                    />
                   </div>
+                </div>
 
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <button
-                      type="button"
-                      disabled={saving || !dirty}
-                      onClick={() => void saveCurrent()}
-                      className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                      style={{ background: "var(--accent)" }}
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <label
+                      className="block text-[11px] font-semibold uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
                     >
-                      {saving ? "Menyimpan…" : "Simpan"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowPreview((v) => !v)}
-                      className="rounded-lg border px-3 py-2 text-xs font-semibold"
-                      style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
+                      Isi redaksi
+                    </label>
+                    <span
+                      className="text-[10px] font-semibold"
+                      style={{
+                        color:
+                          saveStatus === "saved"
+                            ? "var(--success)"
+                            : saveStatus === "unsaved"
+                              ? "var(--warning)"
+                              : saveStatus === "error"
+                                ? "var(--danger)"
+                                : "var(--text-muted)",
+                      }}
                     >
-                      {showPreview ? "Sembunyikan pratinjau" : "Pratinjau"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handlePrint}
-                      className="rounded-lg px-3 py-2 text-xs font-semibold text-white"
-                      style={{ background: "var(--accent)" }}
-                    >
-                      Cetak / Simpan PDF
-                    </button>
-                    <button
-                      type="button"
-                      onClick={downloadBlank}
-                      className="rounded-lg border px-3 py-2 text-xs font-semibold"
-                      style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
-                    >
-                      Unduh HTML
-                    </button>
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={() => void deleteCurrent()}
-                      className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-50"
-                      style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
-                    >
-                      Hapus
-                    </button>
+                      {statusLabel}
+                    </span>
                   </div>
-                  <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                    Tip cetak: di dialog browser pilih Margins = <strong>None</strong> agar sama dengan halaman editor.
+                  <DocumentEditor
+                    key={editorKey}
+                    ref={editorRef}
+                    initialHtml={body}
+                    initialPageSettings={pageSettings}
+                    onChange={onEditorChange}
+                    onSaveRequest={() => void saveCurrent()}
+                  />
+                </div>
+
+                <div>
+                  <p
+                    className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    Sisipkan placeholder
                   </p>
-
-                  {msg && (
-                    <p className="text-xs" style={{ color: msg.type === "ok" ? "var(--success)" : "var(--danger)" }}>
-                      {msg.text}
+                  <div className="flex flex-wrap gap-1.5">
+                    {suggestedPlaceholders.map((p) => (
+                      <button
+                        key={p.key}
+                        type="button"
+                        title={p.label}
+                        onClick={() => insertPlaceholder(p.key)}
+                        className="rounded-md border px-2 py-1 text-[10px] font-mono"
+                        style={{
+                          borderColor: "var(--border)",
+                          color: "var(--text-secondary)",
+                          background: "var(--bg-primary)",
+                          opacity: TEMPLATE_OFFICIAL_PLACEHOLDERS[slug]?.includes(p.key) === false ? 0.65 : 1,
+                        }}
+                      >
+                        {`{{${p.key}}}`}
+                      </button>
+                    ))}
+                  </div>
+                  {unrecognizedPlaceholders.length > 0 && (
+                    <p className="mt-2 text-[11px] leading-relaxed" style={{ color: "var(--warning)" }}>
+                      Peringatan: token tidak ada di daftar resmi jenis surat ini:{" "}
+                      {unrecognizedPlaceholders.map((k) => `{{${k}}}`).join(", ")}. Tidak memblokir simpan — boleh tetap
+                      dipakai jika sengaja.
                     </p>
                   )}
                 </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    disabled={saving || !dirty}
+                    onClick={() => void saveCurrent()}
+                    className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                    style={{ background: "var(--accent)" }}
+                  >
+                    {saving ? "Menyimpan…" : "Simpan"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview((v) => !v)}
+                    className="rounded-lg border px-3 py-2 text-xs font-semibold"
+                    style={{
+                      borderColor: "var(--border)",
+                      color: "var(--text-primary)",
+                      background: "var(--bg-primary)",
+                    }}
+                  >
+                    {showPreview ? "Sembunyikan pratinjau" : "Pratinjau"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="rounded-lg px-3 py-2 text-xs font-semibold text-white"
+                    style={{ background: "var(--accent)" }}
+                  >
+                    Cetak / Simpan PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={downloadBlank}
+                    className="rounded-lg border px-3 py-2 text-xs font-semibold"
+                    style={{
+                      borderColor: "var(--border)",
+                      color: "var(--text-primary)",
+                      background: "var(--bg-primary)",
+                    }}
+                  >
+                    Unduh HTML
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => void deleteCurrent()}
+                    className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                    style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
+                  >
+                    Hapus
+                  </button>
+                </div>
+                <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  Tip cetak: di dialog browser pilih Margins = <strong>None</strong> agar sama dengan halaman editor.
+                </p>
+
+                {msg && (
+                  <p className="text-xs" style={{ color: msg.type === "ok" ? "var(--success)" : "var(--danger)" }}>
+                    {msg.text}
+                  </p>
+                )}
+              </div>
 
               {/* Saat pratinjau: tampilkan surface yang sama dengan yang akan dicetak */}
               {showPreview && (
@@ -588,7 +607,11 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                       type="button"
                       onClick={() => setShowPreview(false)}
                       className="rounded-lg border px-3 py-2 text-xs font-semibold"
-                      style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
+                      style={{
+                        borderColor: "var(--border)",
+                        color: "var(--text-primary)",
+                        background: "var(--bg-primary)",
+                      }}
                     >
                       Kembali ke editor
                     </button>

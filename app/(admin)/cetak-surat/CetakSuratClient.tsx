@@ -70,7 +70,10 @@ export default function CetakSuratClient() {
         className="rounded-xl border p-4 space-y-3"
         style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
       >
-        <label className="block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+        <label
+          className="block text-[11px] font-semibold uppercase tracking-wide"
+          style={{ color: "var(--text-secondary)" }}
+        >
           Cari siswa (nama / NISN / kelas)
         </label>
         <input

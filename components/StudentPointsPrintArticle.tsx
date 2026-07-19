@@ -87,8 +87,8 @@ export function StudentPointsPrintArticle({
           </div>
           <p className="text-xs text-neutral-600 mt-3">
             Remisi otomatis dapat diterapkan setelah ≥{quietDays} hari sejak tanggal kejadian pelanggaran terakhir
-            (dihitung dari tanggal kejadian, bukan tanggal input).
-            (bukan tanggal input catatan), sesuai kebijakan sekolah.
+            (dihitung dari tanggal kejadian, bukan tanggal input). (bukan tanggal input catatan), sesuai kebijakan
+            sekolah.
           </p>
         </div>
 
@@ -123,8 +123,12 @@ export function StudentPointsPrintArticle({
               <table className="w-full min-w-[280px] text-sm">
                 <thead>
                   <tr className="bg-neutral-50">
-                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-neutral-500">Tanggal</th>
-                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-neutral-500">Pelanggaran</th>
+                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+                      Tanggal
+                    </th>
+                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+                      Pelanggaran
+                    </th>
                     <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-neutral-500">Poin</th>
                   </tr>
                 </thead>
@@ -143,7 +147,9 @@ export function StudentPointsPrintArticle({
         </section>
 
         <section>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-600 mb-3">Riwayat remisi / penyesuaian</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-600 mb-3">
+            Riwayat remisi / penyesuaian
+          </h3>
           {history.adjustments.length === 0 ? (
             <p className="text-sm text-neutral-600">Tidak ada remisi atau penyesuaian poin.</p>
           ) : (
@@ -151,9 +157,15 @@ export function StudentPointsPrintArticle({
               <table className="w-full min-w-[280px] text-sm">
                 <thead>
                   <tr className="bg-neutral-50">
-                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-neutral-500">Tanggal</th>
-                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-neutral-500">Keterangan</th>
-                    <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-neutral-500">Δ Poin</th>
+                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+                      Tanggal
+                    </th>
+                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+                      Keterangan
+                    </th>
+                    <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-neutral-500">
+                      Δ Poin
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

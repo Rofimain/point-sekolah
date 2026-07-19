@@ -8,9 +8,7 @@ export const NOT_DELETED = { deletedAt: null } as const;
  * Soft-delete user: set deletedAt, bebaskan unique email/nisn/nip,
  * invalidate session (authVersion++), nonaktifkan login.
  */
-export async function softDeleteUser(opts: {
-  userId: string;
-}): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function softDeleteUser(opts: { userId: string }): Promise<{ ok: true } | { ok: false; error: string }> {
   const existing = await prisma.user.findFirst({
     where: { id: opts.userId, deletedAt: null },
     select: { id: true, role: true, email: true, nisn: true, nip: true },

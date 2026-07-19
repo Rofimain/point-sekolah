@@ -117,16 +117,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
       ctrl.abort();
       window.clearTimeout(t);
     };
-  }, [
-    selectedId,
-    achievementYmd,
-    type,
-    customPercent,
-    multiplier,
-    needsPercent,
-    def?.allowMultiplier,
-    localPercent,
-  ]);
+  }, [selectedId, achievementYmd, type, customPercent, multiplier, needsPercent, def?.allowMultiplier, localPercent]);
 
   async function applyManual() {
     if (!selectedId) {
@@ -214,8 +205,8 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
         </h2>
         <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
           Jika murid tidak melanggar selama {AUTO_REMISI_QUIET_DAYS} hari sejak tanggal kejadian terakhir, sistem
-          otomatis mengurangi {AUTO_REMISI_PERCENT}% dari total skor pelanggaran (cron harian). Tidak perlu diatur
-          atau ditekan tombol apa pun.
+          otomatis mengurangi {AUTO_REMISI_PERCENT}% dari total skor pelanggaran (cron harian). Tidak perlu diatur atau
+          ditekan tombol apa pun.
         </p>
       </div>
 
@@ -228,14 +219,16 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             2. Remisi &amp; reward manual
           </h2>
           <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Remisi dihitung dari poin pelanggaran dengan tanggal kejadian{" "}
-            <strong>pada/sebelum tanggal prestasi</strong>. Poin mulai hari berikutnya sampai hari ini tidak ikut
-            dihitung.
+            Remisi dihitung dari poin pelanggaran dengan tanggal kejadian <strong>pada/sebelum tanggal prestasi</strong>
+            . Poin mulai hari berikutnya sampai hari ini tidak ikut dihitung.
           </p>
         </div>
 
         <div>
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+          <label
+            className="mb-1 block text-[11px] font-semibold uppercase tracking-wide"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Cari siswa
           </label>
           <input
@@ -281,13 +274,16 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
 
         {selected && (
           <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-            Dipilih: <strong style={{ color: "var(--text-primary)" }}>{selected.name}</strong> — bruto{" "}
-            {selected.gross}, efektif {selected.effective}
+            Dipilih: <strong style={{ color: "var(--text-primary)" }}>{selected.name}</strong> — bruto {selected.gross},
+            efektif {selected.effective}
           </p>
         )}
 
         <div>
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+          <label
+            className="mb-1 block text-[11px] font-semibold uppercase tracking-wide"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Jenis remisi / reward
           </label>
           <select
@@ -321,7 +317,10 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
 
         {needsLabel && (
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            <label
+              className="mb-1 block text-[11px] font-semibold uppercase tracking-wide"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Nama jenis (manual) *
             </label>
             <input
@@ -336,7 +335,10 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
 
         {needsPercent && (
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            <label
+              className="mb-1 block text-[11px] font-semibold uppercase tracking-wide"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Persentase pengurangan (%) *
             </label>
             <input
@@ -353,7 +355,10 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
 
         {def?.allowMultiplier && (
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            <label
+              className="mb-1 block text-[11px] font-semibold uppercase tracking-wide"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Jumlah unit (surat/juz) × 10%
             </label>
             <input
@@ -367,7 +372,10 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
         )}
 
         <div>
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+          <label
+            className="mb-1 block text-[11px] font-semibold uppercase tracking-wide"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Tanggal prestasi *
           </label>
           <input
@@ -386,7 +394,10 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
         </div>
 
         <div>
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+          <label
+            className="mb-1 block text-[11px] font-semibold uppercase tracking-wide"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Catatan (opsional)
           </label>
           <input
@@ -409,9 +420,13 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
           </p>
         )}
         {preview && !previewLoading && (
-          <div className="rounded-lg border px-3 py-2.5 text-xs space-y-1" style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}>
+          <div
+            className="rounded-lg border px-3 py-2.5 text-xs space-y-1"
+            style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+          >
             <p>
-              Basis remisi (poin ≤ {achievementYmd}): <strong style={{ color: "var(--text-primary)" }}>{preview.eligibleGross}</strong>
+              Basis remisi (poin ≤ {achievementYmd}):{" "}
+              <strong style={{ color: "var(--text-primary)" }}>{preview.eligibleGross}</strong>
               {preview.grossTotal !== preview.eligibleGross ? (
                 <span style={{ color: "var(--text-muted)" }}>
                   {" "}

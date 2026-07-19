@@ -23,12 +23,36 @@ async function main() {
 
   // Create classes
   const _classes = await Promise.all([
-    prisma.class.upsert({ where: { id: "cls-x-mipa1" }, update: {}, create: { id: "cls-x-mipa1", name: "X MIPA 1", grade: "X", major: "MIPA", year: "2025/2026" } }),
-    prisma.class.upsert({ where: { id: "cls-x-mipa2" }, update: {}, create: { id: "cls-x-mipa2", name: "X MIPA 2", grade: "X", major: "MIPA", year: "2025/2026" } }),
-    prisma.class.upsert({ where: { id: "cls-xi-ipa1" }, update: {}, create: { id: "cls-xi-ipa1", name: "XI IPA 1", grade: "XI", major: "IPA", year: "2025/2026" } }),
-    prisma.class.upsert({ where: { id: "cls-xi-ips2" }, update: {}, create: { id: "cls-xi-ips2", name: "XI IPS 2", grade: "XI", major: "IPS", year: "2025/2026" } }),
-    prisma.class.upsert({ where: { id: "cls-xii-ipa1" }, update: {}, create: { id: "cls-xii-ipa1", name: "XII IPA 1", grade: "XII", major: "IPA", year: "2025/2026" } }),
-    prisma.class.upsert({ where: { id: "cls-xii-ips1" }, update: {}, create: { id: "cls-xii-ips1", name: "XII IPS 1", grade: "XII", major: "IPS", year: "2025/2026" } }),
+    prisma.class.upsert({
+      where: { id: "cls-x-mipa1" },
+      update: {},
+      create: { id: "cls-x-mipa1", name: "X MIPA 1", grade: "X", major: "MIPA", year: "2025/2026" },
+    }),
+    prisma.class.upsert({
+      where: { id: "cls-x-mipa2" },
+      update: {},
+      create: { id: "cls-x-mipa2", name: "X MIPA 2", grade: "X", major: "MIPA", year: "2025/2026" },
+    }),
+    prisma.class.upsert({
+      where: { id: "cls-xi-ipa1" },
+      update: {},
+      create: { id: "cls-xi-ipa1", name: "XI IPA 1", grade: "XI", major: "IPA", year: "2025/2026" },
+    }),
+    prisma.class.upsert({
+      where: { id: "cls-xi-ips2" },
+      update: {},
+      create: { id: "cls-xi-ips2", name: "XI IPS 2", grade: "XI", major: "IPS", year: "2025/2026" },
+    }),
+    prisma.class.upsert({
+      where: { id: "cls-xii-ipa1" },
+      update: {},
+      create: { id: "cls-xii-ipa1", name: "XII IPA 1", grade: "XII", major: "IPA", year: "2025/2026" },
+    }),
+    prisma.class.upsert({
+      where: { id: "cls-xii-ips1" },
+      update: {},
+      create: { id: "cls-xii-ips1", name: "XII IPS 1", grade: "XII", major: "IPS", year: "2025/2026" },
+    }),
   ]);
 
   // Master bagian jenis pelanggaran
@@ -134,10 +158,40 @@ async function main() {
     if (existing === 0) {
       await prisma.violationRecord.createMany({
         data: [
-          { studentId: ahmad.id, violationTypeId: "vt-p15-049", points: 5, session: "Masuk Pagi", notes: "Kemacetan", date: new Date("2026-04-14"), createdByName: "Siti Rahayu" },
-          { studentId: ahmad.id, violationTypeId: "vt-p15-072", points: 10, session: "Umum", date: new Date("2026-04-10"), createdByName: "Siti Rahayu" },
-          { studentId: ahmad.id, violationTypeId: "vt-p15-012a", points: 20, session: "Jam 3-4", notes: "Barang disita", date: new Date("2026-04-03"), createdByName: "Siti Rahayu" },
-          { studentId: ahmad.id, violationTypeId: "vt-p15-057", points: 20, session: "Jam 5-6", date: new Date("2026-03-22"), createdByName: "Siti Rahayu" },
+          {
+            studentId: ahmad.id,
+            violationTypeId: "vt-p15-049",
+            points: 5,
+            session: "Masuk Pagi",
+            notes: "Kemacetan",
+            date: new Date("2026-04-14"),
+            createdByName: "Siti Rahayu",
+          },
+          {
+            studentId: ahmad.id,
+            violationTypeId: "vt-p15-072",
+            points: 10,
+            session: "Umum",
+            date: new Date("2026-04-10"),
+            createdByName: "Siti Rahayu",
+          },
+          {
+            studentId: ahmad.id,
+            violationTypeId: "vt-p15-012a",
+            points: 20,
+            session: "Jam 3-4",
+            notes: "Barang disita",
+            date: new Date("2026-04-03"),
+            createdByName: "Siti Rahayu",
+          },
+          {
+            studentId: ahmad.id,
+            violationTypeId: "vt-p15-057",
+            points: 20,
+            session: "Jam 5-6",
+            date: new Date("2026-03-22"),
+            createdByName: "Siti Rahayu",
+          },
         ],
       });
     }
@@ -148,10 +202,39 @@ async function main() {
     if (existing === 0) {
       await prisma.violationRecord.createMany({
         data: [
-          { studentId: rizky.id, violationTypeId: "vt-p15-034a", points: 75, session: "Istirahat", notes: "Insiden di kantin", date: new Date("2026-04-15"), createdByName: "Drs. Hartanto" },
-          { studentId: rizky.id, violationTypeId: "vt-p15-057", points: 20, session: "Jam 7-8", date: new Date("2026-04-08"), createdByName: "Siti Rahayu" },
-          { studentId: rizky.id, violationTypeId: "vt-p15-012a", points: 20, session: "Jam 1-2", date: new Date("2026-04-02"), createdByName: "Siti Rahayu" },
-          { studentId: rizky.id, violationTypeId: "vt-p15-072", points: 10, session: "Umum", date: new Date("2026-03-20"), createdByName: "Siti Rahayu" },
+          {
+            studentId: rizky.id,
+            violationTypeId: "vt-p15-034a",
+            points: 75,
+            session: "Istirahat",
+            notes: "Insiden di kantin",
+            date: new Date("2026-04-15"),
+            createdByName: "Drs. Hartanto",
+          },
+          {
+            studentId: rizky.id,
+            violationTypeId: "vt-p15-057",
+            points: 20,
+            session: "Jam 7-8",
+            date: new Date("2026-04-08"),
+            createdByName: "Siti Rahayu",
+          },
+          {
+            studentId: rizky.id,
+            violationTypeId: "vt-p15-012a",
+            points: 20,
+            session: "Jam 1-2",
+            date: new Date("2026-04-02"),
+            createdByName: "Siti Rahayu",
+          },
+          {
+            studentId: rizky.id,
+            violationTypeId: "vt-p15-072",
+            points: 10,
+            session: "Umum",
+            date: new Date("2026-03-20"),
+            createdByName: "Siti Rahayu",
+          },
         ],
       });
     }
@@ -289,9 +372,7 @@ async function main() {
           grossTotalBefore: manualGross,
         },
       });
-      console.log(
-        `   Demo bukti manual: ${demoManual.name} bruto ${manualGross} → potong -${cut} (disimpan di seed)`
-      );
+      console.log(`   Demo bukti manual: ${demoManual.name} bruto ${manualGross} → potong -${cut} (disimpan di seed)`);
     }
   }
 

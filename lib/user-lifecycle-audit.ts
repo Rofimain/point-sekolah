@@ -35,8 +35,6 @@ export async function recordUserLifecycleEvent(input: RecordLifecycleInput): Pro
   }
 }
 
-export async function recordUserLifecycleEvents(
-  inputs: RecordLifecycleInput[]
-): Promise<void> {
+export async function recordUserLifecycleEvents(inputs: RecordLifecycleInput[]): Promise<void> {
   await Promise.all(inputs.map((input) => recordUserLifecycleEvent(input)));
 }

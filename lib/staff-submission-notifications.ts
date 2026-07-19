@@ -17,8 +17,7 @@ export type StudentSubmissionNotification = {
 
 export const STAFF_SUBMISSION_POLL_MS = 5000;
 export const STAFF_SUBMISSION_POLL_HIDDEN_MS = 45000;
-export const STAFF_SUBMISSION_NOTIFICATIONS_PATH =
-  "/api/staff/student-submissions-notifications";
+export const STAFF_SUBMISSION_NOTIFICATIONS_PATH = "/api/staff/student-submissions-notifications";
 
 /** Label sumber input untuk lonceng / monitoring notifikasi. */
 export function notificationSourceLabel(it: StudentSubmissionNotification): string {

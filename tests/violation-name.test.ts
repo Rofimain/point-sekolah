@@ -12,7 +12,5 @@ test("violationCodeSortOrder sorts by nomor then suffix", () => {
 
 test("violationNameSortOrder reads bracket code", () => {
   assert.equal(violationNameSortOrder("[91] tes"), violationCodeSortOrder("91"));
-  assert.ok(
-    violationNameSortOrder("[48] Duduk di wastafel") < violationNameSortOrder("[91] tes")
-  );
+  assert.ok(violationNameSortOrder("[48] Duduk di wastafel") < violationNameSortOrder("[91] tes"));
 });

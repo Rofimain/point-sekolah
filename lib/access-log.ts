@@ -1,11 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { AccessLogCategory, AccessLogPortal } from "@/generated/prisma/client";
 import { getAuthRequestMeta } from "@/lib/auth-request-meta";
-import {
-  accessLogActorFromSession,
-  portalFromActorRole,
-  type AccessLogActor,
-} from "@/lib/access-log-meta";
+import { accessLogActorFromSession, portalFromActorRole, type AccessLogActor } from "@/lib/access-log-meta";
 
 export {
   accessLogActorFromSession,

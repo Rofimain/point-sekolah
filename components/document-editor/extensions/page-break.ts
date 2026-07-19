@@ -15,7 +15,7 @@ export const PageBreak = Node.create({
   selectable: true,
 
   parseHTML() {
-    return [{ tag: "div[data-page-break]" }, { tag: 'hr[data-page-break]' }];
+    return [{ tag: "div[data-page-break]" }, { tag: "hr[data-page-break]" }];
   },
 
   renderHTML({ HTMLAttributes }) {

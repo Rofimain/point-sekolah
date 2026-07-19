@@ -1,6 +1,7 @@
 # Panduan Deploy — Sistem Poin Pelanggaran Sekolah
 
 ## Stack
+
 - **Hosting**: Docker Compose di VPS/EC2 (app + Caddy)
 - **Database**: PostgreSQL 16 (container service `db`)
 - **Auth**: NextAuth.js
@@ -42,6 +43,7 @@ NEXT_PUBLIC_STAFF_DOMAIN="namaschool.sch.id"
 ```
 
 Generate secret:
+
 ```bash
 openssl rand -base64 32
 ```
@@ -62,11 +64,12 @@ npm run db:seed
 ```
 
 Akun contoh dari seed:
-| Role | Email | Password |
-|------|-------|----------|
-| Super Admin | admin@seed.local | Admin@1234 |
-| Guru | s.rahayu@seed.local | Guru@1234 |
-| Siswa | 0051234567@siswa.seed.local | Siswa@123456 |
+
+| Role        | Email                       | Password     |
+| ----------- | --------------------------- | ------------ |
+| Super Admin | admin@seed.local            | Admin@1234   |
+| Guru        | s.rahayu@seed.local         | Guru@1234    |
+| Siswa       | 0051234567@siswa.seed.local | Siswa@123456 |
 
 ---
 
@@ -100,6 +103,7 @@ NEXTAUTH_URL=https://tanse.smai-alazhar1.com
 ### B. Push ke `main`
 
 Push ke branch `main` memicu workflow `.github/workflows/deploy.yml`:
+
 1. Lint, test, typecheck, validasi/migration test, build, dan audit dependency.
 2. Build image SHA dan smoke test dengan PostgreSQL sementara.
 3. Push image yang sudah lulus ke GHCR.
@@ -144,6 +148,7 @@ Alternatif host crontab (jika cron container dimatikan):
 ## KUSTOMISASI DOMAIN EMAIL SEKOLAH
 
 Di `.env` produksi, ubah:
+
 ```
 NEXT_PUBLIC_STUDENT_DOMAIN=siswa.sma-anda.sch.id
 NEXT_PUBLIC_STAFF_DOMAIN=sma-anda.sch.id
@@ -166,11 +171,11 @@ Tidak perlu add-on daily backup Hostinger. Cukup bayar VPS + backup `pg_dump` se
 
 ### Yang otomatis vs manual
 
-| Langkah | Manual / otomatis |
-|---------|-------------------|
-| Install rclone + login Google Drive | **Sekali manual** di VPS |
-| Jalankan backup | **Otomatis** via cron (harian) |
-| Restore saat disaster | Manual (pakai `scripts/restore-db.sh`) |
+| Langkah                             | Manual / otomatis                      |
+| ----------------------------------- | -------------------------------------- |
+| Install rclone + login Google Drive | **Sekali manual** di VPS               |
+| Jalankan backup                     | **Otomatis** via cron (harian)         |
+| Restore saat disaster               | Manual (pakai `scripts/restore-db.sh`) |
 
 ### A. Setup rclone (sekali)
 
@@ -184,6 +189,7 @@ rclone config
 ```
 
 Di wizard:
+
 1. `n` → New remote
 2. Nama: `gdrive`
 3. Storage: Google Drive

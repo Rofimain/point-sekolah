@@ -11,11 +11,7 @@ type Props = {
 
 export function SessionProvider({ children, session }: Props) {
   return (
-    <NextAuthSessionProvider
-      session={session ?? undefined}
-      refetchInterval={0}
-      refetchOnWindowFocus={false}
-    >
+    <NextAuthSessionProvider session={session ?? undefined} refetchInterval={0} refetchOnWindowFocus={false}>
       {children}
     </NextAuthSessionProvider>
   );

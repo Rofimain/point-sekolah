@@ -41,7 +41,11 @@ function ChevronToggle({ open, className }: { open: boolean; className?: string 
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
-      className={cn("h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]", open && "rotate-180", className)}
+      className={cn(
+        "h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+        open && "rotate-180",
+        className
+      )}
     >
       <path d="M6 8l4 4 4-4" />
     </svg>
@@ -51,23 +55,13 @@ function ChevronToggle({ open, className }: { open: boolean; className?: string 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-2.5 flex items-center gap-2 px-2">
-      <span className="font-serif text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
-        {children}
-      </span>
+      <span className="font-serif text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">{children}</span>
       <span className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" aria-hidden />
     </div>
   );
 }
 
-function SubmenuLink({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
+function SubmenuLink({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
   return (
     <Link
       href={href}
@@ -277,7 +271,10 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             }
             label="Data Siswa"
           >
-            <SubmenuLink href="/students" active={!classId && pathname.startsWith("/students") && !pathname.includes("/cetak")}>
+            <SubmenuLink
+              href="/students"
+              active={!classId && pathname.startsWith("/students") && !pathname.includes("/cetak")}
+            >
               Semua kelas
             </SubmenuLink>
             {classes.map((c) => (
@@ -293,10 +290,15 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
 
           <SimpleNavLink
             href="/cetak-surat"
-            active={pathname.startsWith("/cetak-surat") || (pathname.includes("/students/") && pathname.includes("/cetak"))}
+            active={
+              pathname.startsWith("/cetak-surat") || (pathname.includes("/students/") && pathname.includes("/cetak"))
+            }
             icon={
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" strokeLinecap="round" />
+                <path
+                  d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"
+                  strokeLinecap="round"
+                />
                 <path d="M6 14h12v8H6z" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             }
@@ -343,7 +345,11 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
               active={pathname.startsWith("/access-log")}
               icon={
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" strokeLinecap="round" strokeLinejoin="round" />
+                  <path
+                    d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                   <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               }
@@ -356,7 +362,11 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             active={pathname.startsWith("/violations")}
             icon={
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             }
             label="Jenis Pelanggaran"
@@ -391,19 +401,25 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
           )}
         </div>
 
-        {canManage && <div className="px-3 pb-2 pt-2">
-          <SectionLabel>Laporan</SectionLabel>
-          <SimpleNavLink
-            href="/export"
-            active={pathname.startsWith("/export")}
-            icon={
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            }
-            label="Export Excel"
-          />
-        </div>}
+        {canManage && (
+          <div className="px-3 pb-2 pt-2">
+            <SectionLabel>Laporan</SectionLabel>
+            <SimpleNavLink
+              href="/export"
+              active={pathname.startsWith("/export")}
+              icon={
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <path
+                    d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              }
+              label="Export Excel"
+            />
+          </div>
+        )}
       </nav>
 
       <div className="border-t p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
@@ -413,9 +429,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             background: "linear-gradient(135deg, rgba(255,255,255,0.07), rgba(184,149,108,0.08))",
           }}
         >
-          <div className="truncate text-[11px] font-semibold tracking-tight text-white/85">
-            {session?.user?.name}
-          </div>
+          <div className="truncate text-[11px] font-semibold tracking-tight text-white/85">{session?.user?.name}</div>
           <div className="mt-0.5 text-[10px] font-medium tracking-wide" style={{ color: "var(--gold)" }}>
             {session?.user?.role ? getRoleLabel(session.user.role) : ""}
           </div>

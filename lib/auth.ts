@@ -33,10 +33,7 @@ function normalizeIdentifier(raw: string): string {
 
 type AuthPortal = "student" | "staff";
 
-async function authorizeCredentials(
-  portal: AuthPortal,
-  credentials: Record<"email" | "password", string> | undefined
-) {
+async function authorizeCredentials(portal: AuthPortal, credentials: Record<"email" | "password", string> | undefined) {
   const meta = await getAuthRequestMeta();
   const provider = portal === "student" ? "student-login" : "admin-login";
 
@@ -75,11 +72,7 @@ async function authorizeCredentials(
         include: { class: true },
       });
 
-  const roleOk = user
-    ? portal === "student"
-      ? user.role === "STUDENT"
-      : isStaffRole(user.role)
-    : false;
+  const roleOk = user ? (portal === "student" ? user.role === "STUDENT" : isStaffRole(user.role)) : false;
 
   if (!user || !roleOk) {
     await recordAuthLoginEvent({
@@ -208,9 +201,7 @@ export const authOptions: NextAuthOptions = {
 
       const jar = await cookies();
       const callbackUrl =
-        jar.get("next-auth.callback-url")?.value ||
-        jar.get("__Secure-next-auth.callback-url")?.value ||
-        null;
+        jar.get("next-auth.callback-url")?.value || jar.get("__Secure-next-auth.callback-url")?.value || null;
       const portal = inferGooglePortal(callbackUrl ? decodeURIComponent(callbackUrl) : null);
 
       const googleSub = account.providerAccountId;

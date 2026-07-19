@@ -48,9 +48,7 @@ export function plainTextToDocumentHtml(text: string): string {
       else parts.push("<p></p>");
       emptyRun = 0;
     }
-    const withTokens = escapeHtml(line).replace(PLACEHOLDER_RE, (_m, key: string) =>
-      placeholderSpanHtml(key)
-    );
+    const withTokens = escapeHtml(line).replace(PLACEHOLDER_RE, (_m, key: string) => placeholderSpanHtml(key));
     parts.push(`<p>${withTokens}</p>`);
   }
   if (emptyRun >= 3) parts.push('<p class="doc-sign-gap"></p>');
@@ -152,8 +150,12 @@ export function buildPrintableDocumentHtml(options: {
     : plainTextToDocumentHtml(options.bodyHtml);
   const headerRaw = settings.headerHtml || "";
   const footerRaw = settings.footerHtml || "";
-  const header = options.vars ? fillDocumentHtml(plainTextToDocumentHtml(headerRaw), options.vars) : plainTextToDocumentHtml(headerRaw);
-  const footer = options.vars ? fillDocumentHtml(plainTextToDocumentHtml(footerRaw), options.vars) : plainTextToDocumentHtml(footerRaw);
+  const header = options.vars
+    ? fillDocumentHtml(plainTextToDocumentHtml(headerRaw), options.vars)
+    : plainTextToDocumentHtml(headerRaw);
+  const footer = options.vars
+    ? fillDocumentHtml(plainTextToDocumentHtml(footerRaw), options.vars)
+    : plainTextToDocumentHtml(footerRaw);
   const css = buildDocumentPageCss(settings, { forPrint: true });
   const hasHeader = Boolean(headerRaw.trim());
   const hasFooter = Boolean(footerRaw.trim());

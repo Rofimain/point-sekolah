@@ -7,7 +7,7 @@ import {
 } from "../lib/telegram-env";
 
 test("sanitizeTelegramBotToken strips curly quotes and whitespace", () => {
-  assert.equal(sanitizeTelegramBotToken('  “123456:ABC-DEF”  '), "123456:ABC-DEF");
+  assert.equal(sanitizeTelegramBotToken("  “123456:ABC-DEF”  "), "123456:ABC-DEF");
   assert.equal(sanitizeTelegramBotToken('"123456:ABC-DEF"'), "123456:ABC-DEF");
 });
 

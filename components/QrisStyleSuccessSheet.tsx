@@ -77,15 +77,31 @@ export function QrisStyleSuccessSheet({
           ) : (
             <div
               className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full shadow-lg motion-safe:animate-qris-check"
-              style={{ background: "var(--success)", boxShadow: "0 10px 28px color-mix(in srgb, var(--success) 35%, transparent)" }}
+              style={{
+                background: "var(--success)",
+                boxShadow: "0 10px 28px color-mix(in srgb, var(--success) 35%, transparent)",
+              }}
             >
-              <svg className="h-9 w-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <svg
+                className="h-9 w-9 text-white"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             </div>
           )}
 
-          <h2 id="qris-success-title" className="mt-5 text-[1.35rem] font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
+          <h2
+            id="qris-success-title"
+            className="mt-5 text-[1.35rem] font-bold tracking-tight"
+            style={{ color: "var(--text-primary)" }}
+          >
             {title}
           </h2>
           <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
@@ -95,7 +111,10 @@ export function QrisStyleSuccessSheet({
 
         {details.length > 0 && (
           <div className="mx-5 mt-5 rounded-xl px-4 py-3 text-left" style={{ background: "var(--bg-primary)" }}>
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+            <div
+              className="mb-2 text-[10px] font-semibold uppercase tracking-wider"
+              style={{ color: "var(--text-muted)" }}
+            >
               Rincian
             </div>
             <ul className="space-y-2.5">
@@ -131,7 +150,10 @@ export function QrisStyleSuccessSheet({
             type="button"
             onClick={onClose}
             className="min-h-11 w-full touch-manipulation rounded-xl py-3.5 text-[15px] font-semibold text-white shadow-md transition active:scale-[0.99] motion-reduce:transition-none"
-            style={{ background: "var(--success)", boxShadow: "0 8px 20px color-mix(in srgb, var(--success) 25%, transparent)" }}
+            style={{
+              background: "var(--success)",
+              boxShadow: "0 8px 20px color-mix(in srgb, var(--success) 25%, transparent)",
+            }}
           >
             Selesai
           </button>

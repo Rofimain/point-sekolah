@@ -71,10 +71,7 @@ export function canCreateUserWithRole(
  * - ADMIN: hanya TEACHER dan STUDENT (bukan peer ADMIN / SUPER_ADMIN)
  * - TEACHER: tidak boleh
  */
-export function canModifyUser(
-  actorRole: string | undefined | null,
-  targetRole: string | undefined | null
-): boolean {
+export function canModifyUser(actorRole: string | undefined | null, targetRole: string | undefined | null): boolean {
   if (isSuperAdmin(actorRole)) return true;
   if (isAdminRole(actorRole)) {
     return targetRole === "TEACHER" || targetRole === "STUDENT";
@@ -85,10 +82,7 @@ export function canModifyUser(
 /**
  * Hapus akun target — sama batasan dengan canModifyUser.
  */
-export function canDeleteUser(
-  actorRole: string | undefined | null,
-  targetRole: string | undefined | null
-): boolean {
+export function canDeleteUser(actorRole: string | undefined | null, targetRole: string | undefined | null): boolean {
   return canModifyUser(actorRole, targetRole);
 }
 
@@ -104,10 +98,7 @@ export function getRoleLabel(role: string): string {
 }
 
 /** Nama staf + jabatan opsional untuk kolom "dicatat oleh". */
-export function formatStaffDisplayName(user: {
-  name?: string | null;
-  jabatan?: string | null;
-}): string {
+export function formatStaffDisplayName(user: { name?: string | null; jabatan?: string | null }): string {
   const name = user.name?.trim() || "Staf";
   const jabatan = user.jabatan?.trim();
   return jabatan ? `${name} (${jabatan})` : name;

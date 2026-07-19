@@ -79,10 +79,8 @@ export function parsePageSettings(raw: string | null | undefined): DocumentPageS
       orientation: parsed.orientation === "landscape" ? "landscape" : "portrait",
       margin: validMargin,
       customMarginMm: parsed.customMarginMm ?? DEFAULT_PAGE_SETTINGS.customMarginMm,
-      headerHtml:
-        typeof parsed.headerHtml === "string" ? sanitizeDocumentHtml(parsed.headerHtml) : "",
-      footerHtml:
-        typeof parsed.footerHtml === "string" ? sanitizeDocumentHtml(parsed.footerHtml) : "",
+      headerHtml: typeof parsed.headerHtml === "string" ? sanitizeDocumentHtml(parsed.headerHtml) : "",
+      footerHtml: typeof parsed.footerHtml === "string" ? sanitizeDocumentHtml(parsed.footerHtml) : "",
       showPageNumbers: parsed.showPageNumbers === true,
     };
   } catch {

@@ -1,8 +1,4 @@
-import {
-  AUTH_LOCK_DURATION_MS,
-  AUTH_MAX_FAILED_LOGINS,
-  isLoginLockoutEnabled,
-} from "@/lib/auth-constants";
+import { AUTH_LOCK_DURATION_MS, AUTH_MAX_FAILED_LOGINS, isLoginLockoutEnabled } from "@/lib/auth-constants";
 
 export function isAccountLocked(lockedUntil: Date | null | undefined, now = new Date()): boolean {
   return Boolean(lockedUntil && lockedUntil.getTime() > now.getTime());

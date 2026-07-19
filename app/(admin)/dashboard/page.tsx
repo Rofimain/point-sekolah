@@ -25,31 +25,24 @@ async function getDashboardData() {
     };
   });
 
-  const [
-    totalStudents,
-    totalTeachers,
-    thisMonthCount,
-    lastMonthCount,
-    vtGroups,
-    effectivePointsMap,
-    ...monthCounts
-  ] = await Promise.all([
-    prisma.user.count({ where: { role: "STUDENT", status: "ACTIVE", deletedAt: null } }),
-    prisma.user.count({ where: { role: { not: "STUDENT" }, status: "ACTIVE", deletedAt: null } }),
-    prisma.violationRecord.count({ where: { date: { gte: startOfMonth }, deletedAt: null } }),
-    prisma.violationRecord.count({
-      where: { date: { gte: lastMonthStart, lte: endLastMonth }, deletedAt: null },
-    }),
-    prisma.violationRecord.groupBy({
-      by: ["violationTypeId"],
-      where: { date: { gte: startOfMonth }, deletedAt: null },
-      _count: { id: true },
-    }),
-    getEffectivePointsMap(),
-    ...monthRanges.map(({ d, end }) =>
-      prisma.violationRecord.count({ where: { date: { gte: d, lte: end }, deletedAt: null } })
-    ),
-  ]);
+  const [totalStudents, totalTeachers, thisMonthCount, lastMonthCount, vtGroups, effectivePointsMap, ...monthCounts] =
+    await Promise.all([
+      prisma.user.count({ where: { role: "STUDENT", status: "ACTIVE", deletedAt: null } }),
+      prisma.user.count({ where: { role: { not: "STUDENT" }, status: "ACTIVE", deletedAt: null } }),
+      prisma.violationRecord.count({ where: { date: { gte: startOfMonth }, deletedAt: null } }),
+      prisma.violationRecord.count({
+        where: { date: { gte: lastMonthStart, lte: endLastMonth }, deletedAt: null },
+      }),
+      prisma.violationRecord.groupBy({
+        by: ["violationTypeId"],
+        where: { date: { gte: startOfMonth }, deletedAt: null },
+        _count: { id: true },
+      }),
+      getEffectivePointsMap(),
+      ...monthRanges.map(({ d, end }) =>
+        prisma.violationRecord.count({ where: { date: { gte: d, lte: end }, deletedAt: null } })
+      ),
+    ]);
 
   const monthlyData = monthRanges.map((mr, i) => ({
     label: mr.label,
@@ -130,7 +123,17 @@ async function getDashboardData() {
   };
 }
 
-function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
+function StatCard({
+  label,
+  value,
+  sub,
+  color,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  color?: string;
+}) {
   return (
     <div className="panel p-3 sm:p-4">
       <div className="text-[11px] sm:text-xs mb-1.5 tracking-wide leading-snug" style={{ color: "var(--text-muted)" }}>
@@ -161,7 +164,7 @@ export default async function DashboardPage() {
     topViolations,
   } = await getDashboardData();
   const maxCount = Math.max(...monthlyData.map((m) => m.count), 1);
-  const trend = lastMonthCount > 0 ? ((thisMonthCount - lastMonthCount) / lastMonthCount * 100).toFixed(0) : null;
+  const trend = lastMonthCount > 0 ? (((thisMonthCount - lastMonthCount) / lastMonthCount) * 100).toFixed(0) : null;
 
   const over25Rows = over25Students.map(({ student, total }) => ({
     id: student.id,
@@ -179,47 +182,106 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="mb-5">
-        <h1 className="font-serif text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--text-primary)" }}>Dashboard Pelanggaran</h1>
+        <h1
+          className="font-serif text-xl font-semibold tracking-tight sm:text-2xl"
+          style={{ color: "var(--text-primary)" }}
+        >
+          Dashboard Pelanggaran
+        </h1>
         <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
           Ringkasan data seluruh siswa · Tahun Ajaran {indonesianAcademicYearLabel()}
         </p>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Siswa Aktif" value={totalStudents} sub={`${totalTeachers} staf (guru / admin / super admin)`} />
-        <StatCard label="Pelanggaran Bulan Ini" value={thisMonthCount} sub={trend ? `${parseInt(trend) > 0 ? "+" : ""}${trend}% dari bulan lalu` : undefined} color="var(--warning)" />
-        <StatCard label={`Siswa poin ≥${ALERT_POINTS}`} value={over25Students.length} sub="Perhatian wali kelas / BK" color="var(--warning)" />
-        <StatCard label={`Siswa poin kritis (≥${CRITICAL_POINTS})`} value={criticalStudents.length} sub="Tindak lanjut segera" color="var(--danger)" />
+        <StatCard
+          label="Total Siswa Aktif"
+          value={totalStudents}
+          sub={`${totalTeachers} staf (guru / admin / super admin)`}
+        />
+        <StatCard
+          label="Pelanggaran Bulan Ini"
+          value={thisMonthCount}
+          sub={trend ? `${parseInt(trend) > 0 ? "+" : ""}${trend}% dari bulan lalu` : undefined}
+          color="var(--warning)"
+        />
+        <StatCard
+          label={`Siswa poin ≥${ALERT_POINTS}`}
+          value={over25Students.length}
+          sub="Perhatian wali kelas / BK"
+          color="var(--warning)"
+        />
+        <StatCard
+          label={`Siswa poin kritis (≥${CRITICAL_POINTS})`}
+          value={criticalStudents.length}
+          sub="Tindak lanjut segera"
+          color="var(--danger)"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
-        <div className="rounded-xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-          <div className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>Pelanggaran per Bulan (6 Bulan Terakhir)</div>
+        <div
+          className="rounded-xl border p-4"
+          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        >
+          <div className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
+            Pelanggaran per Bulan (6 Bulan Terakhir)
+          </div>
           <div className="flex h-24 min-w-0 items-end gap-1 px-0.5 sm:gap-2 sm:px-1">
             {monthlyData.map((m, i) => {
               const h = maxCount > 0 ? Math.max((m.count / maxCount) * 100, 4) : 4;
               const isLast = i === monthlyData.length - 1;
               return (
                 <div key={m.label} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                  <span className="text-[11px] tabular-nums" style={{ color: "var(--text-secondary)" }}>{m.count}</span>
-                  <div className="w-full rounded-t" style={{ height: `${h}%`, background: isLast ? "var(--accent)" : "var(--accent-light)", border: `1px solid var(--accent-border)`, minHeight: 4 }} />
-                  <span className="text-[11px]" style={{ color: "var(--text-secondary)" }}>{m.label}</span>
+                  <span className="text-[11px] tabular-nums" style={{ color: "var(--text-secondary)" }}>
+                    {m.count}
+                  </span>
+                  <div
+                    className="w-full rounded-t"
+                    style={{
+                      height: `${h}%`,
+                      background: isLast ? "var(--accent)" : "var(--accent-light)",
+                      border: `1px solid var(--accent-border)`,
+                      minHeight: 4,
+                    }}
+                  />
+                  <span className="text-[11px]" style={{ color: "var(--text-secondary)" }}>
+                    {m.label}
+                  </span>
                 </div>
               );
             })}
           </div>
         </div>
 
-        <div className="rounded-xl border p-4" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-          <div className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>Top Jenis Pelanggaran Bulan Ini</div>
+        <div
+          className="rounded-xl border p-4"
+          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        >
+          <div className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+            Top Jenis Pelanggaran Bulan Ini
+          </div>
           {topViolations.length === 0 ? (
-            <div className="text-xs text-center py-4" style={{ color: "var(--text-muted)" }}>Tidak ada data bulan ini</div>
+            <div className="text-xs text-center py-4" style={{ color: "var(--text-muted)" }}>
+              Tidak ada data bulan ini
+            </div>
           ) : (
             <div className="space-y-2">
               {topViolations.map((v) => (
-                <div key={v.name} className="flex min-w-0 items-center justify-between gap-2 py-1.5 border-b" style={{ borderColor: "var(--border)" }}>
-                  <span className="min-w-0 flex-1 truncate text-xs" style={{ color: "var(--text-secondary)" }}>{v.name}</span>
-                  <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap" style={{ background: "var(--warning-bg)", color: "var(--warning)" }}>{v.count} kasus</span>
+                <div
+                  key={v.name}
+                  className="flex min-w-0 items-center justify-between gap-2 py-1.5 border-b"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <span className="min-w-0 flex-1 truncate text-xs" style={{ color: "var(--text-secondary)" }}>
+                    {v.name}
+                  </span>
+                  <span
+                    className="shrink-0 px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap"
+                    style={{ background: "var(--warning-bg)", color: "var(--warning)" }}
+                  >
+                    {v.count} kasus
+                  </span>
                 </div>
               ))}
             </div>

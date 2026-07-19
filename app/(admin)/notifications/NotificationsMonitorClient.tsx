@@ -4,10 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { QrisStyleSuccessSheet } from "@/components/QrisStyleSuccessSheet";
 import { useStaffSubmissionNotifications } from "@/lib/use-staff-submission-notifications";
-import {
-  notificationSourceLabel,
-  type StudentSubmissionNotification,
-} from "@/lib/staff-submission-notifications";
+import { notificationSourceLabel, type StudentSubmissionNotification } from "@/lib/staff-submission-notifications";
 import { formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
 import UserAvatar from "@/components/ui/UserAvatar";
 
@@ -25,8 +22,7 @@ function sheetDetails(it: StudentSubmissionNotification) {
 
 export default function NotificationsMonitorClient() {
   const router = useRouter();
-  const { items, readSet, readReady, unreadCount, markRead, lastFetchedAt } =
-    useStaffSubmissionNotifications();
+  const { items, readSet, readReady, unreadCount, markRead, lastFetchedAt } = useStaffSubmissionNotifications();
   const [sheetItem, setSheetItem] = useState<StudentSubmissionNotification | null>(null);
   const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
 
@@ -50,8 +46,7 @@ export default function NotificationsMonitorClient() {
             Monitoring Notifikasi
           </h1>
           <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
-            Semua catatan pelanggaran hari ini (siswa & staf) · diperbarui otomatis · hilang setelah
-            berganti hari
+            Semua catatan pelanggaran hari ini (siswa & staf) · diperbarui otomatis · hilang setelah berganti hari
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -104,9 +99,7 @@ export default function NotificationsMonitorClient() {
           <div className="text-xs" style={{ color: "var(--text-muted)" }}>
             Belum dibaca
           </div>
-          <div className="mt-1 font-serif text-2xl text-blue-600">
-            {readReady ? unreadCount : "—"}
-          </div>
+          <div className="mt-1 font-serif text-2xl text-blue-600">{readReady ? unreadCount : "—"}</div>
         </button>
         <button
           type="button"
@@ -134,9 +127,7 @@ export default function NotificationsMonitorClient() {
       >
         {visible.length === 0 ? (
           <div className="px-4 py-16 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-            {items.length === 0
-              ? "Belum ada catatan pelanggaran hari ini."
-              : "Tidak ada item pada filter ini."}
+            {items.length === 0 ? "Belum ada catatan pelanggaran hari ini." : "Tidak ada item pada filter ini."}
           </div>
         ) : (
           <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
@@ -204,7 +195,10 @@ export default function NotificationsMonitorClient() {
                         </span>
                         <span className="font-semibold tabular-nums">{it.points} poin</span>
                       </span>
-                      <span className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                      <span
+                        className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px]"
+                        style={{ color: "var(--text-muted)" }}
+                      >
                         <span>Kejadian: {formatIncidentDateOnly(it.incidentDate)}</span>
                         <span>Input: {formatInputDateTime(it.createdAt)}</span>
                       </span>

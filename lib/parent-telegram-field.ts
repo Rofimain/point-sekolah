@@ -12,7 +12,7 @@ export function parseParentTelegramForDb(
     return {
       ok: false,
       error:
-        "Telegram ortu: jangan simpan @username atau nama akun. Kosongkan field ini, lalu pakai \"Salin tautan Telegram ortu\" dan minta ortu buka link lalu ketuk Start. Setelah itu chat ID terisi otomatis.",
+        'Telegram ortu: jangan simpan @username atau nama akun. Kosongkan field ini, lalu pakai "Salin tautan Telegram ortu" dan minta ortu buka link lalu ketuk Start. Setelah itu chat ID terisi otomatis.',
     };
   }
   if (!/^\d{5,}$/.test(s)) {

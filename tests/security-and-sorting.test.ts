@@ -14,11 +14,7 @@ import {
   shouldEnforceSingleSession,
 } from "../lib/auth-constants";
 import { computeLockUntil, isAccountLocked } from "../lib/auth-lockout";
-import {
-  activeFlagFromStatus,
-  canUserLogin,
-  statusFromActiveToggle,
-} from "../lib/user-status";
+import { activeFlagFromStatus, canUserLogin, statusFromActiveToggle } from "../lib/user-status";
 import { buildUserLookupMaps, matchImportUser } from "../lib/user-import-match";
 import {
   GOOGLE_NOT_REGISTERED_MESSAGE,
@@ -35,19 +31,20 @@ test("password policy enforces length and bcrypt byte boundary", () => {
 });
 
 test("evidence parser accepts real PNG and rejects MIME spoofing", () => {
-  const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+  const png =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
   const parsed = parseEvidenceImageDataUrl(png);
   assert.equal(parsed.mime, "image/png");
   assert.throws(() => parseEvidenceImageDataUrl(png.replace("image/png", "image/jpeg")));
   assert.throws(() => parseEvidenceImageDataUrl("data:image/svg+xml;base64,PHN2Zz4="));
-  assert.throws(() => parseEvidenceImageDataUrl("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"));
+  assert.throws(() =>
+    parseEvidenceImageDataUrl("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
+  );
 });
 
 test("evidence parser accepts WebP magic bytes and rejects spoofed WebP", () => {
   // Minimal RIFF/WEBP header + padding (not a real decodeable image, but magic matches)
-  const webpBytes = Buffer.from([
-    0x52, 0x49, 0x46, 0x46, 0x0a, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x00, 0x00,
-  ]);
+  const webpBytes = Buffer.from([0x52, 0x49, 0x46, 0x46, 0x0a, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x00, 0x00]);
   const webp = `data:image/webp;base64,${webpBytes.toString("base64")}`;
   const parsed = parseEvidenceImageDataUrl(webp);
   assert.equal(parsed.mime, "image/webp");
@@ -135,7 +132,10 @@ test("import match prioritizes id then nisn then email and detects conflicts", (
     { id: "u2", nisn: "222", nip: null, email: "b@x.id", status: "LEFT" },
   ];
   const maps = buildUserLookupMaps(users);
-  assert.equal(matchImportUser({ id: "u1", email: "b@x.id" }, maps.byId, maps.byNisn, maps.byNip, maps.byEmail).kind, "conflict");
+  assert.equal(
+    matchImportUser({ id: "u1", email: "b@x.id" }, maps.byId, maps.byNisn, maps.byNip, maps.byEmail).kind,
+    "conflict"
+  );
   const byNisn = matchImportUser({ nisn: "111" }, maps.byId, maps.byNisn, maps.byNip, maps.byEmail);
   assert.equal(byNisn.kind, "match");
   if (byNisn.kind === "match") assert.equal(byNisn.via, "nisn");
@@ -149,7 +149,10 @@ test("dashboard sorting uses deterministic name and id tie-breakers", () => {
     { id: "a", name: "Ani", className: "X", total: 50 },
   ];
   const sorted = sortDashboardRows(rows, { key: "points", direction: "desc" }, 75);
-  assert.deepEqual(sorted.map((row) => row.id), ["a", "c", "b"]);
+  assert.deepEqual(
+    sorted.map((row) => row.id),
+    ["a", "c", "b"]
+  );
 });
 
 test("students can only read their own record while staff can read records", () => {

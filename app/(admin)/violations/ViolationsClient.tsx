@@ -2,11 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import {
-  groupByViolationSection,
-  getViolationSectionLabel,
-  type ViolationBagianRow,
-} from "@/lib/violation-sections";
+import { groupByViolationSection, getViolationSectionLabel, type ViolationBagianRow } from "@/lib/violation-sections";
 import { joinViolationName, splitViolationName, violationNameSortOrder } from "@/lib/violation-name";
 import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
 import { SectionAccordion, useSectionAccordionState } from "@/components/SectionAccordion";
@@ -62,7 +58,10 @@ function matchesViolationSearch(v: any, q: string, bagian: ViolationBagianRow[])
   ]
     .join(" ")
     .toLowerCase();
-  return t.split(/\s+/).filter(Boolean).every((p) => blob.includes(p));
+  return t
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((p) => blob.includes(p));
 }
 
 export default function ViolationsClient({
@@ -213,7 +212,9 @@ export default function ViolationsClient({
       items: [...items].sort((a, b) => {
         const byCode = violationNameSortOrder(a.name || "") - violationNameSortOrder(b.name || "");
         if (byCode !== 0) return byCode;
-        return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.points - b.points || String(a.name).localeCompare(String(b.name));
+        return (
+          (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.points - b.points || String(a.name).localeCompare(String(b.name))
+        );
       }),
     }));
   }, [filtered, bagian]);
@@ -542,7 +543,11 @@ export default function ViolationsClient({
                 setBagianModal(true);
               }}
               className="w-full touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold sm:w-auto sm:py-1.5"
-              style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-secondary)" }}
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--text-secondary)",
+                background: "var(--bg-secondary)",
+              }}
             >
               + Tambah bagian
             </button>
@@ -668,16 +673,25 @@ export default function ViolationsClient({
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[11px] font-semibold tabular-nums" style={{ color: "var(--text-muted)" }}>
+                            <span
+                              className="text-[11px] font-semibold tabular-nums"
+                              style={{ color: "var(--text-muted)" }}
+                            >
                               {code || "—"}
                             </span>
                             <CatBadge cat={v.category} />
                           </div>
-                          <div className="mt-1 text-sm font-medium leading-snug break-words" style={{ color: "var(--text-primary)" }}>
+                          <div
+                            className="mt-1 text-sm font-medium leading-snug break-words"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             {title || v.name}
                           </div>
                           {v.description ? (
-                            <div className="mt-1 text-[11px] leading-snug break-words" style={{ color: "var(--text-muted)" }}>
+                            <div
+                              className="mt-1 text-[11px] leading-snug break-words"
+                              style={{ color: "var(--text-muted)" }}
+                            >
                               {v.description}
                             </div>
                           ) : null}
@@ -692,11 +706,7 @@ export default function ViolationsClient({
                                   ? "var(--warning-bg)"
                                   : "var(--success-bg)",
                             color:
-                              v.points >= 51
-                                ? "var(--danger)"
-                                : v.points >= 16
-                                  ? "var(--warning)"
-                                  : "var(--success)",
+                              v.points >= 51 ? "var(--danger)" : v.points >= 16 ? "var(--warning)" : "var(--success)",
                           }}
                         >
                           {v.points}
@@ -754,18 +764,17 @@ export default function ViolationsClient({
                     {items.map((v) => {
                       const { code, title } = splitViolationName(v.name || "");
                       return (
-                        <tr
-                          key={v.id}
-                          className="border-t"
-                          style={{ borderColor: "var(--border)" }}
-                        >
+                        <tr key={v.id} className="border-t" style={{ borderColor: "var(--border)" }}>
                           <td
                             className="px-3 py-3 text-xs font-semibold tabular-nums whitespace-nowrap align-top"
                             style={{ color: "var(--text-secondary)" }}
                           >
                             {code || "—"}
                           </td>
-                          <td className="px-3 py-3 text-xs font-medium align-top break-words" style={{ color: "var(--text-primary)" }}>
+                          <td
+                            className="px-3 py-3 text-xs font-medium align-top break-words"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             {title || v.name}
                           </td>
                           <td className="px-3 py-3 align-top">
@@ -792,7 +801,10 @@ export default function ViolationsClient({
                               {v.points}
                             </span>
                           </td>
-                          <td className="px-3 py-3 text-xs align-top break-words" style={{ color: "var(--text-muted)" }}>
+                          <td
+                            className="px-3 py-3 text-xs align-top break-words"
+                            style={{ color: "var(--text-muted)" }}
+                          >
                             {v.description || "—"}
                           </td>
                           {canManage && (

@@ -51,7 +51,10 @@ export function StudentPointsDetailView({
         ) : null}
       </div>
 
-      <header className="rounded-xl border px-4 py-4 sm:px-5" style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
+      <header
+        className="rounded-xl border px-4 py-4 sm:px-5"
+        style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}
+      >
         <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
           Info poin siswa
         </p>
@@ -63,7 +66,10 @@ export function StudentPointsDetailView({
         </p>
       </header>
 
-      <section className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
+      <section
+        className="rounded-xl border p-4"
+        style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}
+      >
         <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
           Ringkasan poin
         </h2>
@@ -101,7 +107,10 @@ export function StudentPointsDetailView({
         </p>
       </section>
 
-      <section className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
+      <section
+        className="rounded-xl border p-4"
+        style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}
+      >
         <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
           Riwayat pelanggaran
         </h2>
@@ -114,13 +123,22 @@ export function StudentPointsDetailView({
             <table className="w-full min-w-[280px] text-sm">
               <thead>
                 <tr style={{ background: "var(--bg-primary)" }}>
-                  <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                  <th
+                    className="px-3 py-2 text-left text-[11px] uppercase tracking-wide"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     Tanggal
                   </th>
-                  <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                  <th
+                    className="px-3 py-2 text-left text-[11px] uppercase tracking-wide"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     Pelanggaran
                   </th>
-                  <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                  <th
+                    className="px-3 py-2 text-right text-[11px] uppercase tracking-wide"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     Poin
                   </th>
                 </tr>
@@ -139,7 +157,10 @@ export function StudentPointsDetailView({
                         </span>
                       ) : null}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums font-semibold" style={{ color: "var(--text-primary)" }}>
+                    <td
+                      className="px-3 py-2 text-right tabular-nums font-semibold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       {r.points}
                     </td>
                   </tr>
@@ -150,7 +171,10 @@ export function StudentPointsDetailView({
         )}
       </section>
 
-      <section className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
+      <section
+        className="rounded-xl border p-4"
+        style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}
+      >
         <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
           Riwayat remisi / penyesuaian
         </h2>
@@ -163,13 +187,22 @@ export function StudentPointsDetailView({
             <table className="w-full min-w-[280px] text-sm">
               <thead>
                 <tr style={{ background: "var(--bg-primary)" }}>
-                  <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                  <th
+                    className="px-3 py-2 text-left text-[11px] uppercase tracking-wide"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     Tanggal
                   </th>
-                  <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                  <th
+                    className="px-3 py-2 text-left text-[11px] uppercase tracking-wide"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     Keterangan
                   </th>
-                  <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                  <th
+                    className="px-3 py-2 text-right text-[11px] uppercase tracking-wide"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     Δ Poin
                   </th>
                 </tr>
@@ -183,7 +216,10 @@ export function StudentPointsDetailView({
                     <td className="px-3 py-2 break-words" style={{ color: "var(--text-primary)" }}>
                       {formatPointAdjustmentReason(a.reason)}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums font-semibold" style={{ color: "var(--text-primary)" }}>
+                    <td
+                      className="px-3 py-2 text-right tabular-nums font-semibold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       {a.pointsDelta}
                     </td>
                   </tr>

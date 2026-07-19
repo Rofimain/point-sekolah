@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  plainTextToDocumentHtml,
-  fillDocumentHtml,
-  isLikelyHtmlDocument,
-  buildSampleVars,
-} from "../lib/document-html";
+import { plainTextToDocumentHtml, fillDocumentHtml, isLikelyHtmlDocument, buildSampleVars } from "../lib/document-html";
 import { parsePageSettings, resolvePageBox, serializePageSettings, DEFAULT_PAGE_SETTINGS } from "../lib/document-page";
 import { poinTerbilang, buildStudentPrintVars } from "../lib/student-print-vars";
 
