@@ -6,7 +6,7 @@ export type PrintTemplateSeed = {
 };
 
 /** Naikkan versi ini bila layout default template diubah (satu kali sync ke DB). */
-export const PRINT_TEMPLATES_LAYOUT_VERSION = "4";
+export const PRINT_TEMPLATES_LAYOUT_VERSION = "5";
 
 export const PRINT_PLACEHOLDERS: { key: string; label: string }[] = [
   { key: "nama", label: "Nama siswa" },
@@ -61,7 +61,8 @@ export function sortPrintTemplates<T extends { sortOrder: number; title: string 
 /** Lebar baris cetak (monospace) untuk penataan kolom tanda tangan. */
 const TTD_LINE_WIDTH = 72;
 const TTD_SIGN_LINE = "_______________";
-const TTD_GAP = ["", "", "", ""]; // ruang bubuh tanda tangan
+/** Ruang bubuh tanda tangan (cukup 2 baris kosong → dirender sebagai gap tetap). */
+const TTD_GAP = ["", ""];
 
 /** Satu penandatangan: rata kiri. */
 function ttdOne(role: string, name: string): string {

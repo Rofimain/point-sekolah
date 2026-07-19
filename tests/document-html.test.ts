@@ -23,6 +23,20 @@ test("fillDocumentHtml replaces placeholder spans", () => {
   assert.doesNotMatch(filled, /data-placeholder/);
 });
 
+test("fillDocumentHtml preserves newlines as br", () => {
+  const html = plainTextToDocumentHtml("{{daftar_pelanggaran}}");
+  const filled = fillDocumentHtml(html, {
+    daftar_pelanggaran: "1. A\n2. B",
+  });
+  assert.match(filled, /1\. A<br>2\. B/);
+});
+
+test("plainTextToDocumentHtml collapses long empty runs to sign gap", () => {
+  const html = plainTextToDocumentHtml("Atas\n\n\n\nBawah");
+  assert.match(html, /doc-sign-gap/);
+  assert.doesNotMatch(html, /(<p><\/p>\s*){3}/);
+});
+
 test("isLikelyHtmlDocument detects html", () => {
   assert.equal(isLikelyHtmlDocument("<p>x</p>"), true);
   assert.equal(isLikelyHtmlDocument("Nama: {{nama}}"), false);

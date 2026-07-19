@@ -19,21 +19,48 @@ export function placeholderSpanHtml(key: string): string {
   return `<span data-placeholder="${safe}" class="doc-placeholder" contenteditable="false">{{${safe}}}</span>`;
 }
 
+function formatFilledValue(value: string): string {
+  return escapeHtml(value).replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
+}
+
 /** Konversi redaksi plain text lama → HTML dokumen dengan token placeholder. */
 export function plainTextToDocumentHtml(text: string): string {
   if (!text.trim()) return "<p></p>";
-  if (isLikelyHtmlDocument(text)) return ensurePlaceholderSpans(text);
+  if (isLikelyHtmlDocument(text)) return ensurePlaceholderSpans(collapseEmptyParagraphs(text));
 
   const lines = text.replace(/\r\n/g, "\n").split("\n");
-  return lines
-    .map((line) => {
-      if (!line.trim()) return "<p></p>";
-      const withTokens = escapeHtml(line).replace(PLACEHOLDER_RE, (_m, key: string) =>
-        placeholderSpanHtml(key)
-      );
-      return `<p>${withTokens}</p>`;
-    })
-    .join("");
+  const parts: string[] = [];
+  let emptyRun = 0;
+
+  for (const line of lines) {
+    if (!line.trim()) {
+      emptyRun += 1;
+      continue;
+    }
+    if (emptyRun > 0) {
+      // Satu gap tanda tangan, bukan 4× <p> kosong yang mendorong ke halaman 2
+      if (emptyRun >= 3) parts.push('<p class="doc-sign-gap"></p>');
+      else if (emptyRun === 2) parts.push("<p></p><p></p>");
+      else parts.push("<p></p>");
+      emptyRun = 0;
+    }
+    const withTokens = escapeHtml(line).replace(PLACEHOLDER_RE, (_m, key: string) =>
+      placeholderSpanHtml(key)
+    );
+    parts.push(`<p>${withTokens}</p>`);
+  }
+  if (emptyRun >= 3) parts.push('<p class="doc-sign-gap"></p>');
+  else if (emptyRun === 2) parts.push("<p></p><p></p>");
+  else if (emptyRun === 1) parts.push("<p></p>");
+
+  return parts.join("") || "<p></p>";
+}
+
+/** Rapikan run <p></p> beruntun di HTML legacy. */
+export function collapseEmptyParagraphs(html: string): string {
+  return html
+    .replace(/(?:<p>\s*<\/p>\s*){3,}/gi, '<p class="doc-sign-gap"></p>')
+    .replace(/(?:<p><br\s*\/?><\/p>\s*){3,}/gi, '<p class="doc-sign-gap"></p>');
 }
 
 /** Pastikan {{key}} di HTML jadi span token (tanpa merusak yang sudah span). */
@@ -43,7 +70,6 @@ export function ensurePlaceholderSpans(html: string): string {
     if (/data-placeholder\s*=\s*["'][^"']*$/i.test(before) || /<span[^>]*data-placeholder[^>]*>\s*$/i.test(before)) {
       return match;
     }
-    // Skip if already inside a placeholder span content
     const openIdx = full.lastIndexOf("<span", offset);
     const closeIdx = full.lastIndexOf("</span>", offset);
     if (openIdx > closeIdx && /data-placeholder/i.test(full.slice(openIdx, offset))) {
@@ -58,12 +84,12 @@ export function fillDocumentHtml(html: string, vars: Record<string, string>): st
     /<span\b[^>]*\bdata-placeholder\s*=\s*["']([^"']+)["'][^>]*>[\s\S]*?<\/span>/gi,
     (_m, key: string) => {
       const value = vars[key.toLowerCase()];
-      return value != null && value !== "" ? escapeHtml(value) : escapeHtml(`{{${key}}}`);
+      return value != null && value !== "" ? formatFilledValue(value) : escapeHtml(`{{${key}}}`);
     }
   );
   return filledSpans.replace(PLACEHOLDER_RE, (_m, key: string) => {
     const value = vars[key.toLowerCase()];
-    return value != null && value !== "" ? escapeHtml(value) : escapeHtml(`{{${key}}}`);
+    return value != null && value !== "" ? formatFilledValue(value) : escapeHtml(`{{${key}}}`);
   });
 }
 
@@ -102,15 +128,24 @@ export function buildPrintableDocumentHtml(options: {
   vars?: Record<string, string> | null;
 }): string {
   const settings = options.pageSettings ?? DEFAULT_PAGE_SETTINGS;
-  const body = options.vars ? fillDocumentHtml(options.bodyHtml, options.vars) : options.bodyHtml;
-  const header = options.vars
-    ? fillDocumentHtml(settings.headerHtml || "", options.vars)
-    : settings.headerHtml || "";
-  const footer = options.vars
-    ? fillDocumentHtml(settings.footerHtml || "", options.vars)
-    : settings.footerHtml || "";
+  const body = options.vars
+    ? fillDocumentHtml(plainTextToDocumentHtml(options.bodyHtml), options.vars)
+    : plainTextToDocumentHtml(options.bodyHtml);
+  const headerRaw = settings.headerHtml || "";
+  const footerRaw = settings.footerHtml || "";
+  const header = options.vars ? fillDocumentHtml(plainTextToDocumentHtml(headerRaw), options.vars) : plainTextToDocumentHtml(headerRaw);
+  const footer = options.vars ? fillDocumentHtml(plainTextToDocumentHtml(footerRaw), options.vars) : plainTextToDocumentHtml(footerRaw);
   const css = buildDocumentPageCss(settings, { forPrint: true });
-  const pageNum = settings.showPageNumbers ? `<span class="doc-page-num"></span>` : "";
+  const hasHeader = Boolean(headerRaw.trim());
+  const hasFooter = Boolean(footerRaw.trim());
+  const showPageNum = settings.showPageNumbers;
+  const footerClass = [
+    "doc-page-footer",
+    !hasFooter && !showPageNum ? "is-empty" : "",
+    !hasFooter && showPageNum ? "doc-footer-pagenum-only" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return `<!DOCTYPE html>
 <html lang="id">
@@ -119,16 +154,18 @@ export function buildPrintableDocumentHtml(options: {
 <title>${escapeHtml(options.title)}</title>
 <style>
 ${css}
-body { margin: 0; background: #fff; }
-.doc-page-num::after { content: "Hal. " counter(page); }
+html, body { margin: 0; background: #fff; }
 </style>
 </head>
 <body>
   <div class="doc-editor-canvas">
     <div class="doc-page">
-      <div class="doc-page-header">${header || "&nbsp;"}</div>
+      <div class="doc-page-header${hasHeader ? "" : " is-empty"}">${hasHeader ? header : ""}</div>
       <div class="doc-page-body">${body}</div>
-      <div class="doc-page-footer"><div>${footer || ""}</div><div>${pageNum}</div></div>
+      <div class="${footerClass}">
+        <div>${hasFooter ? footer : ""}</div>
+        <div>${showPageNum ? "Hal." : ""}</div>
+      </div>
     </div>
   </div>
 </body>

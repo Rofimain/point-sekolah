@@ -406,154 +406,189 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
             </p>
           ) : (
             <>
-              <div className="no-print space-y-3">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className={showPreview ? "no-print hidden" : "no-print space-y-3"}>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                        Judul
+                      </label>
+                      <input
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 text-sm"
+                        style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                        Slug
+                      </label>
+                      <input
+                        value={slug}
+                        onChange={(e) => setSlug(e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 text-sm"
+                        style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                      Judul
-                    </label>
-                    <input
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      className="w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <label className="block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                        Isi redaksi
+                      </label>
+                      <span
+                        className="text-[10px] font-semibold"
+                        style={{
+                          color:
+                            saveStatus === "saved"
+                              ? "var(--success)"
+                              : saveStatus === "unsaved"
+                                ? "var(--warning)"
+                                : saveStatus === "error"
+                                  ? "var(--danger)"
+                                  : "var(--text-muted)",
+                        }}
+                      >
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <DocumentEditor
+                      key={editorKey}
+                      ref={editorRef}
+                      initialHtml={body}
+                      initialPageSettings={pageSettings}
+                      onChange={onEditorChange}
+                      onSaveRequest={() => void saveCurrent()}
                     />
                   </div>
+
                   <div>
-                    <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                      Slug
-                    </label>
-                    <input
-                      value={slug}
-                      onChange={(e) => setSlug(e.target.value)}
-                      className="w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
-                    />
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                      Sisipkan placeholder
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {PRINT_PLACEHOLDERS.map((p) => (
+                        <button
+                          key={p.key}
+                          type="button"
+                          title={p.label}
+                          onClick={() => insertPlaceholder(p.key)}
+                          className="rounded-md border px-2 py-1 text-[10px] font-mono"
+                          style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+                        >
+                          {`{{${p.key}}}`}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      type="button"
+                      disabled={saving || !dirty}
+                      onClick={() => void saveCurrent()}
+                      className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                      style={{ background: "var(--accent)" }}
+                    >
+                      {saving ? "Menyimpan…" : "Simpan"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPreview((v) => !v)}
+                      className="rounded-lg border px-3 py-2 text-xs font-semibold"
+                      style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
+                    >
+                      {showPreview ? "Sembunyikan pratinjau" : "Pratinjau"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePrint}
+                      className="rounded-lg px-3 py-2 text-xs font-semibold text-white"
+                      style={{ background: "var(--accent)" }}
+                    >
+                      Cetak / Simpan PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={downloadBlank}
+                      className="rounded-lg border px-3 py-2 text-xs font-semibold"
+                      style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
+                    >
+                      Unduh HTML
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => void deleteCurrent()}
+                      className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                      style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                  <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                    Tip cetak: di dialog browser pilih Margins = <strong>None</strong> agar sama dengan halaman editor.
+                  </p>
+
+                  {msg && (
+                    <p className="text-xs" style={{ color: msg.type === "ok" ? "var(--success)" : "var(--danger)" }}>
+                      {msg.text}
+                    </p>
+                  )}
                 </div>
 
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <label className="block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                      Isi redaksi
-                    </label>
-                    <span
-                      className="text-[10px] font-semibold"
-                      style={{
-                        color:
-                          saveStatus === "saved"
-                            ? "var(--success)"
-                            : saveStatus === "unsaved"
-                              ? "var(--warning)"
-                              : saveStatus === "error"
-                                ? "var(--danger)"
-                                : "var(--text-muted)",
-                      }}
+              {/* Saat pratinjau: tampilkan surface yang sama dengan yang akan dicetak */}
+              {showPreview && (
+                <div className="no-print space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={saving || !dirty}
+                      onClick={() => void saveCurrent()}
+                      className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                      style={{ background: "var(--accent)" }}
                     >
-                      {statusLabel}
-                    </span>
+                      {saving ? "Menyimpan…" : "Simpan"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPreview(false)}
+                      className="rounded-lg border px-3 py-2 text-xs font-semibold"
+                      style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
+                    >
+                      Kembali ke editor
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePrint}
+                      className="rounded-lg px-3 py-2 text-xs font-semibold text-white"
+                      style={{ background: "var(--accent)" }}
+                    >
+                      Cetak / Simpan PDF
+                    </button>
                   </div>
-                  <DocumentEditor
-                    key={editorKey}
-                    ref={editorRef}
-                    initialHtml={body}
-                    initialPageSettings={pageSettings}
-                    onChange={onEditorChange}
-                    onSaveRequest={() => void saveCurrent()}
+                  <p className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                    Pratinjau = layout halaman editor (placeholder terisi data contoh)
+                  </p>
+                  <DocumentPrintView
+                    bodyHtml={body}
+                    pageSettings={pageSettings}
+                    vars={previewVars}
+                    printId="redaksi-preview"
+                    variant="screen"
                   />
                 </div>
+              )}
 
-                <div>
-                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                    Sisipkan placeholder
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {PRINT_PLACEHOLDERS.map((p) => (
-                      <button
-                        key={p.key}
-                        type="button"
-                        title={p.label}
-                        onClick={() => insertPlaceholder(p.key)}
-                        className="rounded-md border px-2 py-1 text-[10px] font-mono"
-                        style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
-                      >
-                        {`{{${p.key}}}`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    disabled={saving || !dirty}
-                    onClick={() => void saveCurrent()}
-                    className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                    style={{ background: "var(--accent)" }}
-                  >
-                    {saving ? "Menyimpan…" : "Simpan"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowPreview((v) => !v)}
-                    className="rounded-lg border px-3 py-2 text-xs font-semibold"
-                    style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
-                  >
-                    {showPreview ? "Sembunyikan pratinjau" : "Pratinjau"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handlePrint}
-                    className="rounded-lg px-3 py-2 text-xs font-semibold text-white"
-                    style={{ background: "var(--accent)" }}
-                  >
-                    Cetak / Simpan PDF
-                  </button>
-                  <button
-                    type="button"
-                    onClick={downloadBlank}
-                    className="rounded-lg border px-3 py-2 text-xs font-semibold"
-                    style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
-                  >
-                    Unduh HTML
-                  </button>
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => void deleteCurrent()}
-                    className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-50"
-                    style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
-                  >
-                    Hapus
-                  </button>
-                </div>
-
-                {msg && (
-                  <p className="text-xs" style={{ color: msg.type === "ok" ? "var(--success)" : "var(--danger)" }}>
-                    {msg.text}
-                  </p>
-                )}
-              </div>
-
-              <div className={showPreview ? "mt-5 no-print" : "hidden"}>
-                <p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
-                  Pratinjau dengan data contoh (placeholder terisi)
-                </p>
-                <DocumentPrintView
-                  bodyHtml={body}
-                  pageSettings={pageSettings}
-                  vars={previewVars}
-                  printId="redaksi-preview"
-                />
-              </div>
-
-              {/* Surface cetak: pakai data contoh jika pratinjau aktif, else placeholder */}
+              {/* Satu surface cetak — sama HTML/CSS dengan pratinjau */}
               <div className="hidden print:block">
                 <DocumentPrintView
                   bodyHtml={body}
                   pageSettings={pageSettings}
                   vars={showPreview ? previewVars : null}
                   printId="redaksi-print"
+                  variant="print-surface"
                 />
               </div>
             </>
@@ -564,9 +599,8 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: white !important; }
-          /* Sembunyikan chrome layout admin saat cetak */
-          aside, nav, header, .admin-sidebar { display: none !important; }
+          html, body { background: white !important; margin: 0 !important; }
+          /* Paksa margin browser = none; margin surat di @page dokumen */
         }
       `}</style>
     </div>

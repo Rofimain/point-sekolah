@@ -28,9 +28,9 @@ export const PAPER_SIZES_MM: Record<PaperSize, { width: number; height: number; 
 };
 
 export const MARGIN_PRESETS_MM: Record<Exclude<MarginPreset, "custom">, DocumentMarginsMm> = {
-  normal: { top: 25, right: 25, bottom: 25, left: 25 },
+  normal: { top: 20, right: 20, bottom: 20, left: 20 },
   narrow: { top: 12.7, right: 12.7, bottom: 12.7, left: 12.7 },
-  wide: { top: 38, right: 38, bottom: 38, left: 38 },
+  wide: { top: 30, right: 30, bottom: 30, left: 30 },
 };
 
 export const DEFAULT_PAGE_SETTINGS: DocumentPageSettings = {
@@ -39,7 +39,7 @@ export const DEFAULT_PAGE_SETTINGS: DocumentPageSettings = {
   margin: "normal",
   headerHtml: "",
   footerHtml: "",
-  showPageNumbers: true,
+  showPageNumbers: false,
 };
 
 export function resolveMargins(settings: DocumentPageSettings): DocumentMarginsMm {
@@ -68,7 +68,7 @@ export function parsePageSettings(raw: string | null | undefined): DocumentPageS
       customMarginMm: parsed.customMarginMm ?? DEFAULT_PAGE_SETTINGS.customMarginMm,
       headerHtml: typeof parsed.headerHtml === "string" ? parsed.headerHtml : "",
       footerHtml: typeof parsed.footerHtml === "string" ? parsed.footerHtml : "",
-      showPageNumbers: parsed.showPageNumbers !== false,
+      showPageNumbers: parsed.showPageNumbers === true,
     };
   } catch {
     return { ...DEFAULT_PAGE_SETTINGS };
@@ -89,6 +89,10 @@ export function pageSizeCss(settings: DocumentPageSettings): string {
   return `${widthMm}mm ${heightMm}mm`;
 }
 
+/**
+ * Satu set CSS untuk editor + pratinjau + cetak.
+ * Margin hanya sekali: di layar via padding .doc-page; saat cetak via @page (padding konten di-nol-kan).
+ */
 export function buildDocumentPageCss(settings: DocumentPageSettings, options?: { forPrint?: boolean }): string {
   const { widthMm, heightMm } = resolvePageBox(settings);
   const margins = resolveMargins(settings);
@@ -105,6 +109,7 @@ export function buildDocumentPageCss(settings: DocumentPageSettings, options?: {
   width: ${widthMm}mm;
   min-height: ${heightMm}mm;
   margin: ${forPrint ? "0" : "0 auto 24px"};
+  padding: ${margins.top}mm ${margins.right}mm ${margins.bottom}mm ${margins.left}mm;
   background: #fff;
   color: #111;
   box-shadow: ${forPrint ? "none" : "0 1px 3px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.08)"};
@@ -114,37 +119,48 @@ export function buildDocumentPageCss(settings: DocumentPageSettings, options?: {
   position: relative;
 }
 .doc-page-header {
-  padding: ${margins.top}mm ${margins.right}mm 4mm ${margins.left}mm;
-  min-height: ${Math.max(margins.top, 8)}mm;
+  flex: 0 0 auto;
+  margin: 0 0 3mm;
   font-size: 10pt;
   color: #333;
-  border-bottom: 1px solid transparent;
+  line-height: 1.35;
 }
+.doc-page-header.is-empty { display: none; }
 .doc-page-body {
-  flex: 1;
-  padding: 0 ${margins.right}mm 0 ${margins.left}mm;
+  flex: 1 1 auto;
   font-family: "Times New Roman", Times, serif;
   font-size: 12pt;
-  line-height: 1.55;
+  line-height: 1.45;
   outline: none;
+  min-width: 0;
 }
-.doc-page-body p { margin: 0 0 0.65em; }
-.doc-page-body h1 { font-size: 18pt; font-weight: 700; margin: 0 0 0.6em; }
-.doc-page-body h2 { font-size: 14pt; font-weight: 700; margin: 0 0 0.55em; }
-.doc-page-body h3 { font-size: 12pt; font-weight: 700; margin: 0 0 0.5em; }
-.doc-page-body ul, .doc-page-body ol { margin: 0 0 0.65em; padding-left: 1.4em; }
-.doc-page-body table { border-collapse: collapse; width: 100%; margin: 0 0 0.65em; }
+.doc-page-body p { margin: 0 0 0.45em; }
+.doc-page-body p:empty { margin: 0; height: 0.7em; }
+.doc-page-body p.doc-sign-gap { margin: 0; height: 14mm; }
+.doc-page-body h1 { font-size: 16pt; font-weight: 700; margin: 0 0 0.5em; text-align: center; }
+.doc-page-body h2 { font-size: 13pt; font-weight: 700; margin: 0 0 0.45em; }
+.doc-page-body h3 { font-size: 12pt; font-weight: 700; margin: 0 0 0.4em; }
+.doc-page-body ul, .doc-page-body ol { margin: 0 0 0.45em; padding-left: 1.35em; }
+.doc-page-body table { border-collapse: collapse; width: 100%; margin: 0 0 0.45em; }
 .doc-page-body td, .doc-page-body th { border: 1px solid #333; padding: 4px 8px; vertical-align: top; }
-.doc-page-body hr { border: none; border-top: 1px solid #333; margin: 1em 0; }
+.doc-page-body hr { border: none; border-top: 1px solid #333; margin: 0.85em 0; }
+.doc-page-body .ProseMirror { outline: none; min-height: 40mm; }
 .doc-page-footer {
-  padding: 4mm ${margins.right}mm ${margins.bottom}mm ${margins.left}mm;
-  min-height: ${Math.max(margins.bottom, 8)}mm;
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding-top: 3mm;
   font-size: 9pt;
   color: #444;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   gap: 12px;
+}
+.doc-page-footer.is-empty { display: none; }
+.doc-page-footer.doc-footer-pagenum-only {
+  justify-content: flex-end;
+  color: #888;
+  font-size: 8pt;
 }
 .doc-placeholder {
   display: inline-block;
@@ -163,7 +179,7 @@ export function buildDocumentPageCss(settings: DocumentPageSettings, options?: {
 .doc-page-break {
   display: block;
   height: 0;
-  margin: 12px 0;
+  margin: 10px 0;
   border: none;
   border-top: 2px dashed #94a3b8;
   page-break-before: always;
@@ -182,16 +198,41 @@ export function buildDocumentPageCss(settings: DocumentPageSettings, options?: {
   padding: 0 8px;
   font-family: system-ui, sans-serif;
 }
+/* Blok akhir surat jangan putus ke halaman berikutnya jika masih muat */
+.doc-page-body p:last-child,
+.doc-page-body p:nth-last-child(-n+4) {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
 @media print {
   .doc-page-break { border: none; margin: 0; height: 0; }
   .doc-page-break::after { display: none; }
-  .doc-editor-canvas { background: transparent !important; padding: 0 !important; max-height: none !important; overflow: visible !important; }
-  .doc-page {
-    width: 100% !important;
-    min-height: auto !important;
-    margin: 0 !important;
-    box-shadow: none !important;
+  .doc-editor-canvas {
+    background: transparent !important;
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
+  .doc-page {
+    width: auto !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    /* Margin sudah di @page — jangan dobel */
+    padding: 0 !important;
+    box-shadow: none !important;
+    display: block !important;
+  }
+  .doc-page-header { margin-bottom: 3mm; }
+  .doc-page-body { flex: none; }
+  .doc-page-footer {
+    margin-top: 6mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Nomor halaman dekoratif layar: jangan cetak (bikin orphan page) */
+  .doc-page-footer.doc-footer-pagenum-only { display: none !important; }
   @page {
     size: ${pageSizeCss(settings)};
     margin: ${margins.top}mm ${margins.right}mm ${margins.bottom}mm ${margins.left}mm;

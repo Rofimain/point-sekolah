@@ -225,15 +225,25 @@ export const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorPro
           <div className="doc-editor-canvas" data-document-editor-canvas>
             <div className="doc-page" data-document-page>
               <div
-                className="doc-page-header"
+                className={`doc-page-header${pageSettings.headerHtml?.trim() ? "" : " is-empty"}`}
                 dangerouslySetInnerHTML={{
                   __html: pageSettings.headerHtml?.trim()
                     ? plainTextToDocumentHtml(pageSettings.headerHtml)
-                    : "&nbsp;",
+                    : "",
                 }}
               />
               <EditorContent editor={editor} />
-              <div className="doc-page-footer">
+              <div
+                className={[
+                  "doc-page-footer",
+                  !pageSettings.footerHtml?.trim() && !pageSettings.showPageNumbers ? "is-empty" : "",
+                  !pageSettings.footerHtml?.trim() && pageSettings.showPageNumbers
+                    ? "doc-footer-pagenum-only"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
                 <div
                   dangerouslySetInnerHTML={{
                     __html: pageSettings.footerHtml?.trim()
@@ -241,7 +251,7 @@ export const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorPro
                       : "",
                   }}
                 />
-                <div>{pageSettings.showPageNumbers ? "Hal. 1" : ""}</div>
+                <div>{pageSettings.showPageNumbers ? "Hal." : ""}</div>
               </div>
             </div>
           </div>
