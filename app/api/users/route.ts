@@ -57,7 +57,8 @@ export async function POST(req: NextRequest) {
       parentTelegramLinkToken: r === "STUDENT" ? newParentLinkToken() : null,
       ...statusFields,
       createdFrom: "MANUAL",
-      passwordChangedAt: new Date(),
+      /** Siswa: password dari admin → wajib diganti. Staff: password dipilih admin, anggap sudah set. */
+      passwordChangedAt: r === "STUDENT" ? null : new Date(),
       photoData: photo.photoData,
       photoPresent: photo.photoPresent,
     },

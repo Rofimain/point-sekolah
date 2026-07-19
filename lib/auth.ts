@@ -19,6 +19,7 @@ import {
 } from "@/lib/auth-login-guard";
 import { getAuthRequestMeta } from "@/lib/auth-request-meta";
 import { canUserLogin } from "@/lib/user-status";
+import { requiresPasswordChange } from "@/lib/password-change";
 import {
   googleErrorRedirect,
   inferGooglePortal,
@@ -151,6 +152,7 @@ async function authorizeCredentials(portal: AuthPortal, credentials: Record<"ema
     className: user.class?.name ?? undefined,
     classId: user.classId ?? undefined,
     authVersion,
+    mustChangePassword: requiresPasswordChange(user.passwordChangedAt),
   };
 }
 
@@ -271,6 +273,8 @@ export const authOptions: NextAuthOptions = {
         token.classId = dbUser.classId ?? undefined;
         token.authVersion = dbUser.authVersion;
         token.email = dbUser.email;
+        token.loginProvider = "google";
+        token.mustChangePassword = false;
         delete token.error;
         return token;
       }
@@ -283,6 +287,8 @@ export const authOptions: NextAuthOptions = {
         token.className = (user as { className?: string }).className;
         token.classId = (user as { classId?: string }).classId;
         token.authVersion = (user as { authVersion?: number }).authVersion;
+        token.loginProvider = account?.provider ?? "credentials";
+        token.mustChangePassword = Boolean((user as { mustChangePassword?: boolean }).mustChangePassword);
         delete token.error;
       }
 
@@ -301,6 +307,7 @@ export const authOptions: NextAuthOptions = {
             authVersion: true,
             lockedUntil: true,
             deletedAt: true,
+            passwordChangedAt: true,
             class: { select: { name: true } },
           },
         });
@@ -316,6 +323,8 @@ export const authOptions: NextAuthOptions = {
           token.nip = dbUser.nip ?? undefined;
           token.classId = dbUser.classId ?? undefined;
           token.className = dbUser.class?.name ?? undefined;
+          token.mustChangePassword =
+            token.loginProvider === "google" ? false : requiresPasswordChange(dbUser.passwordChangedAt);
           delete token.error;
         }
       }
@@ -337,6 +346,7 @@ export const authOptions: NextAuthOptions = {
         session.user.nip = token.nip as string;
         session.user.className = token.className as string;
         session.user.classId = token.classId as string;
+        session.user.mustChangePassword = Boolean(token.mustChangePassword);
         if (token.email) session.user.email = token.email as string;
       }
       return session;
@@ -377,6 +387,7 @@ declare module "next-auth" {
     className?: string;
     classId?: string;
     authVersion?: number;
+    mustChangePassword?: boolean;
   }
   interface Session {
     error?: string;
@@ -390,6 +401,7 @@ declare module "next-auth" {
       nip?: string;
       className?: string;
       classId?: string;
+      mustChangePassword?: boolean;
     };
   }
 }
@@ -405,5 +417,7 @@ declare module "next-auth/jwt" {
     authVersion?: number;
     error?: string;
     email?: string | null;
+    loginProvider?: string;
+    mustChangePassword?: boolean;
   }
 }

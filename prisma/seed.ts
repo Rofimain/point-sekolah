@@ -114,6 +114,7 @@ async function main() {
       password: superAdminPwd,
       role: Role.SUPER_ADMIN,
       nip: "197012011990031001",
+      passwordChangedAt: new Date(),
     },
   });
 
@@ -128,6 +129,7 @@ async function main() {
       password: teacherPwd,
       role: Role.TEACHER,
       nip: "198505152010012002",
+      passwordChangedAt: new Date(),
     },
   });
 
@@ -145,7 +147,7 @@ async function main() {
     await prisma.user.upsert({
       where: { email: s.email },
       update: {},
-      create: { ...s, password: studentPwd, role: Role.STUDENT },
+      create: { ...s, password: studentPwd, role: Role.STUDENT, passwordChangedAt: new Date() },
     });
   }
 
@@ -251,6 +253,7 @@ async function main() {
       classId: "cls-x-mipa1",
       password: studentPwd,
       role: Role.STUDENT,
+      passwordChangedAt: new Date(),
     },
   });
   const demoAktif = await prisma.user.upsert({
@@ -263,6 +266,7 @@ async function main() {
       classId: "cls-x-mipa2",
       password: studentPwd,
       role: Role.STUDENT,
+      passwordChangedAt: new Date(),
     },
   });
   const demoManual = await prisma.user.upsert({
@@ -275,6 +279,7 @@ async function main() {
       classId: "cls-xi-ipa1",
       password: studentPwd,
       role: Role.STUDENT,
+      passwordChangedAt: new Date(),
     },
   });
 
@@ -429,6 +434,7 @@ async function main() {
       active: true,
       status: "ACTIVE",
       createdFrom: "MANUAL",
+      passwordChangedAt: new Date(),
     },
   });
   await prisma.user.upsert({
@@ -444,6 +450,7 @@ async function main() {
       active: true,
       status: "ACTIVE",
       createdFrom: "MANUAL",
+      passwordChangedAt: new Date(),
     },
   });
 

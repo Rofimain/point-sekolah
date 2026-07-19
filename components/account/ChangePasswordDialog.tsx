@@ -5,7 +5,14 @@ import { createPortal } from "react-dom";
 import { signOut } from "next-auth/react";
 import { lockAppScroll, Z_MODAL_ELEVATED_CLASS } from "@/lib/ui-layers";
 
-export function ChangePasswordDialog({ role, onClose }: { role: string; onClose: () => void }) {
+type Props = {
+  role: string;
+  /** Wajib ganti password — tidak bisa ditutup / dilewati. */
+  forced?: boolean;
+  onClose?: () => void;
+};
+
+export function ChangePasswordDialog({ role, forced = false, onClose }: Props) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -49,7 +56,9 @@ export function ChangePasswordDialog({ role, onClose }: { role: string; onClose:
       aria-modal="true"
       aria-labelledby="change-password-title"
     >
-      <button type="button" className="absolute inset-0" aria-label="Tutup dialog" onClick={onClose} />
+      {forced ? null : (
+        <button type="button" className="absolute inset-0" aria-label="Tutup dialog" onClick={onClose} />
+      )}
       <form
         onSubmit={submit}
         className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-t-2xl border p-5 pb-sheet-bottom shadow-2xl sm:rounded-2xl sm:pb-5"
@@ -62,21 +71,25 @@ export function ChangePasswordDialog({ role, onClose }: { role: string; onClose:
               className="font-serif text-lg font-semibold"
               style={{ color: "var(--text-primary)" }}
             >
-              Ubah password
+              {forced ? "Ganti password wajib" : "Ubah password"}
             </h2>
             <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-              Minimal 12 karakter. Setelah berhasil, semua sesi akun akan keluar.
+              {forced
+                ? "Akun memakai password default dari sekolah. Ganti password sebelum melanjutkan. Minimal 12 karakter. Setelah berhasil, login ulang dengan password baru."
+                : "Minimal 12 karakter. Setelah berhasil, semua sesi akun akan keluar."}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex min-h-11 min-w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg text-xs font-medium"
-            style={{ color: "var(--text-muted)" }}
-            aria-label="Tutup"
-          >
-            Tutup
-          </button>
+          {forced ? null : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex min-h-11 min-w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg text-xs font-medium"
+              style={{ color: "var(--text-muted)" }}
+              aria-label="Tutup"
+            >
+              Tutup
+            </button>
+          )}
         </div>
         <div className="space-y-3">
           <label className="block text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
@@ -131,8 +144,18 @@ export function ChangePasswordDialog({ role, onClose }: { role: string; onClose:
           disabled={loading}
           className="btn-primary mt-5 min-h-11 w-full touch-manipulation px-4 py-3 text-sm disabled:opacity-60"
         >
-          {loading ? "Menyimpan..." : "Simpan password baru"}
+          {loading ? "Menyimpan..." : forced ? "Simpan & lanjut login" : "Simpan password baru"}
         </button>
+        {forced ? (
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: role === "STUDENT" ? "/login" : "/admin/login" })}
+            className="mt-3 min-h-11 w-full touch-manipulation rounded-lg border px-4 py-2.5 text-sm font-medium"
+            style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+          >
+            Keluar
+          </button>
+        ) : null}
       </form>
     </div>,
     document.body

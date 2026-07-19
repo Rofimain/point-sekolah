@@ -105,6 +105,8 @@ export function buildStudentCreateInput(input: {
     active: true,
     status: "ACTIVE",
     createdFrom: "MANUAL",
+    /** Password dari admin/default → wajib diganti saat login credentials pertama kali. */
+    passwordChangedAt: null,
     photoData: hasPhoto ? input.photoData! : null,
     photoPresent: hasPhoto,
   };

@@ -41,6 +41,7 @@ model User {
   /// Kunci akun sementara setelah terlalu banyak gagal login
   lockedUntil      DateTime?
   lastLoginAt      DateTime?
+  /// null = wajib ganti password saat login credentials (siswa baru / reset admin)
   passwordChangedAt DateTime?
   /// Foto profil (data URL base64 JPEG/PNG)
   photoData        String?           @db.Text

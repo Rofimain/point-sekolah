@@ -1223,7 +1223,8 @@ export default function StudentsClient({
                     .xlsx maks. 8 MB; ZIP + foto maks. 40 MB. Struktur ZIP:{" "}
                     <code className="text-[10px]">data.xlsx</code> +{" "}
                     <code className="text-[10px]">foto/ahmad fauzi m.jpg</code> (nama boleh disingkat). Password default
-                    di bawah untuk baris tanpa kolom password.
+                    di bawah untuk baris tanpa kolom password. Siswa wajib ganti password saat login credentials pertama
+                    kali.
                   </p>
                 </div>
 
@@ -1247,7 +1248,8 @@ export default function StudentsClient({
                   </div>
                   <div className="flex items-end">
                     <p className="text-[10px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                      Maks. 500 baris per sekali kirim. Baris gagal tidak menghentikan yang lain.
+                      Maks. 500 baris per sekali kirim. Baris gagal tidak menghentikan yang lain. Login Google (domain
+                      sekolah) tidak memakai password ini.
                     </p>
                   </div>
                 </div>

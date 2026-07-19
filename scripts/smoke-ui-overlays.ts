@@ -55,6 +55,10 @@ assert(!/bg-white/.test(qris), "Qris sheet has no bg-white");
 const password = read("components/account/ChangePasswordDialog.tsx");
 assert(password.includes("createPortal"), "ChangePasswordDialog uses createPortal");
 assert(password.includes("Z_MODAL_ELEVATED_CLASS"), "ChangePasswordDialog elevated z");
+assert(password.includes("forced"), "ChangePasswordDialog supports forced mode");
+
+const forceGate = read("components/account/ForceChangePasswordGate.tsx");
+assert(forceGate.includes("mustChangePassword"), "Force gate reads mustChangePassword");
 
 const records = read("app/(admin)/records/RecordsClient.tsx");
 assert(records.includes("createPortal"), "Records modals use createPortal");

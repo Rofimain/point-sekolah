@@ -6,6 +6,7 @@ import { TopBar } from "@/components/layouts/TopBar";
 import { AdminSidebar, type SidebarClass } from "@/components/layouts/AdminSidebar";
 import { StaffSubmissionBell } from "@/components/staff/StaffSubmissionBell";
 import { StaffSubmissionNotificationsProvider } from "@/lib/use-staff-submission-notifications";
+import { ForceChangePasswordGate } from "@/components/account/ForceChangePasswordGate";
 import { cn } from "@/lib/utils";
 import { lockAppScroll } from "@/lib/ui-layers";
 
@@ -44,6 +45,7 @@ export default function AdminChrome({
             staffNotifications={<StaffSubmissionBell />}
           />
         </div>
+        <ForceChangePasswordGate />
         <div className="admin-chrome-body flex min-h-0 flex-1 overflow-hidden print:block print:h-auto print:max-h-none print:overflow-visible">
           {navOpen ? (
             <button

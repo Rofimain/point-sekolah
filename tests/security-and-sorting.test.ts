@@ -15,6 +15,7 @@ import {
 } from "../lib/auth-constants";
 import { computeLockUntil, isAccountLocked } from "../lib/auth-lockout";
 import { activeFlagFromStatus, canUserLogin, statusFromActiveToggle } from "../lib/user-status";
+import { requiresPasswordChange } from "../lib/password-change";
 import { buildUserLookupMaps, matchImportUser } from "../lib/user-import-match";
 import {
   GOOGLE_NOT_REGISTERED_MESSAGE,
@@ -85,6 +86,12 @@ test("user status login gate and active toggle mapping", () => {
   assert.equal(statusFromActiveToggle(false), "SUSPENDED");
   assert.equal(activeFlagFromStatus("ACTIVE"), true);
   assert.equal(activeFlagFromStatus("LEFT"), false);
+});
+
+test("requires password change when passwordChangedAt is null", () => {
+  assert.equal(requiresPasswordChange(null), true);
+  assert.equal(requiresPasswordChange(undefined), true);
+  assert.equal(requiresPasswordChange(new Date()), false);
 });
 
 test("google error messages map AccessDenied to unregistered copy", () => {

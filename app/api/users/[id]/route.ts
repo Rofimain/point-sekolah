@@ -83,7 +83,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!nextPassword.ok) return NextResponse.json({ error: nextPassword.error }, { status: 400 });
     updateData.password = await bcrypt.hash(nextPassword.value, 12);
     updateData.authVersion = { increment: 1 };
-    updateData.passwordChangedAt = new Date();
+    /** Reset admin → paksa ganti password saat login credentials berikutnya. */
+    updateData.passwordChangedAt = null;
     updateData.failedLoginCount = 0;
     updateData.lockedUntil = null;
   }
