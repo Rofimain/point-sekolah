@@ -1,3 +1,5 @@
+import { SCHOOL_NAME, SCHOOL_NAME_SHORT } from "@/lib/branding";
+
 export type PrintTemplateSeed = {
   slug: string;
   title: string;
@@ -6,7 +8,7 @@ export type PrintTemplateSeed = {
 };
 
 /** Naikkan versi ini bila layout default template diubah (satu kali sync ke DB). */
-export const PRINT_TEMPLATES_LAYOUT_VERSION = "10";
+export const PRINT_TEMPLATES_LAYOUT_VERSION = "12";
 
 /** Katalog global placeholder (chip UI + soft-warning). User boleh pakai token di luar daftar. */
 export const PRINT_PLACEHOLDERS: { key: string; label: string }[] = [
@@ -18,7 +20,6 @@ export const PRINT_PLACEHOLDERS: { key: string; label: string }[] = [
   { key: "tanggal", label: "Tanggal surat" },
   { key: "nomor_surat", label: "Nomor surat" },
   { key: "daftar_pelanggaran", label: "Daftar pelanggaran" },
-  { key: "sekolah", label: "Nama sekolah" },
   { key: "kepala_sekolah", label: "Nama kepala sekolah" },
   { key: "alamat", label: "Alamat siswa" },
   { key: "tanggal_hijriah", label: "Tanggal Hijriah" },
@@ -52,7 +53,6 @@ export const TEMPLATE_OFFICIAL_PLACEHOLDERS: Record<string, readonly string[]> =
     "poin",
     "poin_terbilang",
     "daftar_pelanggaran",
-    "sekolah",
     "kepala_sekolah",
   ],
   sp2: [
@@ -64,7 +64,6 @@ export const TEMPLATE_OFFICIAL_PLACEHOLDERS: Record<string, readonly string[]> =
     "poin",
     "poin_terbilang",
     "daftar_pelanggaran",
-    "sekolah",
     "kepala_sekolah",
   ],
   sp3: [
@@ -76,7 +75,6 @@ export const TEMPLATE_OFFICIAL_PLACEHOLDERS: Record<string, readonly string[]> =
     "poin",
     "poin_terbilang",
     "daftar_pelanggaran",
-    "sekolah",
     "kepala_sekolah",
   ],
   skorsing: [
@@ -90,7 +88,6 @@ export const TEMPLATE_OFFICIAL_PLACEHOLDERS: Record<string, readonly string[]> =
     "lama_skorsing",
     "tanggal_mulai_skorsing",
     "tanggal_masuk_kembali",
-    "sekolah",
     "kepala_sekolah",
   ],
   "pemanggilan-otm": [
@@ -104,7 +101,6 @@ export const TEMPLATE_OFFICIAL_PLACEHOLDERS: Record<string, readonly string[]> =
     "tempat",
     "nama_pic",
     "materi_diskusi",
-    "sekolah",
     "kepala_sekolah",
   ],
   "info-poin": [
@@ -116,10 +112,9 @@ export const TEMPLATE_OFFICIAL_PLACEHOLDERS: Record<string, readonly string[]> =
     "periode_akhir",
     "poin",
     "batas_remisi",
-    "sekolah",
     "kepala_sekolah",
   ],
-  "perjanjian-khusus": ["nama", "kelas", "alamat", "jenis_sp", "poin", "tanggal_perjanjian", "sekolah"],
+  "perjanjian-khusus": ["nama", "kelas", "alamat", "jenis_sp", "poin", "tanggal_perjanjian"],
 };
 
 const ALL_OFFICIAL_KEYS = new Set(PRINT_PLACEHOLDERS.map((p) => p.key));
@@ -254,10 +249,10 @@ export const DEFAULT_PRINT_TEMPLATES: PrintTemplateSeed[] = [
 </tbody></table>
 <p>telah mencapai akumulasi poin pelanggaran tata tertib sekolah sebanyak {{poin}} poin ({{poin_terbilang}}) yang tercatat sebagai berikut :</p>
 <p>{{daftar_pelanggaran}}</p>
-<p>Surat peringatan pertama ini diberikan sebagai peringatan awal agar diperhatikan dan menjadi pengingat agar tidak mengulangi perbuatan yang melanggar tata tertib sekolah lagi. Surat SP1 ini sebagai catatan dan berlaku selama menjadi murid {{sekolah}}.</p>
+<p>Surat peringatan pertama ini diberikan sebagai peringatan awal agar diperhatikan dan menjadi pengingat agar tidak mengulangi perbuatan yang melanggar tata tertib sekolah lagi. Surat SP1 ini sebagai catatan dan berlaku selama menjadi murid ${SCHOOL_NAME}.</p>
 <p>Demikian Surat Peringatan 1 (SP 1) ini di buat agar menjadi perhatian dan perbaikan.</p>
 <p>Wassalamualaikum Wr.Wb.</p>
-${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
+${ttdOne("Kepala " + SCHOOL_NAME, "{{kepala_sekolah}}")}`,
   },
   {
     slug: "sp2",
@@ -281,10 +276,10 @@ ${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
 </tbody></table>
 <p>telah mencapai akumulasi poin pelanggaran tata tertib sekolah sebanyak {{poin}} ({{poin_terbilang}}) yang tercatat sebagai berikut :</p>
 <p>{{daftar_pelanggaran}}</p>
-<p>Surat peringatan ke-2 ini diberikan agar diperhatikan dan menjadi pengingat agar tidak mengulangi perbuatan yang melanggar tata tertib sekolah lagi. Surat SP-2 ini sebagai catatan dan berlaku selama menjadi murid {{sekolah}}.</p>
+<p>Surat peringatan ke-2 ini diberikan agar diperhatikan dan menjadi pengingat agar tidak mengulangi perbuatan yang melanggar tata tertib sekolah lagi. Surat SP-2 ini sebagai catatan dan berlaku selama menjadi murid ${SCHOOL_NAME}.</p>
 <p>Demikian surat Peringatan Ke-2 (SP 2) ini di buat agar menjadi perhatian dan perbaikan.</p>
 <p>Wassalamualaikum wr.wb.</p>
-${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
+${ttdOne("Kepala " + SCHOOL_NAME, "{{kepala_sekolah}}")}`,
   },
   {
     slug: "sp3",
@@ -310,10 +305,10 @@ ${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
 <p>telah melakukan akumulasi pelanggaran tata tertib sekolah berupa:</p>
 <p>{{daftar_pelanggaran}}</p>
 <p>Total point yang terakumulasi = {{poin}} ({{poin_terbilang}})</p>
-<p>Surat peringatan ke-3 (ketiga) ini diberikan sebagai peringatan terakhir yang wajib diperhatikan dan dipatuhi/ditaati. Apabila di kemudian hari dimulai dari tanggal diterbitkan surat SP-3 ini, terjadi perbuatan pelanggaran tata tertib lagi baik pada pasal yang sama maupun pada pasal berbeda maka sanksi yang diberikan berupa dikembalikan ke orang tua atau dikeluarkan dari {{sekolah}}.</p>
+<p>Surat peringatan ke-3 (ketiga) ini diberikan sebagai peringatan terakhir yang wajib diperhatikan dan dipatuhi/ditaati. Apabila di kemudian hari dimulai dari tanggal diterbitkan surat SP-3 ini, terjadi perbuatan pelanggaran tata tertib lagi baik pada pasal yang sama maupun pada pasal berbeda maka sanksi yang diberikan berupa dikembalikan ke orang tua atau dikeluarkan dari ${SCHOOL_NAME}.</p>
 <p>Demikian Surat Peringatan ke-3 (SP 3) ini di buat agar diperhatikan dan wajib dipatuhi/taati.</p>
 <p>Wassalamu'alaikum Warrohmatullohi Wabarokaatuh.</p>
-${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
+${ttdOne("Kepala " + SCHOOL_NAME, "{{kepala_sekolah}}")}`,
   },
   {
     slug: "info-poin",
@@ -323,7 +318,7 @@ ${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
       [{ label: "Hal", value: "Informasi poin ke-{{urutan_poin}} pelanggaran tata-tertib" }],
       "{{tanggal}}"
     )}
-<p>Kepada Yth.<br/>Bapak/Ibu Orang Tua Murid<br/>Ananda {{nama}} ({{kelas}})<br/>{{sekolah}}<br/>di- Jakarta</p>
+<p>Kepada Yth.<br/>Bapak/Ibu Orang Tua Murid<br/>Ananda {{nama}} ({{kelas}})<br/>${SCHOOL_NAME}<br/>di- Jakarta</p>
 <p>Assalamualaikum Wr. Wb.</p>
 <p>Salam ta'zim kami sampaikan semoga kita semua senantiasa berada dalam lindungan Allah SWT serta sukses dalam menjalankan tugas sehari – hari, Aamiin Yaa Robbal'aalamiin.</p>
 <p>Dengan surat ini kami beritahukan bahwa terhitung mulai {{periode_awal}} hingga {{periode_akhir}} poin pelanggaran tata tertib Ananda di sekolah sudah mencapai {{poin}} poin.</p>
@@ -331,7 +326,7 @@ ${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
 <p>Jika Ananda tidak melakukan pelanggaran tata tertib kembali sampai tanggal {{batas_remisi}} maka Ananda akan mendapat remisi/pengurangan poin sebesar 25% dari total poin.</p>
 <p>Demikian surat informasi dari kami, atas perhatian Bapak/Ibu kami ucapkan terima kasih.</p>
 <p>Billahit Taufiq Walhidayah<br/>Wassalamu 'alaikum Wr. Wb.</p>
-${ttdTwo("Kepala {{sekolah}}", "Mengetahui<br/>Orangtua Murid", "{{kepala_sekolah}}", "................................")}
+${ttdTwo("Kepala " + SCHOOL_NAME, "Mengetahui<br/>Orangtua Murid", "{{kepala_sekolah}}", "................................")}
 <p class="doc-note">Catatan : Surat ini di kembalikan ke sekolah setelah di tandatangani oleh orangtua murid paling lambat 2 hari sejak tanggal pemberian surat.</p>`,
   },
   {
@@ -345,7 +340,7 @@ ${ttdTwo("Kepala {{sekolah}}", "Mengetahui<br/>Orangtua Murid", "{{kepala_sekola
       ],
       "{{tanggal}}"
     )}
-<p>Kepada<br/>Yth. Bapak &amp; Ibu Orang Tua<br/>Ananda {{nama}} ({{kelas}})<br/>{{sekolah}}<br/>di- Jakarta</p>
+<p>Kepada<br/>Yth. Bapak &amp; Ibu Orang Tua<br/>Ananda {{nama}} ({{kelas}})<br/>${SCHOOL_NAME}<br/>di- Jakarta</p>
 <p>Assalamu 'alaikum Wr. Wb.</p>
 <p>Salam ta'zim kami sampaikan semoga kita semua senantiasa berada dalam lindungan Allah SWT serta sukses dalam menjalankan tugas sehari – hari, Aamiin Yaa Robbal'aalamiin.</p>
 <p>Sehubungan dengan kondisi akumulasi poin pelanggaran Ananda {{nama}} sampai saat ini sudah mencapai {{poin}} poin. Kami mengharapkan kehadiran Bapak / Ibu pada</p>
@@ -358,7 +353,7 @@ ${ttdTwo("Kepala {{sekolah}}", "Mengetahui<br/>Orangtua Murid", "{{kepala_sekola
 </tbody></table>
 <p>Demikian surat ini kami sampaikan, atas perhatian dan kesediaan Bapak/Ibu untuk hadir, kami ucapkan terima kasih.</p>
 <p>Billahit Taufiq Walhidayah<br/>Wassalamu 'alaikum Wr. Wb.</p>
-${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}
+${ttdOne("Kepala " + SCHOOL_NAME, "{{kepala_sekolah}}")}
 <p class="doc-note">Catatan :<br/>Harap hadir sesuai dengan waktu yang telah di tentukan.</p>`,
   },
   {
@@ -390,7 +385,7 @@ ${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}
 ${ttdThree("Wali kelas", "Orangtua/wali murid", "saya yang berjanji")}
 <p class="doc-note">Materai Rp. 10.000,-</p>
 <p>Mengetahui,</p>
-${ttdThree("Kepala {{sekolah}}", "Korbid Tanse", "Bimb. Konseling")}`,
+${ttdThree("Kepala " + SCHOOL_NAME_SHORT, "Korbid Tanse", "Bimb. Konseling")}`,
   },
   {
     slug: "skorsing",
@@ -414,6 +409,6 @@ ${ttdThree("Kepala {{sekolah}}", "Korbid Tanse", "Bimb. Konseling")}`,
 <p>Billahit Taufiq Walhidayah<br/>Wassalamu'alaikum Wr.Wb</p>
 ${ttdTwo("Ketahanan Sekolah", "Wali Kelas")}
 <p>Mengetahui</p>
-${ttdOne("Kepala {{sekolah}}", "{{kepala_sekolah}}")}`,
+${ttdOne("Kepala " + SCHOOL_NAME, "{{kepala_sekolah}}")}`,
   },
 ];

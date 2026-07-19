@@ -10,7 +10,10 @@ import {
 import { DocumentPrintView } from "@/components/document-editor";
 import { parsePageSettings, type DocumentPageSettings } from "@/lib/document-page";
 import { buildStudentPrintVars } from "@/lib/student-print-vars";
-import { TEMPLATE_OFFICIAL_PLACEHOLDERS } from "@/lib/print-templates";
+import {
+  extractPlaceholderKeys,
+  TEMPLATE_OFFICIAL_PLACEHOLDERS,
+} from "@/lib/print-templates";
 
 export type LetterTemplateOption = {
   id: string;
@@ -31,6 +34,18 @@ type Props = Omit<StudentPointsPrintArticleProps, "print"> & {
 };
 
 const POINTS_DOC = "__points__";
+
+/** Placeholder yang sudah terisi otomatis — tidak perlu field override. */
+const AUTO_FILLED_KEYS = new Set([
+  "nama",
+  "kelas",
+  "nis",
+  "poin",
+  "poin_terbilang",
+  "daftar_pelanggaran",
+  "tanggal",
+  "alamat",
+]);
 
 function field(
   label: string,
@@ -74,6 +89,8 @@ export function StudentPointsPrintClient({
 
   const [coordinatorName, setCoordinatorName] = useState("");
   const [coordinatorTitle, setCoordinatorTitle] = useState("");
+  const [kepalaSekolah, setKepalaSekolah] = useState("");
+  const [namaPic, setNamaPic] = useState("");
   const [selectedDoc, setSelectedDoc] = useState(initialDoc);
   const [nomorSurat, setNomorSurat] = useState("");
   const [lamaSkorsing, setLamaSkorsing] = useState("3");
@@ -97,7 +114,20 @@ export function StudentPointsPrintClient({
   const selectedTemplate = letterTemplates.find((t) => t.id === selectedDoc) ?? null;
   const isPointsDoc = selectedDoc === POINTS_DOC;
   const slug = selectedTemplate?.slug ?? "";
-  const official = TEMPLATE_OFFICIAL_PLACEHOLDERS[slug];
+
+  const overrideKeys = useMemo(() => {
+    if (isPointsDoc) return new Set<string>();
+    const official = TEMPLATE_OFFICIAL_PLACEHOLDERS[slug];
+    const keys = official
+      ? [...official]
+      : selectedTemplate
+        ? extractPlaceholderKeys(selectedTemplate.body)
+        : [];
+    return new Set(keys.filter((k) => !AUTO_FILLED_KEYS.has(k)));
+  }, [isPointsDoc, slug, selectedTemplate]);
+
+  const needs = (key: string) => overrideKeys.has(key);
+  const hasLetterOverrides = overrideKeys.size > 0;
 
   const pageSettings: DocumentPageSettings = useMemo(
     () => parsePageSettings(selectedTemplate?.pageSettings),
@@ -120,7 +150,7 @@ export function StudentPointsPrintClient({
         className: articleProps.classNameLabel,
         address,
         effectivePoints: articleProps.breakdown.effective,
-        kepalaSekolah: coordinatorName.trim() || undefined,
+        kepalaSekolah: kepalaSekolah.trim() || undefined,
         nomorSurat: nomorSurat.trim() || undefined,
         daftarPelanggaran,
         lamaSkorsing,
@@ -130,7 +160,7 @@ export function StudentPointsPrintClient({
         tanggalMasehi: tanggalMasehi.trim() || undefined,
         pasal: pasal.trim() || undefined,
         bunyiPasal: bunyiPasal.trim() || daftarPelanggaran || undefined,
-        namaPic: coordinatorName.trim() || coordinatorTitle.trim() || undefined,
+        namaPic: namaPic.trim() || undefined,
         materiDiskusi,
         hariTanggalPertemuan: hariTanggalPertemuan.trim() || undefined,
         waktuPertemuan: waktuPertemuan.trim() || undefined,
@@ -148,8 +178,8 @@ export function StudentPointsPrintClient({
       articleProps.classNameLabel,
       articleProps.breakdown.effective,
       address,
-      coordinatorName,
-      coordinatorTitle,
+      kepalaSekolah,
+      namaPic,
       nomorSurat,
       daftarPelanggaran,
       lamaSkorsing,
@@ -171,8 +201,6 @@ export function StudentPointsPrintClient({
       tanggalPerjanjian,
     ]
   );
-
-  const needs = (key: string) => !official || official.includes(key);
 
   return (
     <div className="pb-safe-bottom">
@@ -197,7 +225,7 @@ export function StudentPointsPrintClient({
               .join(" · ")}
           </p>
           <p className="text-[11px] pt-1" style={{ color: "var(--text-muted)" }}>
-            Placeholder surat diisi otomatis dari data siswa. Field di bawah untuk override manual.
+            Data siswa terisi otomatis. Field di bawah hanya untuk isian yang relevan dengan jenis surat.
           </p>
         </div>
 
@@ -222,37 +250,49 @@ export function StudentPointsPrintClient({
             ))}
           </select>
 
-          <p className="text-xs font-semibold pt-1" style={{ color: "var(--text-primary)" }}>
-            Data pejabat / override
-          </p>
-          {field("Nama kepala / PIC", coordinatorName, setCoordinatorName, "mis. Drs. Hartanto")}
-          {field("Jabatan", coordinatorTitle, setCoordinatorTitle, "mis. Koordinator BP/BK")}
+          {isPointsDoc && (
+            <>
+              <p className="text-xs font-semibold pt-1" style={{ color: "var(--text-primary)" }}>
+                Data pejabat
+              </p>
+              {field("Nama pejabat / PIC", coordinatorName, setCoordinatorName, "mis. Drs. Hartanto")}
+              {field("Jabatan", coordinatorTitle, setCoordinatorTitle, "mis. Koordinator BP/BK")}
+            </>
+          )}
 
-          {!isPointsDoc && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {needs("nomor_surat") && field("Nomor surat", nomorSurat, setNomorSurat, "123/SP1/VII/2026")}
-              {needs("lama_skorsing") && field("Lama skorsing (hari)", lamaSkorsing, setLamaSkorsing, "3")}
-              {needs("tanggal_mulai_skorsing") &&
-                field("Tanggal mulai skorsing", tanggalMulaiSkorsing, setTanggalMulaiSkorsing)}
-              {needs("tanggal_masuk_kembali") &&
-                field("Tanggal masuk kembali", tanggalMasukKembali, setTanggalMasukKembali)}
-              {needs("tanggal_hijriah") && field("Tanggal Hijriah", tanggalHijriah, setTanggalHijriah)}
-              {needs("tanggal_masehi") && field("Tanggal Masehi", tanggalMasehi, setTanggalMasehi)}
-              {needs("pasal") && field("Pasal", pasal, setPasal, "16 ayat 12")}
-              {needs("bunyi_pasal") && field("Bunyi pasal", bunyiPasal, setBunyiPasal)}
-              {needs("hari_tanggal_pertemuan") &&
-                field("Hari/tanggal pertemuan", hariTanggalPertemuan, setHariTanggalPertemuan)}
-              {needs("waktu_pertemuan") && field("Waktu pertemuan", waktuPertemuan, setWaktuPertemuan)}
-              {needs("tempat") && field("Tempat", tempat, setTempat)}
-              {needs("materi_diskusi") && field("Materi diskusi", materiDiskusi, setMateriDiskusi)}
-              {needs("urutan_poin") && field("Urutan info poin", urutanPoin, setUrutanPoin, "1")}
-              {needs("periode_awal") && field("Periode awal", periodeAwal, setPeriodeAwal)}
-              {needs("periode_akhir") && field("Periode akhir", periodeAkhir, setPeriodeAkhir)}
-              {needs("batas_remisi") && field("Batas remisi", batasRemisi, setBatasRemisi)}
-              {needs("jenis_sp") && field("Jenis SP", jenisSp, setJenisSp, "SP-2")}
-              {needs("tanggal_perjanjian") &&
-                field("Tanggal perjanjian", tanggalPerjanjian, setTanggalPerjanjian)}
-            </div>
+          {!isPointsDoc && hasLetterOverrides && (
+            <>
+              <p className="text-xs font-semibold pt-1" style={{ color: "var(--text-primary)" }}>
+                Isian tambahan surat
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {needs("kepala_sekolah") &&
+                  field("Nama kepala sekolah", kepalaSekolah, setKepalaSekolah, "mis. H. Bahron Fathin, M.A.")}
+                {needs("nama_pic") && field("Nama PIC", namaPic, setNamaPic, "mis. Bapak Ahmad Fauzi")}
+                {needs("nomor_surat") && field("Nomor surat", nomorSurat, setNomorSurat, "123/SP1/VII/2026")}
+                {needs("lama_skorsing") && field("Lama skorsing (hari)", lamaSkorsing, setLamaSkorsing, "3")}
+                {needs("tanggal_mulai_skorsing") &&
+                  field("Tanggal mulai skorsing", tanggalMulaiSkorsing, setTanggalMulaiSkorsing)}
+                {needs("tanggal_masuk_kembali") &&
+                  field("Tanggal masuk kembali", tanggalMasukKembali, setTanggalMasukKembali)}
+                {needs("tanggal_hijriah") && field("Tanggal Hijriah", tanggalHijriah, setTanggalHijriah)}
+                {needs("tanggal_masehi") && field("Tanggal Masehi", tanggalMasehi, setTanggalMasehi)}
+                {needs("pasal") && field("Pasal", pasal, setPasal, "16 ayat 12")}
+                {needs("bunyi_pasal") && field("Bunyi pasal", bunyiPasal, setBunyiPasal)}
+                {needs("hari_tanggal_pertemuan") &&
+                  field("Hari/tanggal pertemuan", hariTanggalPertemuan, setHariTanggalPertemuan)}
+                {needs("waktu_pertemuan") && field("Waktu pertemuan", waktuPertemuan, setWaktuPertemuan)}
+                {needs("tempat") && field("Tempat", tempat, setTempat)}
+                {needs("materi_diskusi") && field("Materi diskusi", materiDiskusi, setMateriDiskusi)}
+                {needs("urutan_poin") && field("Urutan info poin", urutanPoin, setUrutanPoin, "1")}
+                {needs("periode_awal") && field("Periode awal", periodeAwal, setPeriodeAwal)}
+                {needs("periode_akhir") && field("Periode akhir", periodeAkhir, setPeriodeAkhir)}
+                {needs("batas_remisi") && field("Batas remisi", batasRemisi, setBatasRemisi)}
+                {needs("jenis_sp") && field("Jenis SP", jenisSp, setJenisSp, "SP-2")}
+                {needs("tanggal_perjanjian") &&
+                  field("Tanggal perjanjian", tanggalPerjanjian, setTanggalPerjanjian)}
+              </div>
+            </>
           )}
         </div>
       </div>

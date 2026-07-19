@@ -185,6 +185,16 @@ export function buildDocumentPageCss(settings: DocumentPageSettings, options?: {
 .doc-page-body .doc-sign-space { height: 16mm; margin: 0; padding: 0; border: none; }
 .doc-page-body .doc-sign-role,
 .doc-page-body .doc-sign-name { text-align: center; margin: 0; }
+.doc-page-body .doc-sign-role {
+  font-size: 10.5pt;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.doc-page-body .doc-sign-table td.doc-sign-cell:first-child:nth-last-child(3) .doc-sign-role,
+.doc-page-body .doc-sign-table td.doc-sign-cell:first-child:nth-last-child(3) ~ td .doc-sign-role {
+  font-size: 9.5pt;
+  letter-spacing: -0.01em;
+}
 .doc-page-body .doc-sign-cell { width: 50%; text-align: center; }
 .doc-page-body .doc-sign-table td.doc-sign-cell:first-child:nth-last-child(3),
 .doc-page-body .doc-sign-table td.doc-sign-cell:first-child:nth-last-child(3) ~ td { width: 33.33%; }
