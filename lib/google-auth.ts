@@ -77,8 +77,8 @@ export async function resolveAndLinkGoogleUser(input: {
     if (email && !isGoogleEmailDomainAllowed(email)) {
       return { ok: false, code: "DOMAIN_NOT_ALLOWED" };
     }
-    await markGoogleLoginSuccess(bySub.id, "OK");
-    return { ok: true, user: bySub };
+    const authVersion = await markGoogleLoginSuccess(bySub.id, "OK", bySub.role);
+    return { ok: true, user: { ...bySub, authVersion } };
   }
 
   if (!email) return { ok: false, code: "NOT_REGISTERED" };
@@ -121,12 +121,16 @@ export async function resolveAndLinkGoogleUser(input: {
     });
   }
 
-  await markGoogleLoginSuccess(updated.id, alreadyLinked ? "OK" : "OK_LINKED");
-  return { ok: true, user: updated };
+  const authVersion = await markGoogleLoginSuccess(
+    updated.id,
+    alreadyLinked ? "OK" : "OK_LINKED",
+    updated.role
+  );
+  return { ok: true, user: { ...updated, authVersion } };
 }
 
-async function markGoogleLoginSuccess(userId: string, reason: string) {
-  await registerSuccessfulLogin(userId);
+async function markGoogleLoginSuccess(userId: string, reason: string, role: string): Promise<number> {
+  const { authVersion } = await registerSuccessfulLogin(userId, { role });
   const meta = await getAuthRequestMeta();
   await recordAuthLoginEvent({
     userId,
@@ -136,6 +140,7 @@ async function markGoogleLoginSuccess(userId: string, reason: string) {
     ip: meta.ip,
     userAgent: meta.userAgent,
   });
+  return authVersion;
 }
 
 export function googleErrorRedirect(code: GoogleResolveErr["code"], portal: "student" | "staff"): string {

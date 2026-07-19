@@ -135,7 +135,7 @@ async function authorizeCredentials(
     throw new Error(locked ? AUTH_LOCKED_ERROR : AUTH_GENERIC_CREDENTIALS_ERROR);
   }
 
-  await registerSuccessfulLogin(user.id);
+  const { authVersion } = await registerSuccessfulLogin(user.id, { role: user.role });
   await recordAuthLoginEvent({
     userId: user.id,
     identifier,
@@ -155,7 +155,7 @@ async function authorizeCredentials(
     nip: user.nip ?? undefined,
     className: user.class?.name ?? undefined,
     classId: user.classId ?? undefined,
-    authVersion: user.authVersion,
+    authVersion,
   };
 }
 
@@ -329,7 +329,11 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token?.error === "AccountInactive" || token?.error === "SessionRevoked") {
-        return { ...session, user: { ...session.user, id: "", email: null, role: "INACTIVE" } } as Session;
+        return {
+          ...session,
+          error: token.error,
+          user: { ...session.user, id: "", email: null, role: "INACTIVE" },
+        } as Session;
       }
       if (token && session.user) {
         session.user.id = token.id as string;
@@ -380,6 +384,7 @@ declare module "next-auth" {
     authVersion?: number;
   }
   interface Session {
+    error?: string;
     user: {
       id: string;
       name?: string | null;

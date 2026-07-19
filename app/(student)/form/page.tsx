@@ -11,7 +11,10 @@ export const dynamic = "force-dynamic";
 
 export default async function StudentFormPage() {
   const session = await getSafeServerSession();
-  if (!session || session.user.role !== "STUDENT") redirect("/login");
+  if (!session || session.user.role !== "STUDENT") {
+    if (session?.error === "SessionRevoked") redirect("/login?error=SESSION_REPLACED");
+    redirect("/login");
+  }
 
   const violationTypes = await prisma.violationType.findMany({
     where: { active: true },

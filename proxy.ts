@@ -22,7 +22,14 @@ export const proxy = withAuth(
     }
 
     if (token?.error === "AccountInactive" || token?.error === "SessionRevoked") {
-      const loginPath = pathname.startsWith("/form") ? "/login" : "/admin/login";
+      const isStudentPortal = pathname.startsWith("/form");
+      const loginPath = isStudentPortal
+        ? token.error === "SessionRevoked"
+          ? "/login?error=SESSION_REPLACED"
+          : "/login"
+        : token.error === "SessionRevoked"
+          ? "/admin/login?error=SESSION_ENDED"
+          : "/admin/login";
       const signOut = new URL("/api/auth/signout", request.nextUrl.origin);
       signOut.searchParams.set("callbackUrl", `${request.nextUrl.origin}${loginPath}`);
       return NextResponse.redirect(signOut);

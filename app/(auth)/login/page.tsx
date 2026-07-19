@@ -73,6 +73,9 @@ function StudentLoginForm() {
         </div>
         {error && <div className="p-3 rounded-lg text-xs" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>⚠ {error}</div>}
         <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 text-sm disabled:opacity-60">{loading ? "Memproses..." : "Masuk"}</button>
+        <p className="text-[10px] leading-relaxed text-center" style={{ color: "var(--text-muted)" }}>
+          Hanya satu perangkat aktif. Login di perangkat lain akan mengeluarkan sesi sebelumnya.
+        </p>
       </form>
       <div className="my-4 flex items-center gap-3">
         <div className="h-px flex-1" style={{ background: "var(--border)" }} />

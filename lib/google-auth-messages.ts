@@ -1,3 +1,5 @@
+import { AUTH_SESSION_REPLACED_ERROR } from "@/lib/auth-constants";
+
 export const GOOGLE_NOT_REGISTERED_MESSAGE =
   "Akun Anda belum terdaftar. Silakan hubungi Administrator.";
 export const GOOGLE_UNAVAILABLE_MESSAGE =
@@ -9,6 +11,8 @@ export const GOOGLE_CONFLICT_MESSAGE =
   "Akun Google tidak cocok dengan data pengguna. Hubungi Administrator.";
 export const GOOGLE_DOMAIN_MESSAGE =
   "Gunakan akun Google dengan email domain sekolah (@smaalazhar1.sch.id).";
+
+const SESSION_ENDED_MESSAGE = "Sesi berakhir. Silakan login lagi.";
 
 export function mapGoogleErrorCode(code: string | null | undefined): string | null {
   switch (code) {
@@ -28,6 +32,11 @@ export function mapGoogleErrorCode(code: string | null | undefined): string | nu
       return GOOGLE_CONFLICT_MESSAGE;
     case "DOMAIN_NOT_ALLOWED":
       return GOOGLE_DOMAIN_MESSAGE;
+    case "SESSION_REPLACED":
+      return AUTH_SESSION_REPLACED_ERROR;
+    case "SessionRevoked":
+    case "SESSION_ENDED":
+      return SESSION_ENDED_MESSAGE;
     default:
       return null;
   }

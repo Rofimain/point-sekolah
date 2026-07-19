@@ -6,6 +6,10 @@ export const AUTH_ACCOUNT_UNAVAILABLE_ERROR =
 
 export const AUTH_LOCKED_ERROR = "Terlalu banyak percobaan. Coba lagi nanti.";
 
+/** Siswa: login baru menggantikan sesi di perangkat lain. */
+export const AUTH_SESSION_REPLACED_ERROR =
+  "Sesi diganti karena akun ini masuk dari perangkat lain. Silakan login lagi.";
+
 export const AUTH_MAX_FAILED_LOGINS = 5;
 export const AUTH_LOCK_DURATION_MS = 15 * 60 * 1000;
 
@@ -15,4 +19,9 @@ export const AUTH_IP_WINDOW_MS = 15 * 60 * 1000;
 
 export function isLoginLockoutEnabled(): boolean {
   return process.env.AUTH_LOGIN_LOCKOUT_ENABLED !== "false";
+}
+
+/** Hanya role siswa yang dibatasi satu sesi aktif. */
+export function shouldEnforceSingleSession(role: string | null | undefined): boolean {
+  return role === "STUDENT";
 }

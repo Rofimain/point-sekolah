@@ -10,6 +10,8 @@ import {
   AUTH_GENERIC_CREDENTIALS_ERROR,
   AUTH_LOCK_DURATION_MS,
   AUTH_MAX_FAILED_LOGINS,
+  AUTH_SESSION_REPLACED_ERROR,
+  shouldEnforceSingleSession,
 } from "../lib/auth-constants";
 import { computeLockUntil, isAccountLocked } from "../lib/auth-lockout";
 import {
@@ -78,6 +80,15 @@ test("google error messages map AccessDenied to unregistered copy", () => {
   assert.equal(mapGoogleErrorCode("NOT_REGISTERED"), GOOGLE_NOT_REGISTERED_MESSAGE);
   assert.equal(mapGoogleErrorCode("AccessDenied"), GOOGLE_NOT_REGISTERED_MESSAGE);
   assert.equal(mapGoogleErrorCode("CONFLICT"), "Akun Google tidak cocok dengan data pengguna. Hubungi Administrator.");
+  assert.equal(mapGoogleErrorCode("SESSION_REPLACED"), AUTH_SESSION_REPLACED_ERROR);
+});
+
+test("single session only enforced for STUDENT role", () => {
+  assert.equal(shouldEnforceSingleSession("STUDENT"), true);
+  assert.equal(shouldEnforceSingleSession("TEACHER"), false);
+  assert.equal(shouldEnforceSingleSession("ADMIN"), false);
+  assert.equal(shouldEnforceSingleSession("SUPER_ADMIN"), false);
+  assert.equal(shouldEnforceSingleSession(null), false);
 });
 
 test("infer google portal from callback url", () => {
