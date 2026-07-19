@@ -169,7 +169,7 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
             </p>
             <img
               src={activeImg}
-              alt="Bukti pelanggaran"
+              alt={`Foto bukti pelanggaran${data?.student?.name ? ` — ${data.student.name}` : ""}`}
               className="max-h-[min(420px,58dvh)] max-w-full w-full rounded-lg border object-contain"
               style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
             />

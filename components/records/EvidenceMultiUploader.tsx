@@ -25,6 +25,7 @@ export function EvidenceMultiUploader({
   hint,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const inputId = "evidence-multi-uploader-input";
   const [busy, setBusy] = useState(false);
   const remaining = Math.max(0, MAX_EVIDENCE_IMAGES - images.length);
 
@@ -86,7 +87,11 @@ export function EvidenceMultiUploader({
 
   return (
     <div>
-      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+      <label
+        htmlFor={inputId}
+        className="mb-1 block text-[10px] font-semibold uppercase tracking-wide"
+        style={{ color: "var(--text-muted)" }}
+      >
         {label}
         {images.length > 0 ? ` (${images.length}/${MAX_EVIDENCE_IMAGES})` : ""}
       </label>
@@ -103,7 +108,7 @@ export function EvidenceMultiUploader({
               className="relative rounded-lg border"
               style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
             >
-              <img src={src} alt={`Bukti ${index + 1}`} className="aspect-square w-full rounded-lg object-cover" />
+              <img src={src} alt={`Foto bukti pelanggaran ${index + 1}`} className="aspect-square w-full rounded-lg object-cover" />
               <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
                 {index + 1}
               </span>
@@ -122,6 +127,7 @@ export function EvidenceMultiUploader({
       ) : null}
 
       <input
+        id={inputId}
         ref={inputRef}
         type="file"
         accept="image/*,.heic,.heif"

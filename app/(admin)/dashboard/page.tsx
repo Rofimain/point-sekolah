@@ -6,7 +6,7 @@ import DashboardRankedTables from "@/components/dashboard/DashboardRankedTables"
 export const dynamic = "force-dynamic";
 
 const CRITICAL_POINTS = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
-const ALERT_POINTS = parseInt(process.env.NEXT_PUBLIC_WARNING_POINTS || "25", 10);
+const ALERT_POINTS = parseInt(process.env.NEXT_PUBLIC_WARNING_POINTS || "50", 10);
 
 async function getDashboardData() {
   const now = new Date();
@@ -201,9 +201,9 @@ export default async function DashboardPage() {
               const isLast = i === monthlyData.length - 1;
               return (
                 <div key={m.label} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                  <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>{m.count}</span>
+                  <span className="text-[11px] tabular-nums" style={{ color: "var(--text-secondary)" }}>{m.count}</span>
                   <div className="w-full rounded-t" style={{ height: `${h}%`, background: isLast ? "var(--accent)" : "var(--accent-light)", border: `1px solid var(--accent-border)`, minHeight: 4 }} />
-                  <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>{m.label}</span>
+                  <span className="text-[11px]" style={{ color: "var(--text-secondary)" }}>{m.label}</span>
                 </div>
               );
             })}

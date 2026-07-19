@@ -388,14 +388,18 @@ export default function RecordsClient({
 
       {/* Filters */}
       <div className="panel mb-4 flex flex-wrap gap-2 p-3.5">
+        <label className="sr-only" htmlFor="records-search">
+          Cari nama siswa
+        </label>
         <input
+          id="records-search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && navigate({ search: search.trim() })}
           placeholder="Cari nama siswa..."
           list="record-student-suggestions"
           autoComplete="off"
-          className="px-3 py-2 rounded-lg border text-xs flex-1 min-w-40"
+          className="min-h-11 min-w-40 flex-1 rounded-lg border px-3 py-2 text-xs"
           style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
         />
         <datalist id="record-student-suggestions">
@@ -408,14 +412,18 @@ export default function RecordsClient({
         <button
           type="button"
           onClick={() => navigate({ search: search.trim() })}
-          className="btn-primary px-4 py-2 text-xs"
+          className="btn-primary min-h-11 touch-manipulation px-4 py-2 text-xs"
         >
           Cari
         </button>
+        <label className="sr-only" htmlFor="records-grade">
+          Filter angkatan
+        </label>
         <select
+          id="records-grade"
           value={searchParams.grade || ""}
           onChange={(e) => navigate({ grade: e.target.value, classId: "" })}
-          className="px-3 py-2 rounded-lg border text-xs"
+          className="min-h-11 rounded-lg border px-3 py-2 text-xs"
           style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
         >
           <option value="">Semua Angkatan</option>
@@ -425,10 +433,14 @@ export default function RecordsClient({
             </option>
           ))}
         </select>
+        <label className="sr-only" htmlFor="records-class">
+          Filter kelas
+        </label>
         <select
+          id="records-class"
           value={searchParams.classId || ""}
           onChange={(e) => navigate({ classId: e.target.value })}
-          className="px-3 py-2 rounded-lg border text-xs"
+          className="min-h-11 rounded-lg border px-3 py-2 text-xs"
           style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
         >
           <option value="">{searchParams.grade ? "Semua kelas di angkatan ini" : "Semua Kelas"}</option>
@@ -439,14 +451,29 @@ export default function RecordsClient({
           ))}
         </select>
         {(searchParams.grade || searchParams.classId || searchParams.search) && (
-          <button onClick={() => { setSearch(""); router.push(pathname); }} className="px-3 py-2 rounded-lg border text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>Reset</button>
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              router.push(pathname);
+            }}
+            className="min-h-11 touch-manipulation rounded-lg border px-3 py-2 text-xs"
+            style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+          >
+            Reset
+          </button>
         )}
       </div>
 
       <div className="panel-flush">
         {rows.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-            Tidak ada data
+          <div className="px-4 py-10 text-center">
+            <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              Belum ada catatan pelanggaran
+            </p>
+            <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
+              Ubah filter pencarian, atau tambah catatan baru lewat tombol di atas.
+            </p>
           </div>
         ) : (
           <>
@@ -987,7 +1014,7 @@ export default function RecordsClient({
               <button
                 type="button"
                 onClick={() => setAddModal(false)}
-                className="px-4 py-2.5 rounded-xl border text-sm font-medium"
+                className="min-h-11 touch-manipulation rounded-xl border px-4 py-2.5 text-sm font-medium"
                 style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
               >
                 Batal
@@ -996,7 +1023,7 @@ export default function RecordsClient({
                 type="button"
                 onClick={handleAdd}
                 disabled={loading || !addStudentId || !addVtId}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="min-h-11 touch-manipulation rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 style={{ background: "var(--accent)" }}
               >
                 {loading ? "Menyimpan…" : "Simpan catatan"}

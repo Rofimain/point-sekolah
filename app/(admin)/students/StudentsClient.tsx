@@ -561,7 +561,11 @@ export default function StudentsClient({
 
       <div id="daftar-siswa" className="mb-6 scroll-mt-4">
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border p-3" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+        <label className="sr-only" htmlFor="students-search">
+          Cari siswa
+        </label>
         <input
+          id="students-search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && navigate({ search: search.trim() })}
@@ -570,13 +574,13 @@ export default function StudentsClient({
               ? `Cari di ${selectedClass.name} — nama, NISN, email…`
               : "Cari nama, NISN, email…"
           }
-          className="min-w-0 flex-1 basis-full rounded-lg border px-3 py-2 text-xs sm:basis-auto sm:min-w-[12rem]"
+          className="min-h-11 min-w-0 flex-1 basis-full rounded-lg border px-3 py-2 text-xs sm:basis-auto sm:min-w-[12rem]"
           style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
         />
         <button
           type="button"
           onClick={() => navigate({ search: search.trim() })}
-          className="btn-primary px-4 py-2 text-xs"
+          className="btn-primary min-h-11 touch-manipulation px-4 py-2 text-xs"
         >
           Cari
         </button>
@@ -587,7 +591,7 @@ export default function StudentsClient({
               setSearch("");
               navigate({ search: "" });
             }}
-            className="px-3 py-2 rounded-lg border text-xs"
+            className="min-h-11 touch-manipulation rounded-lg border px-3 py-2 text-xs"
             style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
           >
             Reset pencarian
@@ -1154,7 +1158,11 @@ export default function StudentsClient({
             </div>
           </div>
 
+          <label className="mb-1 block text-xs font-semibold" htmlFor="students-bulk-paste" style={{ color: "var(--text-secondary)" }}>
+            Tempel data siswa (tab-separated)
+          </label>
           <textarea
+            id="students-bulk-paste"
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
             rows={8}

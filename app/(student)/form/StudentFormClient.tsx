@@ -26,11 +26,12 @@ import { SectionAccordion, useSectionAccordionState } from "@/components/Section
 const SESSIONS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 const CRITICAL = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
 const WARNING = parseInt(process.env.NEXT_PUBLIC_WARNING_POINTS || "50", 10);
-const HIGH_ALERT = 25;
 
 function PointBadge({ points }: { points: number }) {
-  const color = points >= 25 ? "var(--danger)" : points >= 10 ? "var(--warning)" : "var(--success)";
-  const bg = points >= 25 ? "var(--danger-bg)" : points >= 10 ? "var(--warning-bg)" : "var(--success-bg)";
+  const color =
+    points >= CRITICAL ? "var(--danger)" : points >= WARNING ? "var(--warning)" : "var(--success)";
+  const bg =
+    points >= CRITICAL ? "var(--danger-bg)" : points >= WARNING ? "var(--warning-bg)" : "var(--success-bg)";
   return (
     <span className="inline-flex items-center justify-center w-9 h-5 rounded-full text-xs font-bold" style={{ background: bg, color }}>
       {points}
@@ -265,13 +266,13 @@ export default function StudentFormClient({
           />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-serif text-white truncate sm:text-base">{session.user.name}</div>
-            <div className="mt-0.5 break-words text-xs leading-snug" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <div className="mt-0.5 break-words text-xs leading-snug" style={{ color: "rgba(255,255,255,0.72)" }}>
               {studentClass || "Kelas tidak ditetapkan"}
               {studentNisn ? ` · NISN: ${studentNisn}` : ""}
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.7)" }}>
               Poin efektif
             </div>
             <div className="text-2xl font-serif font-bold" style={{ color: pointColor }}>
@@ -329,19 +330,19 @@ export default function StudentFormClient({
           </div>
         )}
 
-        {totalPoints > HIGH_ALERT && (
+        {totalPoints >= CRITICAL && (
           <div
             className="p-3 rounded-lg text-xs mb-4 flex items-start gap-2"
             style={{ background: "var(--danger-bg)", color: "var(--danger)" }}
           >
             <span>!</span>
             <span>
-              Poin Anda di atas {HIGH_ALERT}. Segera koordinasikan dengan wali kelas atau BP/BK.
+              Poin Anda mencapai batas kritis (≥{CRITICAL}). Segera koordinasikan dengan wali kelas atau BP/BK.
             </span>
           </div>
         )}
 
-        {totalPoints >= WARNING && totalPoints <= HIGH_ALERT && (
+        {totalPoints >= WARNING && totalPoints < CRITICAL && (
           <div
             className="p-3 rounded-lg text-xs mb-4 flex items-start gap-2"
             style={{ background: "var(--warning-bg)", color: "var(--warning)" }}
@@ -371,7 +372,11 @@ export default function StudentFormClient({
                   setTataQuery(tataSearch);
                 }}
               >
+                <label className="sr-only" htmlFor="tata-search">
+                  Cari jenis pelanggaran
+                </label>
                 <input
+                  id="tata-search"
                   type="search"
                   value={tataSearch}
                   onChange={(e) => {
@@ -379,12 +384,12 @@ export default function StudentFormClient({
                     if (!e.target.value.trim()) setTataQuery("");
                   }}
                   placeholder="Cari no / nama pelanggaran…"
-                  className="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"
+                  className="min-h-11 min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"
                   style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
                 />
                 <button
                   type="submit"
-                  className="shrink-0 rounded-lg px-4 py-2 text-xs font-semibold text-white"
+                  className="min-h-11 shrink-0 touch-manipulation rounded-lg px-4 py-2 text-xs font-semibold text-white"
                   style={{ background: "var(--accent)" }}
                 >
                   Cari

@@ -25,11 +25,11 @@ const TOP5_COLUMNS = [
   { key: "status", label: "Status" },
 ] as const;
 
-function PointBadge({ points }: { points: number }) {
+function PointBadge({ points, alertPoints, criticalPoints }: { points: number; alertPoints: number; criticalPoints: number }) {
   const colors =
-    points >= 75
+    points >= criticalPoints
       ? (["var(--danger-bg)", "var(--danger)"] as const)
-      : points >= 50
+      : points >= alertPoints
         ? (["var(--warning-bg)", "var(--warning)"] as const)
         : (["var(--success-bg)", "var(--success)"] as const);
   return (
@@ -46,17 +46,25 @@ function PointBadge({ points }: { points: number }) {
   );
 }
 
-function statusRank(points: number, criticalPoints: number) {
+function statusRank(points: number, alertPoints: number, criticalPoints: number) {
   if (points >= criticalPoints) return 2;
-  if (points >= 50) return 1;
+  if (points >= alertPoints) return 1;
   return 0;
 }
 
-function StatusBadge({ points, criticalPoints }: { points: number; criticalPoints: number }) {
+function StatusBadge({
+  points,
+  alertPoints,
+  criticalPoints,
+}: {
+  points: number;
+  alertPoints: number;
+  criticalPoints: number;
+}) {
   const status =
     points >= criticalPoints
       ? (["var(--danger-bg)", "var(--danger)", "Kritis"] as const)
-      : points >= 50
+      : points >= alertPoints
         ? (["var(--warning-bg)", "var(--warning)", "Perhatian"] as const)
         : (["var(--success-bg)", "var(--success)", "Normal"] as const);
   return (
@@ -73,12 +81,13 @@ function StatusBadge({ points, criticalPoints }: { points: number; criticalPoint
   );
 }
 
-export function sortDashboardRows(rows: DashStudentRow[], sort: SortState, criticalPoints: number) {
+export function sortDashboardRows(rows: DashStudentRow[], sort: SortState, criticalPoints: number, alertPoints = 50) {
   const direction = sort.direction === "asc" ? 1 : -1;
   return [...rows].sort((a, b) => {
     let compared = 0;
     if (sort.key === "points") compared = a.total - b.total;
-    else if (sort.key === "status") compared = statusRank(a.total, criticalPoints) - statusRank(b.total, criticalPoints);
+    else if (sort.key === "status")
+      compared = statusRank(a.total, alertPoints, criticalPoints) - statusRank(b.total, alertPoints, criticalPoints);
     else if (sort.key === "class") compared = (a.className ?? "").localeCompare(b.className ?? "", "id");
     else compared = a.name.localeCompare(b.name, "id");
 
@@ -109,7 +118,7 @@ function SortHeader({
       <button
         type="button"
         onClick={() => onSort(column.key)}
-        className="inline-flex touch-manipulation items-center gap-1 rounded text-left hover:opacity-80"
+        className="inline-flex min-h-11 touch-manipulation items-center gap-1 rounded text-left hover:opacity-80"
       >
         {column.label}
         <span aria-hidden>{active ? (sort.direction === "asc" ? "↑" : "↓") : "↕"}</span>
@@ -133,10 +142,13 @@ export default function DashboardRankedTables({
   const [top5Sort, setTop5Sort] = useState<SortState>({ key: "points", direction: "desc" });
 
   const sortedOver25 = useMemo(
-    () => sortDashboardRows(over25, over25Sort, criticalPoints),
-    [over25, over25Sort, criticalPoints]
+    () => sortDashboardRows(over25, over25Sort, criticalPoints, alertPoints),
+    [over25, over25Sort, criticalPoints, alertPoints]
   );
-  const sortedTop5 = useMemo(() => sortDashboardRows(top5, top5Sort, criticalPoints), [top5, top5Sort, criticalPoints]);
+  const sortedTop5 = useMemo(
+    () => sortDashboardRows(top5, top5Sort, criticalPoints, alertPoints),
+    [top5, top5Sort, criticalPoints, alertPoints]
+  );
 
   function nextSort(setter: (state: SortState) => void, current: SortState, key: SortKey) {
     setter({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc" });
@@ -160,13 +172,13 @@ export default function DashboardRankedTables({
     if (key === "status" && showStatus) {
       return (
         <td key={key} className="px-3 py-3 sm:px-4">
-          <StatusBadge points={row.total} criticalPoints={criticalPoints} />
+          <StatusBadge points={row.total} alertPoints={alertPoints} criticalPoints={criticalPoints} />
         </td>
       );
     }
     return (
       <td key={key} className="px-3 py-3 sm:px-4">
-        <PointBadge points={row.total} />
+        <PointBadge points={row.total} alertPoints={alertPoints} criticalPoints={criticalPoints} />
       </td>
     );
   }
@@ -222,29 +234,35 @@ export default function DashboardRankedTables({
             Klik judul kolom untuk mengurutkan baris.
           </p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[300px]">
-            <thead>
-              <tr style={{ background: "var(--bg-primary)" }}>
-                {TOP5_COLUMNS.map((column) => (
-                  <SortHeader
-                    key={column.key}
-                    column={column}
-                    sort={top5Sort}
-                    onSort={(key) => nextSort(setTop5Sort, top5Sort, key)}
-                  />
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedTop5.map((row) => (
-                <tr key={row.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                  {TOP5_COLUMNS.map(({ key }) => renderCell(key, row, true))}
+        {sortedTop5.length === 0 ? (
+          <div className="px-4 py-6 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+            Belum ada data poin siswa untuk ditampilkan.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[300px]">
+              <thead>
+                <tr style={{ background: "var(--bg-primary)" }}>
+                  {TOP5_COLUMNS.map((column) => (
+                    <SortHeader
+                      key={column.key}
+                      column={column}
+                      sort={top5Sort}
+                      onSort={(key) => nextSort(setTop5Sort, top5Sort, key)}
+                    />
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {sortedTop5.map((row) => (
+                  <tr key={row.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                    {TOP5_COLUMNS.map(({ key }) => renderCell(key, row, true))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </>
   );
