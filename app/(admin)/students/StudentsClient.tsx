@@ -57,6 +57,23 @@ function StatusBadge({ points }: { points: number }) {
   );
 }
 
+function PointsCell({ studentId, points }: { studentId: string; points: number }) {
+  return (
+    <Link
+      href={`/students/${studentId}/poin`}
+      className="inline-flex flex-col items-start gap-1 rounded-md outline-offset-2 hover:opacity-90 focus-visible:outline focus-visible:outline-2"
+      style={{ outlineColor: "var(--accent)" }}
+      title="Lihat detail poin"
+    >
+      <PointBadge points={points} />
+      <StatusBadge points={points} />
+      <span className="text-[10px] font-semibold hover:underline" style={{ color: "var(--accent)" }}>
+        Info poin
+      </span>
+    </Link>
+  );
+}
+
 function FlashBanner({ msg, className = "mb-4" }: { msg: FlashMsg; className?: string }) {
   return (
     <div
@@ -640,9 +657,8 @@ export default function StudentsClient({
                       <div className="mt-0.5 break-all text-[11px]" style={{ color: "var(--text-muted)" }}>
                         {u.email}
                       </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <PointBadge points={totalPointsMap[u.id] ?? 0} />
-                        <StatusBadge points={totalPointsMap[u.id] ?? 0} />
+                      <div className="mt-2">
+                        <PointsCell studentId={u.id} points={totalPointsMap[u.id] ?? 0} />
                       </div>
                       <Link
                         href={`/students/${u.id}/cetak`}
@@ -659,8 +675,8 @@ export default function StudentsClient({
             <thead>
               <tr style={{ background: "var(--bg-primary)" }}>
                 {(selectedClass
-                  ? ["Siswa", "NISN", "Email", "Total poin", "Status", "Cetak"]
-                  : ["Siswa", "NISN", "Email", "Kelas", "Total poin", "Status", "Cetak"]
+                  ? ["Siswa", "NISN", "Email", "Total poin", "Status", "Aksi"]
+                  : ["Siswa", "NISN", "Email", "Kelas", "Total poin", "Status", "Aksi"]
                 ).map((h) => (
                   <th
                     key={h}
@@ -701,10 +717,7 @@ export default function StudentsClient({
                       </td>
                     )}
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex flex-col items-start gap-1">
-                        <PointBadge points={totalPointsMap[u.id] ?? 0} />
-                        <StatusBadge points={totalPointsMap[u.id] ?? 0} />
-                      </div>
+                      <PointsCell studentId={u.id} points={totalPointsMap[u.id] ?? 0} />
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -718,13 +731,22 @@ export default function StudentsClient({
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <Link
-                        href={`/students/${u.id}/cetak`}
-                        className="inline-flex min-h-11 items-center text-xs font-semibold hover:underline touch-manipulation"
-                        style={{ color: "var(--accent)" }}
-                      >
-                        Cetak surat
-                      </Link>
+                      <div className="flex flex-col items-start gap-1">
+                        <Link
+                          href={`/students/${u.id}/poin`}
+                          className="inline-flex min-h-11 items-center text-xs font-semibold hover:underline touch-manipulation"
+                          style={{ color: "var(--accent)" }}
+                        >
+                          Info poin
+                        </Link>
+                        <Link
+                          href={`/students/${u.id}/cetak`}
+                          className="inline-flex min-h-11 items-center text-xs font-semibold hover:underline touch-manipulation"
+                          style={{ color: "var(--accent)" }}
+                        >
+                          Cetak surat
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
