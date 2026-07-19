@@ -1,10 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { AccessLogCategory, AccessLogPortal } from "@/generated/prisma/client";
-import {
-  accessLogScopeWindow,
-  parseAccessLogScope,
-  type AccessLogScope,
-} from "@/lib/access-log-retention";
+import { accessLogRetainSince } from "@/lib/access-log-retention";
 
 export type AccessLogQuery = {
   from?: string | null;
@@ -13,7 +9,6 @@ export type AccessLogQuery = {
   portal?: string | null;
   action?: string | null;
   q?: string | null;
-  scope?: AccessLogScope;
   page?: number;
   perPage?: number;
 };
@@ -29,7 +24,6 @@ export function parseAccessLogQuery(sp: URLSearchParams): AccessLogQuery {
     portal: sp.get("portal"),
     action: sp.get("action"),
     q: sp.get("q"),
-    scope: parseAccessLogScope(sp.get("scope")),
     page,
     perPage,
   };
@@ -47,15 +41,13 @@ function parseDayEnd(raw: string): Date | null {
   return d;
 }
 
+/** Filter list: selalu dibatasi masa retensi 12 bulan (+ from/to opsional di dalamnya). */
 export function buildAccessLogWhere(q: AccessLogQuery, now = new Date()): Prisma.AccessLogWhereInput {
   const where: Prisma.AccessLogWhereInput = {};
   const and: Prisma.AccessLogWhereInput[] = [];
-  const scope = q.scope ?? "active";
-  const window = accessLogScopeWindow(scope, now);
 
-  let gte = window.gte;
+  let gte = accessLogRetainSince(now);
   let lte: Date | undefined;
-  let lt = window.lt;
 
   if (q.from?.trim()) {
     const from = parseDayStart(q.from);
@@ -63,18 +55,10 @@ export function buildAccessLogWhere(q: AccessLogQuery, now = new Date()): Prisma
   }
   if (q.to?.trim()) {
     const to = parseDayEnd(q.to);
-    if (to) {
-      if (lt && to >= lt) {
-        // clamp to just before archive/active boundary
-        lte = new Date(lt.getTime() - 1);
-      } else {
-        lte = to;
-      }
-    }
+    if (to) lte = to;
   }
 
   and.push({ createdAt: { gte } });
-  if (lt) and.push({ createdAt: { lt } });
   if (lte) and.push({ createdAt: { lte } });
 
   if (q.category && (Object.values(AccessLogCategory) as string[]).includes(q.category)) {

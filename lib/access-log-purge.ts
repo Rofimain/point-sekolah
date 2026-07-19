@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { accessLogRetainSince } from "@/lib/access-log-retention";
 
 /**
- * Hapus AccessLog (+ AuthLoginEvent) yang lebih tua dari masa retensi 24 bulan.
- * Dipanggil cron; gagal sebagian tidak throw kecuali error DB kritis.
+ * Hapus AccessLog (+ AuthLoginEvent) yang lebih tua dari 12 bulan.
+ * Dipanggil cron harian.
  */
 export async function purgeExpiredAccessLogs(now = new Date()): Promise<{
   accessLogsDeleted: number;

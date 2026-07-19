@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { purgeExpiredAccessLogs } from "@/lib/access-log-purge";
 
 /**
- * Purge AccessLog & AuthLoginEvent lebih tua dari 24 bulan.
+ * Purge AccessLog & AuthLoginEvent lebih tua dari 12 bulan.
  * Compose cron atau: curl -X POST -H "x-cron-secret: $CRON_SECRET" .../api/cron/access-log-purge
  */
 export async function POST(req: NextRequest) {
