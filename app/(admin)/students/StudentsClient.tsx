@@ -264,7 +264,7 @@ export default function StudentsClient({
       if (data.ortuTelegramLink) {
         try {
           await navigator.clipboard.writeText(data.ortuTelegramLink);
-          toast.success("Tautan untuk ortu sudah disalin — kirim lewat WA; ortu buka lalu Start.");
+          toast.success("Tautan Telegram ortu sudah disalin — kirim ke orang tua; mereka buka di Telegram lalu Start.");
         } catch {
           toast.info(data.ortuTelegramLink);
         }
