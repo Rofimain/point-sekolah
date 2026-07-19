@@ -14,7 +14,7 @@ import {
   type ViolationBagianRow,
 } from "@/lib/violation-sections";
 import { splitViolationName, violationNameSortOrder } from "@/lib/violation-name";
-import { ViolationTypePicker } from "@/components/ViolationTypePicker";
+import { ViolationTypePicker, type PickerViolationType } from "@/components/ViolationTypePicker";
 import type { Session } from "next-auth";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
 import { calendarTodayYmd } from "@/lib/incident-date";
@@ -26,6 +26,21 @@ import { SectionAccordion, useSectionAccordionState } from "@/components/Section
 const SESSIONS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
 const CRITICAL = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
 const WARNING = parseInt(process.env.NEXT_PUBLIC_WARNING_POINTS || "50", 10);
+
+type StudentFormRecord = {
+  id: string;
+  studentId: string;
+  violationTypeId: string;
+  session: string | null;
+  notes: string | null;
+  points: number;
+  date: string | Date;
+  createdByName: string | null;
+  evidenceImagePresent: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  violationType: { id: string; name: string; points: number };
+};
 
 function PointBadge({ points }: { points: number }) {
   const color = points >= CRITICAL ? "var(--danger)" : points >= WARNING ? "var(--warning)" : "var(--success)";
@@ -52,16 +67,17 @@ function AdjustmentDelta({ delta }: { delta: number }) {
   );
 }
 
-function CategoryBadge({ category }: { category: string }) {
+function CategoryBadge({ category }: { category?: string }) {
   const map: Record<string, [string, string]> = {
     RINGAN: ["var(--success-bg)", "var(--success)"],
     SEDANG: ["var(--warning-bg)", "var(--warning)"],
     BERAT: ["var(--danger-bg)", "var(--danger)"],
   };
-  const [bg, color] = map[category] || ["var(--bg-tertiary)", "var(--text-muted)"];
+  const key = category || "";
+  const [bg, color] = map[key] || ["var(--bg-tertiary)", "var(--text-muted)"];
   return (
     <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: bg, color }}>
-      {getCategoryLabel(category)}
+      {getCategoryLabel(key)}
     </span>
   );
 }
@@ -82,8 +98,8 @@ export default function StudentFormClient({
   bagian = [],
 }: {
   session: Session;
-  violationTypes: any[];
-  records: any[];
+  violationTypes: PickerViolationType[];
+  records: StudentFormRecord[];
   totalPoints: number;
   pointAdjustments?: {
     id: string;
@@ -119,7 +135,7 @@ export default function StudentFormClient({
   const [tataSearch, setTataSearch] = useState("");
   const [tataQuery, setTataQuery] = useState("");
 
-  const selectedVt = violationTypes.find((v: any) => v.id === vtId);
+  const selectedVt = violationTypes.find((v) => v.id === vtId);
   const resolvedPoints = selectedVt?.points ?? 0;
   const needEvidence = violationNeedsEvidence(resolvedPoints);
   const threshold = heavyViolationPointsThreshold();
@@ -143,7 +159,7 @@ export default function StudentFormClient({
     const parts = q ? q.split(/\s+/).filter(Boolean) : [];
     const filtered = !parts.length
       ? sortedTypes
-      : sortedTypes.filter((v: any) => {
+      : sortedTypes.filter((v) => {
           const { code, title } = splitViolationName(v.name || "");
           const blob = [
             v.name,
@@ -257,7 +273,7 @@ export default function StudentFormClient({
         />
       )}
       <TopBar />
-      <div className="mx-auto max-w-2xl px-3 pt-4 pb-safe-bottom sm:px-5 sm:pt-5">
+      <main className="mx-auto max-w-2xl px-3 pt-4 pb-safe-bottom sm:px-5 sm:pt-5">
         <div
           className="mb-4 flex items-center gap-3 rounded-xl p-3 sm:gap-4 sm:p-4"
           style={{ background: "var(--bg-sidebar)" }}
@@ -426,7 +442,7 @@ export default function StudentFormClient({
                     onToggle={() => toggle(key)}
                   >
                     <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
-                      {items.map((v: any) => {
+                      {items.map((v) => {
                         const { code, title } = splitViolationName(v.name || "");
                         return (
                           <li key={v.id} className="px-4 py-3 flex items-start justify-between gap-3">
@@ -694,7 +710,7 @@ export default function StudentFormClient({
                 <>
                   {/* Mobile: stacked cards — avoids clipped table columns */}
                   <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
-                    {records.map((r: any) => (
+                    {records.map((r) => (
                       <li key={r.id} className="px-4 py-3 space-y-2" style={{ borderColor: "var(--border)" }}>
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
@@ -777,7 +793,7 @@ export default function StudentFormClient({
                         </tr>
                       </thead>
                       <tbody>
-                        {records.map((r: any) => (
+                        {records.map((r) => (
                           <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
                             <td
                               className="px-4 py-3 text-xs whitespace-nowrap"
@@ -932,7 +948,7 @@ export default function StudentFormClient({
             </div>
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

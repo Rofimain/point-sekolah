@@ -132,7 +132,7 @@ function StudentLoginForm() {
 
 export default function StudentLoginPage() {
   return (
-    <div
+    <main
       className="flex min-h-[100dvh] flex-col items-center justify-center px-4 pt-10 pb-safe-bottom"
       style={{ background: "var(--bg-primary)" }}
     >
@@ -145,6 +145,6 @@ export default function StudentLoginPage() {
       >
         <StudentLoginForm />
       </Suspense>
-    </div>
+    </main>
   );
 }

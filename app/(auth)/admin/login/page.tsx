@@ -128,7 +128,7 @@ function AdminLoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <div
+    <main
       className="flex min-h-[100dvh] flex-col items-center justify-center px-4 pt-10 pb-safe-bottom"
       style={{ background: "var(--bg-primary)" }}
     >
@@ -141,6 +141,6 @@ export default function AdminLoginPage() {
       >
         <AdminLoginForm />
       </Suspense>
-    </div>
+    </main>
   );
 }

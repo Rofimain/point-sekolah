@@ -61,6 +61,11 @@ assert(records.includes("createPortal"), "Records modals use createPortal");
 assert(records.includes("Z_MODAL_CLASS"), "Records modals use Z_MODAL_CLASS");
 assert(!/fixed inset-0 z-50/.test(records), "Records no longer uses z-50 overlay");
 assert(records.includes("md:hidden"), "Records has mobile card view");
+assert(!records.includes("maxWidth: 160"), "Records pelanggaran col not clipped at 160px");
+assert(records.includes("line-clamp-2 break-words overflow-hidden"), "Records pelanggaran allows 2-line wrap");
+assert(records.includes("title={r.violationType.name}"), "Records pelanggaran has full-name tooltip");
+assert(records.includes("min-w-[960px]"), "Records table min-width leaves room for pelanggaran");
+assert(records.includes("min-w-[220px] max-w-[360px]"), "Records pelanggaran uses Tailwind width bounds");
 
 const users = read("app/(admin)/users/UsersClient.tsx");
 assert(users.includes("createPortal"), "Users modal uses createPortal");
@@ -70,6 +75,14 @@ assert(users.includes("md:hidden"), "Users has mobile card view");
 const chrome = read("components/layouts/AdminChrome.tsx");
 assert(chrome.includes("lockAppScroll"), "AdminChrome uses lockAppScroll for drawer");
 assert(chrome.includes('id="admin-main-scroll"'), "Admin main scroll container id");
+assert(chrome.includes("<main"), "AdminChrome wraps content in main landmark");
+
+const studentLogin = read("app/(auth)/login/page.tsx");
+assert(studentLogin.includes("<main"), "Student login uses main landmark");
+const adminLogin = read("app/(auth)/admin/login/page.tsx");
+assert(adminLogin.includes("<main"), "Admin login uses main landmark");
+const studentForm = read("app/(student)/form/StudentFormClient.tsx");
+assert(studentForm.includes("<main"), "Student form uses main landmark");
 
 const topbar = read("components/layouts/TopBar.tsx");
 assert(topbar.includes("Buka menu navigasi"), "TopBar hamburger aria-label");

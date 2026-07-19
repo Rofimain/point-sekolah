@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
 import { formatDate, formatIncidentDateOnly, formatInputDateTime } from "@/lib/utils";
-import { ViolationTypePicker } from "@/components/ViolationTypePicker";
+import { ViolationTypePicker, type PickerViolationType } from "@/components/ViolationTypePicker";
 import type { RecordsRow, ViolationRecordListItem } from "./records-view";
 import { AddRecordStudentPicker, type PickerStudent } from "./AddRecordStudentPicker";
 import { violationNeedsEvidence, heavyViolationPointsThreshold } from "@/lib/heavy-violation";
@@ -38,7 +38,7 @@ export default function RecordsClient({
   page: number;
   perPage: number;
   classes: { id: string; name: string; grade: string }[];
-  violationTypes: any[];
+  violationTypes: PickerViolationType[];
   bagian?: ViolationBagianRow[];
   studentsForPicker: PickerStudent[];
   totalPointsMap: Record<string, number>;
@@ -55,7 +55,7 @@ export default function RecordsClient({
     return classes.filter((c) => c.grade === searchParams.grade);
   }, [classes, searchParams.grade]);
 
-  const [editModal, setEditModal] = useState<any>(null);
+  const [editModal, setEditModal] = useState<ViolationRecordListItem | null>(null);
   const [editPoints, setEditPoints] = useState(0);
   const [editNotes, setEditNotes] = useState("");
   const [editVtId, setEditVtId] = useState("");
@@ -191,7 +191,7 @@ export default function RecordsClient({
       return;
     }
     const updated = await res.json();
-    const vt = violationTypes.find((v: any) => v.id === editVtId);
+    const vt = violationTypes.find((v) => v.id === editVtId);
     setSuccessSheet({
       title: "Berhasil",
       subtitle: "Perubahan catatan pelanggaran telah disimpan.",
@@ -216,7 +216,7 @@ export default function RecordsClient({
       toast.error("Tanggal kejadian wajib diisi.");
       return;
     }
-    const vt = violationTypes.find((v: any) => v.id === addVtId);
+    const vt = violationTypes.find((v) => v.id === addVtId);
     const pts = vt?.points ?? 0;
     if (violationNeedsEvidence(pts) && addEvidenceImages.length === 0 && addSignatureText.trim().length < 12) {
       toast.error(
@@ -297,7 +297,7 @@ export default function RecordsClient({
 
   const grades = ["X", "XI", "XII"];
 
-  const addResolvedPts = violationTypes.find((v: any) => v.id === addVtId)?.points ?? 0;
+  const addResolvedPts = violationTypes.find((v) => v.id === addVtId)?.points ?? 0;
   const addNeedEvidence = violationNeedsEvidence(addResolvedPts);
   const editNeedEvidence = editModal ? violationNeedsEvidence(editPoints) : false;
   const heavyTh = heavyViolationPointsThreshold();
@@ -632,7 +632,7 @@ export default function RecordsClient({
 
             {/* md+: table */}
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[800px]">
+              <table className="w-full min-w-[960px]">
                 <thead>
                   <tr style={{ background: "color-mix(in srgb, var(--bg-primary) 75%, var(--accent-light))" }}>
                     {[
@@ -748,8 +748,10 @@ export default function RecordsClient({
                         <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
                           {r.student.class?.name || "—"}
                         </td>
-                        <td className="px-4 py-3 text-xs" style={{ color: "var(--text-secondary)", maxWidth: 160 }}>
-                          <span className="line-clamp-1">{r.violationType.name}</span>
+                        <td className="min-w-[220px] max-w-[360px] px-4 py-3 text-xs" style={{ color: "var(--text-secondary)" }}>
+                          <span className="line-clamp-2 break-words overflow-hidden" title={r.violationType.name}>
+                            {r.violationType.name}
+                          </span>
                         </td>
                         <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
                           {formatDate(r.date)}
@@ -902,7 +904,7 @@ export default function RecordsClient({
                       value={editVtId}
                       onChange={(id) => {
                         setEditVtId(id);
-                        const vt = violationTypes.find((v: any) => v.id === id);
+                        const vt = violationTypes.find((v) => v.id === id);
                         if (vt) setEditPoints(vt.points);
                       }}
                     />
