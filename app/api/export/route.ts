@@ -5,6 +5,7 @@ import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import ExcelJS from "exceljs";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { visibleViolationRecordWhere } from "@/lib/record-visibility";
 
 export async function GET(req: NextRequest) {
   const auth = await requireManageData();
@@ -15,10 +16,12 @@ export async function GET(req: NextRequest) {
   const classId = searchParams.get("classId");
   const search = searchParams.get("search");
 
-  const where: any = { deletedAt: null };
-  if (search) where.student = { name: { contains: search, mode: "insensitive" } };
-  if (classId) where.student = { ...where.student, classId };
-  if (grade) where.student = { ...where.student, class: { grade } };
+  const studentFilter: Record<string, unknown> = { deletedAt: null };
+  if (search) studentFilter.name = { contains: search, mode: "insensitive" };
+  if (classId) studentFilter.classId = classId;
+  if (grade) studentFilter.class = { grade };
+
+  const where = visibleViolationRecordWhere({ student: studentFilter });
 
   const [records, effectivePointsMap] = await Promise.all([
     prisma.violationRecord.findMany({

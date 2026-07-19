@@ -17,7 +17,7 @@ export function isPointAdjustmentTableMissing(e: unknown): boolean {
 export async function getGrossPointsByStudent(): Promise<Map<string, number>> {
   const rows = await prisma.violationRecord.groupBy({
     by: ["studentId"],
-    where: { deletedAt: null },
+    where: { deletedAt: null, student: { deletedAt: null } },
     _sum: { points: true },
   });
   const m = new Map<string, number>();
@@ -32,6 +32,7 @@ export async function getAdjustmentSumByStudent(): Promise<Map<string, number>> 
   try {
     const rows = await prisma.pointAdjustment.groupBy({
       by: ["studentId"],
+      where: { student: { deletedAt: null } },
       _sum: { pointsDelta: true },
     });
     for (const r of rows) {

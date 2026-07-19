@@ -11,6 +11,7 @@ import { replaceRecordEvidenceImages } from "@/lib/record-evidence-images";
 import { formatStaffDisplayName } from "@/lib/staff-roles";
 import { recordDataAccessLog } from "@/lib/access-log";
 import { parseRecordsListPagination } from "@/lib/records-pagination";
+import { visibleViolationRecordWhere } from "@/lib/record-visibility";
 
 const studentRecordSelect = {
   id: true,
@@ -182,7 +183,7 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const { page, perPage, skip } = parseRecordsListPagination(sp);
 
-  const where = { deletedAt: null } as const;
+  const where = visibleViolationRecordWhere();
   const [records, total] = await Promise.all([
     prisma.violationRecord.findMany({
       where,

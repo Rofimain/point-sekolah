@@ -6,6 +6,7 @@ import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import { getSafeServerSession } from "@/lib/auth";
 import { canManageData } from "@/lib/staff-roles";
 import { listViolationBagian } from "@/lib/violation-bagian";
+import { visibleViolationRecordWhere } from "@/lib/record-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -94,8 +95,7 @@ export default async function RecordsPage({
     }
     total = studentCount;
   } else {
-    const recordWhere: Prisma.ViolationRecordWhereInput = { deletedAt: null };
-    const studentNested: Prisma.UserWhereInput = {};
+    const studentNested: Prisma.UserWhereInput = { deletedAt: null };
     if (query.search) {
       studentNested.name = { contains: query.search, mode: "insensitive" };
     }
@@ -105,9 +105,7 @@ export default async function RecordsPage({
     if (query.grade) {
       studentNested.class = { grade: query.grade };
     }
-    if (Object.keys(studentNested).length > 0) {
-      recordWhere.student = studentNested;
-    }
+    const recordWhere = visibleViolationRecordWhere({ student: studentNested });
 
     const [records, count] = await Promise.all([
       prisma.violationRecord.findMany({

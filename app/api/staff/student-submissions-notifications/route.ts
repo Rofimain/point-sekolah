@@ -32,6 +32,8 @@ export async function GET() {
   const rows = await prisma.violationRecord.findMany({
     where: {
       createdAt: { gte: since },
+      deletedAt: null,
+      student: { deletedAt: null },
     },
     orderBy: { createdAt: "desc" },
     take: LIMIT,

@@ -19,21 +19,29 @@ export async function softDeleteUser(opts: { userId: string }): Promise<{ ok: tr
   if (saErr) return { ok: false, error: saErr };
 
   const stamp = Date.now().toString(36);
-  await prisma.user.update({
-    where: { id: existing.id },
-    data: {
-      deletedAt: new Date(),
-      active: false,
-      status: "LEFT",
-      authVersion: { increment: 1 },
-      // Bebaskan unique agar email/NISN/NIP bisa dipakai lagi
-      email: `deleted.${stamp}.${existing.id}.${existing.email}`.slice(0, 190),
-      nisn: existing.nisn ? `del_${stamp}_${existing.nisn}`.slice(0, 64) : null,
-      nip: existing.nip ? `del_${stamp}_${existing.nip}`.slice(0, 64) : null,
-      googleSub: null,
-      parentTelegramLinkToken: null,
-    },
-  });
+  const now = new Date();
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        deletedAt: now,
+        active: false,
+        status: "LEFT",
+        authVersion: { increment: 1 },
+        // Bebaskan unique agar email/NISN/NIP bisa dipakai lagi
+        email: `deleted.${stamp}.${existing.id}.${existing.email}`.slice(0, 190),
+        nisn: existing.nisn ? `del_${stamp}_${existing.nisn}`.slice(0, 64) : null,
+        nip: existing.nip ? `del_${stamp}_${existing.nip}`.slice(0, 64) : null,
+        googleSub: null,
+        parentTelegramLinkToken: null,
+      },
+    }),
+    /** Sembunyikan catatan pelanggaran siswa yang dihapus dari daftar operasional. */
+    prisma.violationRecord.updateMany({
+      where: { studentId: existing.id, deletedAt: null },
+      data: { deletedAt: now },
+    }),
+  ]);
   return { ok: true };
 }
 

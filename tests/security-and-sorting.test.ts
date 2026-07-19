@@ -16,6 +16,7 @@ import {
 import { computeLockUntil, isAccountLocked } from "../lib/auth-lockout";
 import { activeFlagFromStatus, canUserLogin, statusFromActiveToggle } from "../lib/user-status";
 import { requiresPasswordChange } from "../lib/password-change";
+import { visibleViolationRecordWhere } from "../lib/record-visibility";
 import { buildUserLookupMaps, matchImportUser } from "../lib/user-import-match";
 import {
   GOOGLE_NOT_REGISTERED_MESSAGE,
@@ -92,6 +93,21 @@ test("requires password change when passwordChangedAt is null", () => {
   assert.equal(requiresPasswordChange(null), true);
   assert.equal(requiresPasswordChange(undefined), true);
   assert.equal(requiresPasswordChange(new Date()), false);
+});
+
+test("visible violation records exclude soft-deleted students", () => {
+  const base = visibleViolationRecordWhere();
+  assert.equal(base.deletedAt, null);
+  assert.deepEqual(base.student, { deletedAt: null });
+
+  const withSearch = visibleViolationRecordWhere({
+    student: { name: { contains: "Rizky", mode: "insensitive" } },
+    date: { gte: new Date("2026-01-01") },
+  });
+  assert.equal(withSearch.deletedAt, null);
+  assert.equal((withSearch.student as { deletedAt: null }).deletedAt, null);
+  assert.equal((withSearch.student as { name: { contains: string } }).name.contains, "Rizky");
+  assert.ok(withSearch.date);
 });
 
 test("google error messages map AccessDenied to unregistered copy", () => {

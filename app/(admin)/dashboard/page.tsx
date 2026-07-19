@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import { indonesianAcademicYearLabel } from "@/lib/academic-year";
 import DashboardRankedTables from "@/components/dashboard/DashboardRankedTables";
+import { visibleViolationRecordWhere } from "@/lib/record-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -29,18 +30,22 @@ async function getDashboardData() {
     await Promise.all([
       prisma.user.count({ where: { role: "STUDENT", status: "ACTIVE", deletedAt: null } }),
       prisma.user.count({ where: { role: { not: "STUDENT" }, status: "ACTIVE", deletedAt: null } }),
-      prisma.violationRecord.count({ where: { date: { gte: startOfMonth }, deletedAt: null } }),
       prisma.violationRecord.count({
-        where: { date: { gte: lastMonthStart, lte: endLastMonth }, deletedAt: null },
+        where: visibleViolationRecordWhere({ date: { gte: startOfMonth } }),
+      }),
+      prisma.violationRecord.count({
+        where: visibleViolationRecordWhere({ date: { gte: lastMonthStart, lte: endLastMonth } }),
       }),
       prisma.violationRecord.groupBy({
         by: ["violationTypeId"],
-        where: { date: { gte: startOfMonth }, deletedAt: null },
+        where: visibleViolationRecordWhere({ date: { gte: startOfMonth } }),
         _count: { id: true },
       }),
       getEffectivePointsMap(),
       ...monthRanges.map(({ d, end }) =>
-        prisma.violationRecord.count({ where: { date: { gte: d, lte: end }, deletedAt: null } })
+        prisma.violationRecord.count({
+          where: visibleViolationRecordWhere({ date: { gte: d, lte: end } }),
+        })
       ),
     ]);
 
