@@ -7,21 +7,12 @@ import { clearPasswordAttempts, passwordAttemptStatus, recordFailedPasswordAttem
 import { validateNewPassword } from "@/lib/password-policy";
 import { canUserLogin } from "@/lib/user-status";
 import { recordDataAccessLog } from "@/lib/access-log";
-
-function isSameOrigin(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  if (!origin) return false;
-  try {
-    return new URL(origin).host === request.nextUrl.host;
-  } catch {
-    return false;
-  }
-}
+import { isSameOriginRequest } from "@/lib/same-origin";
 
 export async function PATCH(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!isSameOrigin(request)) return NextResponse.json({ error: "Permintaan tidak valid." }, { status: 403 });
+  if (!isSameOriginRequest(request)) return NextResponse.json({ error: "Permintaan tidak valid." }, { status: 403 });
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
     return NextResponse.json({ error: "Content-Type harus application/json." }, { status: 415 });
   }
