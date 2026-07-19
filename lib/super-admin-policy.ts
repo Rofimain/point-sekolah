@@ -23,7 +23,7 @@ export async function assertCanDemoteSuperAdmin(userId: string): Promise<string 
   return null;
 }
 
-/** Soft-delete / nonaktifkan — tidak boleh menghilangkan satu-satunya Super Admin aktif. */
+/** Soft-delete / hard-delete — tidak boleh menghilangkan satu-satunya Super Admin aktif. */
 export async function assertCanDeleteSuperAdmin(userId: string): Promise<string | null> {
   const me = await prisma.user.findUnique({
     where: { id: userId },

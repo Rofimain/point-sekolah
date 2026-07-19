@@ -248,13 +248,17 @@ export default function UsersClient({
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Nonaktifkan user "${name}" (status Keluar)?\nAkun tidak bisa login; histori pelanggaran tetap tersimpan.`)) return;
+    const confirmText = window.prompt(
+      `Hapus PERMANEN akun "${name}"?\n\nAkun, foto, catatan pelanggaran, dan remisi terkait akan hilang dan tidak bisa dikembalikan.\n\nKetik HAPUS PERMANEN untuk lanjut:`
+    );
+    if (confirmText !== "HAPUS PERMANEN") return;
     const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      toast.error(data.error || "Gagal menonaktifkan");
+      toast.error(data.error || "Gagal menghapus");
       return;
     }
+    toast.success(`Akun "${name}" dihapus permanen.`);
     router.refresh();
   }
 
@@ -470,9 +474,9 @@ export default function UsersClient({
     }
     const ids = Array.from(selectedIds);
     const confirmText = window.prompt(
-      `Anda akan menandai ${ids.length} akun siswa sebagai Keluar (soft delete).\nHistori pelanggaran tetap tersimpan; akun tidak bisa login.\n\nKetik HAPUS untuk lanjut:`
+      `Hapus PERMANEN ${ids.length} akun siswa?\n\nAkun + catatan pelanggaran terkait hilang permanen.\n\nKetik HAPUS PERMANEN untuk lanjut:`
     );
-    if (confirmText !== "HAPUS") return;
+    if (confirmText !== "HAPUS PERMANEN") return;
     setLoading(true);
     try {
       const res = await fetch("/api/users", {
@@ -481,12 +485,12 @@ export default function UsersClient({
         body: JSON.stringify({ ids }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Gagal menonaktifkan");
-      toast.success(`Berhasil menandai ${data.count ?? ids.length} akun siswa sebagai Keluar.`);
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus");
+      toast.success(`Berhasil menghapus permanen ${data.count ?? ids.length} akun siswa.`);
       setSelectedIds(new Set());
       router.refresh();
     } catch (e: any) {
-      toast.error(e?.message || "Gagal menonaktifkan");
+      toast.error(e?.message || "Gagal menghapus");
     } finally {
       setLoading(false);
     }
@@ -661,9 +665,9 @@ export default function UsersClient({
                 const classObj = classes.find((c: any) => c.id === classId);
                 const label = classObj ? formatClassLabel(classObj) : "kelas terpilih";
                 const confirmText = window.prompt(
-                  `Anda akan menandai SEMUA akun siswa di ${label} sebagai Keluar (soft delete).\nHistori pelanggaran tetap tersimpan; akun tidak bisa login.\n\nKetik HAPUS untuk lanjut:`
+                  `Hapus PERMANEN SEMUA akun siswa di ${label}?\n\nAkun + catatan pelanggaran terkait hilang permanen.\n\nKetik HAPUS PERMANEN untuk lanjut:`
                 );
-                if (confirmText !== "HAPUS") return;
+                if (confirmText !== "HAPUS PERMANEN") return;
                 setLoading(true);
                 try {
                   const res = await fetch("/api/users", {
@@ -672,12 +676,12 @@ export default function UsersClient({
                     body: JSON.stringify({ classId }),
                   });
                   const data = await res.json().catch(() => ({}));
-                  if (!res.ok) throw new Error(data.error || "Gagal menonaktifkan");
-                  toast.success(`Berhasil menandai ${data.count ?? 0} akun siswa di ${label} sebagai Keluar.`);
+                  if (!res.ok) throw new Error(data.error || "Gagal menghapus");
+                  toast.success(`Berhasil menghapus permanen ${data.count ?? 0} akun siswa di ${label}.`);
                   setSelectedIds(new Set());
                   router.refresh();
                 } catch (e: any) {
-                  toast.error(e?.message || "Gagal menonaktifkan");
+                  toast.error(e?.message || "Gagal menghapus");
                 } finally {
                   setLoading(false);
                 }

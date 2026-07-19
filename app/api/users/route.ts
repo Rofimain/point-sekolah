@@ -11,7 +11,7 @@ import { parseUserPhotoInput } from "@/lib/user-photo";
 import { validateNewPassword } from "@/lib/password-policy";
 import { ACTIVE_USER_WHERE, lifecycleFieldsForStatus, statusFromActiveToggle } from "@/lib/user-status";
 import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
-import { softDeleteStudentsByClassId, softDeleteUsersByIds } from "@/lib/user-soft-delete";
+import { hardDeleteStudentsByClassId, hardDeleteUsersByIds } from "@/lib/user-hard-delete";
 import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
@@ -140,15 +140,14 @@ export async function DELETE(req: NextRequest) {
   const ids = Array.isArray(body?.ids) ? body.ids.filter((x: unknown) => typeof x === "string" && x.trim()) : [];
   if (!classId && ids.length < 1) return NextResponse.json({ error: "ids atau classId wajib diisi" }, { status: 400 });
 
-  const actor = { id: session.user.id, name: session.user.name };
-
   if (classId) {
-    const count = await softDeleteStudentsByClassId({
-      classId,
-      actor,
-      reason: "bulk_delete_by_class",
-    });
-    return NextResponse.json({ ok: true, count, softDeleted: true });
+    try {
+      const count = await hardDeleteStudentsByClassId({ classId });
+      return NextResponse.json({ ok: true, count, permanentlyDeleted: true });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Gagal menghapus";
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
   }
 
   const found = await prisma.user.findMany({
@@ -164,10 +163,13 @@ export async function DELETE(req: NextRequest) {
     );
   }
 
-  const count = await softDeleteUsersByIds({
-    ids: found.map((u) => u.id),
-    actor,
-    reason: "bulk_delete_students",
-  });
-  return NextResponse.json({ ok: true, count, softDeleted: true });
+  try {
+    const count = await hardDeleteUsersByIds({
+      ids: found.map((u) => u.id),
+    });
+    return NextResponse.json({ ok: true, count, permanentlyDeleted: true });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Gagal menghapus";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
 }

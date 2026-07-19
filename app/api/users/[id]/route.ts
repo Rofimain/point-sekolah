@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role, UserStatus } from "@/generated/prisma/client";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
-import { assertCanDeleteSuperAdmin, assertCanDemoteSuperAdmin, LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
+import { assertCanDemoteSuperAdmin, LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
 import { canDeleteUser, canManageData, canModifyUser, isAdminRole } from "@/lib/staff-roles";
 import { validateNewPassword } from "@/lib/password-policy";
 import { parseUserPhotoPatch } from "@/lib/user-photo";
@@ -15,7 +15,7 @@ import {
   statusFromActiveToggle,
 } from "@/lib/user-status";
 import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
-import { softDeleteUser } from "@/lib/user-soft-delete";
+import { hardDeleteUser } from "@/lib/user-hard-delete";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 const VALID_STATUSES = new Set<string>(Object.values(UserStatus));
@@ -166,13 +166,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!canDeleteUser(session.user.role, existing.role)) {
     return NextResponse.json({ error: "Admin tidak boleh menghapus akun Admin atau Super Admin." }, { status: 403 });
   }
-  const delErr = await assertCanDeleteSuperAdmin(id);
-  if (delErr) return NextResponse.json({ error: delErr }, { status: 400 });
-  const result = await softDeleteUser({
-    userId: id,
-    actor: { id: session.user.id, name: session.user.name },
-    reason: "admin_delete",
-  });
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 404 });
-  return NextResponse.json({ ok: true, softDeleted: true });
+  const result = await hardDeleteUser({ userId: id });
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+  return NextResponse.json({ ok: true, permanentlyDeleted: true });
 }
