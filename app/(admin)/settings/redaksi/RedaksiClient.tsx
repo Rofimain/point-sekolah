@@ -1,33 +1,59 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PrintButton } from "@/components/PrintButton";
 import {
   PRINT_PLACEHOLDERS,
-  escapeHtml,
   sortPrintTemplates,
 } from "@/lib/print-templates";
+import {
+  DocumentEditor,
+  DocumentPrintView,
+  type DocumentEditorHandle,
+} from "@/components/document-editor";
+import {
+  DEFAULT_PAGE_SETTINGS,
+  parsePageSettings,
+  serializePageSettings,
+  type DocumentPageSettings,
+} from "@/lib/document-page";
+import {
+  buildPrintableDocumentHtml,
+  buildSampleVars,
+  plainTextToDocumentHtml,
+} from "@/lib/document-html";
 
 export type PrintTemplateRow = {
   id: string;
   slug: string;
   title: string;
   body: string;
+  pageSettings?: string | null;
   sortOrder: number;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 };
 
+type SaveStatus = "saved" | "saving" | "unsaved" | "error";
+
 export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[] }) {
   const router = useRouter();
+  const editorRef = useRef<DocumentEditorHandle>(null);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextEditorChange = useRef(true);
+
   const [templates, setTemplates] = useState(initial);
   const [selectedId, setSelectedId] = useState(initial[0]?.id ?? "");
   const [title, setTitle] = useState(initial[0]?.title ?? "");
   const [slug, setSlug] = useState(initial[0]?.slug ?? "");
-  const [body, setBody] = useState(initial[0]?.body ?? "");
+  const [body, setBody] = useState(() => plainTextToDocumentHtml(initial[0]?.body ?? ""));
+  const [pageSettings, setPageSettings] = useState<DocumentPageSettings>(() =>
+    parsePageSettings(initial[0]?.pageSettings)
+  );
+  const [editorKey, setEditorKey] = useState(initial[0]?.id ?? "empty");
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -39,49 +65,100 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
     [templates, selectedId]
   );
 
+  const selectedSettingsJson = selected ? serializePageSettings(parsePageSettings(selected.pageSettings)) : "";
+  const currentSettingsJson = serializePageSettings(pageSettings);
+
   const dirty = selected
-    ? selected.title !== title || selected.slug !== slug || selected.body !== body
+    ? selected.title !== title ||
+      selected.slug !== slug ||
+      plainTextToDocumentHtml(selected.body) !== body ||
+      selectedSettingsJson !== currentSettingsJson
     : false;
+
+  useEffect(() => {
+    if (dirty) setSaveStatus((s) => (s === "saving" ? s : "unsaved"));
+  }, [dirty]);
 
   function selectTemplate(row: PrintTemplateRow) {
     if (dirty && !confirm("Ada perubahan yang belum disimpan. Pindah template?")) return;
     setSelectedId(row.id);
     setTitle(row.title);
     setSlug(row.slug);
-    setBody(row.body);
+    setBody(plainTextToDocumentHtml(row.body));
+    setPageSettings(parsePageSettings(row.pageSettings));
+    setEditorKey(row.id + ":" + String(row.updatedAt ?? ""));
+    skipNextEditorChange.current = true;
     setMsg(null);
     setShowPreview(false);
+    setSaveStatus("saved");
   }
 
   function insertPlaceholder(key: string) {
-    const token = `{{${key}}}`;
-    setBody((prev) => (prev ? `${prev}${prev.endsWith("\n") ? "" : "\n"}${token}` : token));
+    editorRef.current?.insertPlaceholder(key);
+    editorRef.current?.focus();
   }
 
-  async function saveCurrent() {
-    if (!selectedId) return;
-    setSaving(true);
-    setMsg(null);
-    try {
-      const res = await fetch(`/api/print-templates/${selectedId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, slug, body }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || "Gagal menyimpan");
-      setTemplates((prev) => sortPrintTemplates(prev.map((t) => (t.id === selectedId ? { ...t, ...d } : t))));
-      setTitle(d.title);
-      setSlug(d.slug);
-      setBody(d.body);
-      setMsg({ type: "ok", text: "Template disimpan." });
-      router.refresh();
-    } catch (err: unknown) {
-      setMsg({ type: "err", text: err instanceof Error ? err.message : "Gagal menyimpan" });
-    } finally {
-      setSaving(false);
+  const saveCurrent = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!selectedId) return;
+      const html = editorRef.current?.getHTML() ?? body;
+      const settings = editorRef.current?.getPageSettings() ?? pageSettings;
+      setSaving(true);
+      setSaveStatus("saving");
+      if (!opts?.silent) setMsg(null);
+      try {
+        const res = await fetch(`/api/print-templates/${selectedId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title,
+            slug,
+            body: html,
+            pageSettings: settings,
+          }),
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.error || "Gagal menyimpan");
+        setTemplates((prev) => sortPrintTemplates(prev.map((t) => (t.id === selectedId ? { ...t, ...d } : t))));
+        setTitle(d.title);
+        setSlug(d.slug);
+        setBody(d.body);
+        setPageSettings(parsePageSettings(d.pageSettings));
+        skipNextEditorChange.current = true;
+        setSaveStatus("saved");
+        if (!opts?.silent) setMsg({ type: "ok", text: "Template disimpan." });
+        router.refresh();
+      } catch (err: unknown) {
+        setSaveStatus("error");
+        setMsg({ type: "err", text: err instanceof Error ? err.message : "Gagal menyimpan" });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [selectedId, body, pageSettings, title, slug, router]
+  );
+
+  useEffect(() => {
+    if (!dirty || !selectedId) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      void saveCurrent({ silent: true });
+    }, 2500);
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, [dirty, body, pageSettings, title, slug, selectedId, saveCurrent]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        void saveCurrent();
+      }
     }
-  }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [saveCurrent]);
 
   async function createTemplate() {
     const titleValue = newTitle.trim();
@@ -99,6 +176,9 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
         body: JSON.stringify({
           title: titleValue,
           body: source?.body ?? "",
+          pageSettings: source?.pageSettings
+            ? parsePageSettings(source.pageSettings)
+            : DEFAULT_PAGE_SETTINGS,
         }),
       });
       const d = await res.json().catch(() => ({}));
@@ -107,10 +187,13 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
       setSelectedId(d.id);
       setTitle(d.title);
       setSlug(d.slug);
-      setBody(d.body);
+      setBody(plainTextToDocumentHtml(d.body));
+      setPageSettings(parsePageSettings(d.pageSettings));
+      setEditorKey(d.id);
       setAdding(false);
       setNewTitle("");
       setCopyFromId("");
+      setSaveStatus("saved");
       setMsg({ type: "ok", text: "Jenis surat ditambahkan." });
       router.refresh();
     } catch (err: unknown) {
@@ -136,13 +219,18 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
         setSelectedId(first.id);
         setTitle(first.title);
         setSlug(first.slug);
-        setBody(first.body);
+        setBody(plainTextToDocumentHtml(first.body));
+        setPageSettings(parsePageSettings(first.pageSettings));
+        setEditorKey(first.id);
       } else {
         setSelectedId("");
         setTitle("");
         setSlug("");
         setBody("");
+        setPageSettings(DEFAULT_PAGE_SETTINGS);
+        setEditorKey("empty");
       }
+      setSaveStatus("saved");
       setMsg({ type: "ok", text: "Jenis surat dihapus." });
       router.refresh();
     } catch (err: unknown) {
@@ -153,19 +241,12 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
   }
 
   function downloadBlank() {
-    const safeTitle = escapeHtml(title || "template");
-    const safeBody = escapeHtml(body);
-    const html = `<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="utf-8" />
-<title>${safeTitle}</title>
-<style>
-  body { font-family: 'Courier New', Courier, monospace; max-width: 720px; margin: 2rem auto; line-height: 1.55; white-space: pre-wrap; }
-</style>
-</head>
-<body>${safeBody}</body>
-</html>`;
+    const html = buildPrintableDocumentHtml({
+      title: title || "template",
+      bodyHtml: editorRef.current?.getHTML() ?? body,
+      pageSettings: editorRef.current?.getPageSettings() ?? pageSettings,
+      vars: null,
+    });
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -174,6 +255,40 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  function handlePrint() {
+    window.print();
+  }
+
+  function onEditorChange(html: string, settings: DocumentPageSettings) {
+    if (skipNextEditorChange.current) {
+      skipNextEditorChange.current = false;
+      // Sinkronkan baseline ke HTML TipTap agar tidak dianggap dirty saat buka dokumen.
+      setBody(html);
+      setPageSettings(settings);
+      setTemplates((prev) =>
+        prev.map((t) =>
+          t.id === selectedId
+            ? { ...t, body: html, pageSettings: serializePageSettings(settings) }
+            : t
+        )
+      );
+      return;
+    }
+    setBody(html);
+    setPageSettings(settings);
+  }
+
+  const statusLabel =
+    saveStatus === "saving"
+      ? "Saving…"
+      : saveStatus === "saved"
+        ? "Saved"
+        : saveStatus === "unsaved"
+          ? "Unsaved Changes"
+          : "Gagal menyimpan";
+
+  const previewVars = useMemo(() => buildSampleVars(), []);
 
   return (
     <div>
@@ -185,7 +300,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
           Redaksi cetak
         </h1>
         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-          Edit master surat, tambah/hapus jenis dokumen, lalu pratinjau, cetak, atau unduh blanko ber-placeholder.
+          Edit master surat dengan editor dokumen, lalu pratinjau, cetak, atau unduh HTML siap cetak.
         </p>
       </div>
 
@@ -282,11 +397,11 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
         </aside>
 
         <section
-          className="rounded-xl border p-4 sm:p-5"
+          className="rounded-xl border p-4 sm:p-5 print:border-0 print:bg-transparent print:p-0"
           style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
         >
           {!selected ? (
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            <p className="text-sm no-print" style={{ color: "var(--text-muted)" }}>
               Pilih atau buat jenis surat untuk mulai mengedit.
             </p>
           ) : (
@@ -318,15 +433,33 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
-                    Isi redaksi
-                  </label>
-                  <textarea
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    rows={18}
-                    className="w-full rounded-lg border px-3 py-2.5 font-mono text-xs leading-relaxed resize-y"
-                    style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <label className="block text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+                      Isi redaksi
+                    </label>
+                    <span
+                      className="text-[10px] font-semibold"
+                      style={{
+                        color:
+                          saveStatus === "saved"
+                            ? "var(--success)"
+                            : saveStatus === "unsaved"
+                              ? "var(--warning)"
+                              : saveStatus === "error"
+                                ? "var(--danger)"
+                                : "var(--text-muted)",
+                      }}
+                    >
+                      {statusLabel}
+                    </span>
+                  </div>
+                  <DocumentEditor
+                    key={editorKey}
+                    ref={editorRef}
+                    initialHtml={body}
+                    initialPageSettings={pageSettings}
+                    onChange={onEditorChange}
+                    onSaveRequest={() => void saveCurrent()}
                   />
                 </div>
 
@@ -368,7 +501,14 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                   >
                     {showPreview ? "Sembunyikan pratinjau" : "Pratinjau"}
                   </button>
-                  <PrintButton />
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="rounded-lg px-3 py-2 text-xs font-semibold text-white"
+                    style={{ background: "var(--accent)" }}
+                  >
+                    Cetak / Simpan PDF
+                  </button>
                   <button
                     type="button"
                     onClick={downloadBlank}
@@ -393,25 +533,29 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                     {msg.text}
                   </p>
                 )}
-                {dirty && (
-                  <p className="text-[11px]" style={{ color: "var(--warning)" }}>
-                    Ada perubahan belum disimpan.
-                  </p>
-                )}
               </div>
 
-              <article
-                className={`mt-5 rounded-xl border bg-white p-5 text-black shadow-sm sm:p-8 print:mt-0 print:border-0 print:shadow-none ${
-                  showPreview ? "" : "hidden print:block"
-                }`}
-                style={{ borderColor: "var(--border)" }}
-              >
-                <header className="mb-4 border-b border-neutral-300 pb-3 text-center no-print">
-                  <h2 className="text-base font-bold">{title}</h2>
-                  <p className="text-xs text-neutral-500 mt-1">Pratinjau dengan placeholder (tanpa data contoh)</p>
-                </header>
-                <pre className="whitespace-pre-wrap font-mono text-xs sm:text-sm leading-relaxed">{body}</pre>
-              </article>
+              <div className={showPreview ? "mt-5 no-print" : "hidden"}>
+                <p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                  Pratinjau dengan data contoh (placeholder terisi)
+                </p>
+                <DocumentPrintView
+                  bodyHtml={body}
+                  pageSettings={pageSettings}
+                  vars={previewVars}
+                  printId="redaksi-preview"
+                />
+              </div>
+
+              {/* Surface cetak: pakai data contoh jika pratinjau aktif, else placeholder */}
+              <div className="hidden print:block">
+                <DocumentPrintView
+                  bodyHtml={body}
+                  pageSettings={pageSettings}
+                  vars={showPreview ? previewVars : null}
+                  printId="redaksi-print"
+                />
+              </div>
             </>
           )}
         </section>
@@ -421,6 +565,8 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
         @media print {
           .no-print { display: none !important; }
           body { background: white !important; }
+          /* Sembunyikan chrome layout admin saat cetak */
+          aside, nav, header, .admin-sidebar { display: none !important; }
         }
       `}</style>
     </div>

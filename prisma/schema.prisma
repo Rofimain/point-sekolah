@@ -132,13 +132,16 @@ model AppSetting {
 
 /// Master redaksi surat cetak. Admin dapat menambah, mengubah, dan menghapus jenis surat.
 model PrintTemplate {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  title     String
-  body      String   @db.Text
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  /// HTML dokumen (Tiptap). Legacy plain text di-migrate otomatis.
+  body         String   @db.Text
+  /// JSON DocumentPageSettings: paper, orientation, margin, header/footer, dll.
+  pageSettings String?  @db.Text
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([sortOrder, title])
 }

@@ -37,7 +37,7 @@ export function StudentPointsPrintArticle({
     <div className="space-y-6 print:space-y-0">
       {/* Halaman 1 */}
       <article
-        className="rounded-xl border bg-white p-4 text-black shadow-sm sm:p-8 print:border-0 print:shadow-none"
+        className="bg-white p-4 text-black sm:p-8 print:border-0 print:p-[20mm] print:shadow-none rounded-xl border shadow-sm print:rounded-none"
         style={{ borderColor: "var(--border)" }}
       >
         <header className="text-center border-b border-neutral-300 pb-4 mb-6">

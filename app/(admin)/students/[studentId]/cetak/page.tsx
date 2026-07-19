@@ -5,6 +5,15 @@ import { getPrintBlock, getQuietPeriodDays } from "@/lib/app-settings";
 import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 import { isStaffRole } from "@/lib/staff-roles";
 import { StudentPointsPrintClient } from "@/components/StudentPointsPrintClient";
+import { Prisma } from "@/generated/prisma/client";
+
+function isPrintTemplateTableMissing(e: unknown): boolean {
+  return (
+    e instanceof Prisma.PrismaClientKnownRequestError &&
+    e.code === "P2021" &&
+    (e.meta as { modelName?: string } | undefined)?.modelName === "PrintTemplate"
+  );
+}
 
 export default async function StaffStudentPrintPointsPage({ params }: { params: Promise<{ studentId: string }> }) {
   const session = await getSafeServerSession();
@@ -49,13 +58,25 @@ export default async function StaffStudentPrintPointsPage({ params }: { params: 
 
   if (!student) notFound();
 
+  let letterTemplates: { id: string; slug: string; title: string; body: string; pageSettings: string | null }[] = [];
+  try {
+    letterTemplates = await prisma.printTemplate.findMany({
+      orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+      select: { id: true, slug: true, title: true, body: true, pageSettings: true },
+    });
+  } catch (e) {
+    if (!isPrintTemplateTableMissing(e)) throw e;
+  }
+
   return (
     <StudentPointsPrintClient
       studentName={student.name}
       nisn={student.nisn}
       classNameLabel={student.class?.name ?? null}
+      address={null}
       issued={new Date()}
       redaksi={print.redaksi}
+      letterTemplates={letterTemplates}
       breakdown={breakdown}
       quietDays={quietDays}
       history={{

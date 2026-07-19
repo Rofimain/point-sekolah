@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
 import { slugifyPrintTemplate } from "@/lib/print-templates";
+import { DEFAULT_PAGE_SETTINGS, serializePageSettings, parsePageSettings } from "@/lib/document-page";
+import { plainTextToDocumentHtml } from "@/lib/document-html";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -44,7 +46,14 @@ export async function POST(req: NextRequest) {
     slug = `${requestedSlug}-${Date.now().toString(36)}`;
   }
 
-  const templateBody = typeof body.body === "string" ? body.body : "";
+  const templateBody =
+    typeof body.body === "string" ? plainTextToDocumentHtml(body.body) : "<p></p>";
+  const pageSettings =
+    body.pageSettings != null
+      ? typeof body.pageSettings === "string"
+        ? serializePageSettings(parsePageSettings(body.pageSettings))
+        : serializePageSettings(parsePageSettings(JSON.stringify(body.pageSettings)))
+      : serializePageSettings(DEFAULT_PAGE_SETTINGS);
   const maxSort = await prisma.printTemplate.aggregate({ _max: { sortOrder: true } });
   const sortOrder =
     typeof body.sortOrder === "number" && Number.isFinite(body.sortOrder)
@@ -56,6 +65,7 @@ export async function POST(req: NextRequest) {
       title,
       slug,
       body: templateBody,
+      pageSettings,
       sortOrder,
     },
   });

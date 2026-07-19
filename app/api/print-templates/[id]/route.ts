@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageData } from "@/lib/staff-roles";
 import { slugifyPrintTemplate } from "@/lib/print-templates";
+import { serializePageSettings, parsePageSettings, type DocumentPageSettings } from "@/lib/document-page";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -22,7 +23,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Body tidak valid" }, { status: 400 });
   }
 
-  const data: { title?: string; slug?: string; body?: string; sortOrder?: number } = {};
+  const data: {
+    title?: string;
+    slug?: string;
+    body?: string;
+    pageSettings?: string | null;
+    sortOrder?: number;
+  } = {};
 
   if (body.title !== undefined) {
     const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -44,9 +51,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (body.body !== undefined) {
     if (typeof body.body !== "string") {
-      return NextResponse.json({ error: "Isi template harus teks" }, { status: 400 });
+      return NextResponse.json({ error: "Isi template harus teks/HTML" }, { status: 400 });
     }
     data.body = body.body;
+  }
+
+  if (body.pageSettings !== undefined) {
+    if (body.pageSettings === null) {
+      data.pageSettings = null;
+    } else if (typeof body.pageSettings === "string") {
+      data.pageSettings = serializePageSettings(parsePageSettings(body.pageSettings));
+    } else if (typeof body.pageSettings === "object") {
+      data.pageSettings = serializePageSettings(
+        parsePageSettings(JSON.stringify(body.pageSettings as DocumentPageSettings))
+      );
+    } else {
+      return NextResponse.json({ error: "pageSettings tidak valid" }, { status: 400 });
+    }
   }
 
   if (body.sortOrder !== undefined) {

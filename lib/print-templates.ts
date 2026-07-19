@@ -6,7 +6,7 @@ export type PrintTemplateSeed = {
 };
 
 /** Naikkan versi ini bila layout default template diubah (satu kali sync ke DB). */
-export const PRINT_TEMPLATES_LAYOUT_VERSION = "3";
+export const PRINT_TEMPLATES_LAYOUT_VERSION = "4";
 
 export const PRINT_PLACEHOLDERS: { key: string; label: string }[] = [
   { key: "nama", label: "Nama siswa" },
