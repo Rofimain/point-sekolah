@@ -6,6 +6,7 @@ import {
   parsePageSettings,
 } from "@/lib/document-page";
 import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
+import { getSchoolName } from "@/lib/school-config";
 
 const PLACEHOLDER_RE = /\{\{\s*([a-z0-9_]+)\s*\}\}/gi;
 
@@ -107,7 +108,7 @@ export const SAMPLE_PRINT_VARS: Record<string, string> = {
   nomor_surat: "123/SP1/VII/2026",
   daftar_pelanggaran:
     "1. Terlambat masuk kelas (10 poin) — 02/07/2026\n2. Tidak memakai atribut lengkap (15 poin) — 08/07/2026",
-  sekolah: "SMA Islam Al Azhar 1 Jakarta",
+  sekolah: getSchoolName(),
   kepala_sekolah: "Drs. H. Contoh Kepala, M.Pd.",
   alamat: "Jl. Melati No. 10, Jakarta Selatan",
   tanggal_hijriah: "Jakarta, 7 Dzulqo'dah 1446 H",
@@ -120,7 +121,7 @@ export const SAMPLE_PRINT_VARS: Record<string, string> = {
   tanggal_masuk_kembali: "23 Juli 2026",
   hari_tanggal_pertemuan: "Senin, 20 Juli 2026",
   waktu_pertemuan: "07.30 – 08.00 WIB",
-  tempat: "R. Tamu Kepala SMA Islam Al Azhar 1 Jakarta",
+  tempat: `R. Tamu Kepala ${getSchoolName()}`,
   nama_pic: "Bapak Ahmad Fauzi",
   materi_diskusi: "Akumulasi poin dan komitmen perbaikan",
   urutan_poin: "1",

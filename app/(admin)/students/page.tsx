@@ -6,6 +6,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { indonesianAcademicYearLabel } from "@/lib/academic-year";
 import { isStaffRole } from "@/lib/staff-roles";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
+import { getStudentEmailDomain } from "@/lib/school-config";
 
 export default async function StudentsPage({
   searchParams,
@@ -64,7 +65,7 @@ export default async function StudentsPage({
     totalPointsMap[s.id] = effectivePointsMap.get(s.id) ?? 0;
   }
 
-  const studentDomain = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
+  const studentDomain = getStudentEmailDomain();
   const suggestedYear = latestClass?.year ?? indonesianAcademicYearLabel();
 
   return (

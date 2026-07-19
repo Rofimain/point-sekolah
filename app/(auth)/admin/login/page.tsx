@@ -59,7 +59,7 @@ function AdminLoginForm() {
             autoComplete="username"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="admin@sman1contoh.sch.id"
+            placeholder="email@domain-sekolah"
             required
             className="w-full px-3 py-2.5 rounded-lg border text-sm"
             style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}

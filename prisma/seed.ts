@@ -82,10 +82,10 @@ async function main() {
   // Super admin
   const superAdminPwd = await bcrypt.hash("Admin@1234", 12);
   await prisma.user.upsert({
-    where: { email: "admin@sman1contoh.sch.id" },
+    where: { email: "admin@seed.local" },
     update: {},
     create: {
-      email: "admin@sman1contoh.sch.id",
+      email: "admin@seed.local",
       name: "Drs. Hartanto",
       password: superAdminPwd,
       role: Role.SUPER_ADMIN,
@@ -96,10 +96,10 @@ async function main() {
   // Teacher
   const teacherPwd = await bcrypt.hash("Guru@1234", 12);
   await prisma.user.upsert({
-    where: { email: "s.rahayu@sman1contoh.sch.id" },
+    where: { email: "s.rahayu@seed.local" },
     update: {},
     create: {
-      email: "s.rahayu@sman1contoh.sch.id",
+      email: "s.rahayu@seed.local",
       name: "Siti Rahayu, S.Pd",
       password: teacherPwd,
       role: Role.TEACHER,
@@ -110,11 +110,11 @@ async function main() {
   // Students
   const studentPwd = await bcrypt.hash("Siswa@123456", 12);
   const students = [
-    { email: "0051234567@siswa.sman1contoh.sch.id", name: "Ahmad Fauzan", nisn: "0051234567", classId: "cls-xii-ipa1" },
-    { email: "0052345678@siswa.sman1contoh.sch.id", name: "Rizky Santoso", nisn: "0052345678", classId: "cls-xi-ips2" },
-    { email: "0053456789@siswa.sman1contoh.sch.id", name: "Dewi Wulandari", nisn: "0053456789", classId: "cls-x-mipa1" },
-    { email: "0054567890@siswa.sman1contoh.sch.id", name: "Nadia Safitri", nisn: "0054567890", classId: "cls-xi-ipa1" },
-    { email: "0055678901@siswa.sman1contoh.sch.id", name: "Bima Irawan", nisn: "0055678901", classId: "cls-xii-ips1" },
+    { email: "0051234567@siswa.seed.local", name: "Ahmad Fauzan", nisn: "0051234567", classId: "cls-xii-ipa1" },
+    { email: "0052345678@siswa.seed.local", name: "Rizky Santoso", nisn: "0052345678", classId: "cls-xi-ips2" },
+    { email: "0053456789@siswa.seed.local", name: "Dewi Wulandari", nisn: "0053456789", classId: "cls-x-mipa1" },
+    { email: "0054567890@siswa.seed.local", name: "Nadia Safitri", nisn: "0054567890", classId: "cls-xi-ipa1" },
+    { email: "0055678901@siswa.seed.local", name: "Bima Irawan", nisn: "0055678901", classId: "cls-xii-ips1" },
   ];
 
   for (const s of students) {
@@ -126,8 +126,8 @@ async function main() {
   }
 
   // Sample violation records
-  const ahmad = await prisma.user.findUnique({ where: { email: "0051234567@siswa.sman1contoh.sch.id" } });
-  const rizky = await prisma.user.findUnique({ where: { email: "0052345678@siswa.sman1contoh.sch.id" } });
+  const ahmad = await prisma.user.findUnique({ where: { email: "0051234567@siswa.seed.local" } });
+  const rizky = await prisma.user.findUnique({ where: { email: "0052345678@siswa.seed.local" } });
 
   if (ahmad) {
     const existing = await prisma.violationRecord.count({ where: { studentId: ahmad.id } });
@@ -159,10 +159,10 @@ async function main() {
 
   // --- Dummy: pengurangan 25% setelah ≥30 hari tanpa pelanggaran baru ---
   const demoTenang = await prisma.user.upsert({
-    where: { email: "0051111111@siswa.sman1contoh.sch.id" },
+    where: { email: "0051111111@siswa.seed.local" },
     update: {},
     create: {
-      email: "0051111111@siswa.sman1contoh.sch.id",
+      email: "0051111111@siswa.seed.local",
       name: "Ali Pratama (Demo Periode Tenang)",
       nisn: "0051111111",
       classId: "cls-x-mipa1",
@@ -171,10 +171,10 @@ async function main() {
     },
   });
   const demoAktif = await prisma.user.upsert({
-    where: { email: "0052222222@siswa.sman1contoh.sch.id" },
+    where: { email: "0052222222@siswa.seed.local" },
     update: {},
     create: {
-      email: "0052222222@siswa.sman1contoh.sch.id",
+      email: "0052222222@siswa.seed.local",
       name: "Bima Sakti (Demo Masih Aktif)",
       nisn: "0052222222",
       classId: "cls-x-mipa2",
@@ -183,10 +183,10 @@ async function main() {
     },
   });
   const demoManual = await prisma.user.upsert({
-    where: { email: "0053333333@siswa.sman1contoh.sch.id" },
+    where: { email: "0053333333@siswa.seed.local" },
     update: {},
     create: {
-      email: "0053333333@siswa.sman1contoh.sch.id",
+      email: "0053333333@siswa.seed.local",
       name: "Citra Lestari (Demo Potongan Manual)",
       nisn: "0053333333",
       classId: "cls-xi-ipa1",
@@ -336,10 +336,10 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: "piket@sman1contoh.sch.id" },
+    where: { email: "piket@seed.local" },
     update: { role: Role.ADMIN, active: true, status: "ACTIVE", jabatan: "Piket" },
     create: {
-      email: "piket@sman1contoh.sch.id",
+      email: "piket@seed.local",
       name: "Bidang Pertahanan Sekolah",
       password: teacherPwd,
       role: Role.ADMIN,
@@ -351,10 +351,10 @@ async function main() {
     },
   });
   await prisma.user.upsert({
-    where: { email: "walas.mipa1@sman1contoh.sch.id" },
+    where: { email: "walas.mipa1@seed.local" },
     update: { role: Role.TEACHER, classId: null, active: true, status: "ACTIVE", jabatan: "Wali Kelas X MIPA 1" },
     create: {
-      email: "walas.mipa1@sman1contoh.sch.id",
+      email: "walas.mipa1@seed.local",
       name: "Siti Walas",
       password: teacherPwd,
       role: Role.TEACHER,
@@ -368,15 +368,15 @@ async function main() {
 
   console.log("✅ Seeding complete!");
   console.log("\nAkun Login:");
-  console.log("Super Admin: admin@sman1contoh.sch.id / Admin@1234");
-  console.log("Guru:        s.rahayu@sman1contoh.sch.id / Guru@1234");
-  console.log("Admin:       piket@sman1contoh.sch.id / Guru@1234");
-  console.log("Guru:        walas.mipa1@sman1contoh.sch.id / Guru@1234");
-  console.log("Siswa:       0051234567@siswa.sman1contoh.sch.id / Siswa@123456");
+  console.log("Super Admin: admin@seed.local / Admin@1234");
+  console.log("Guru:        s.rahayu@seed.local / Guru@1234");
+  console.log("Admin:       piket@seed.local / Guru@1234");
+  console.log("Guru:        walas.mipa1@seed.local / Guru@1234");
+  console.log("Siswa:       0051234567@siswa.seed.local / Siswa@123456");
   console.log("\nDemo pengurangan 25% (bulan tenang, password Siswa@123456):");
-  console.log("  Ali (otomatis lewat logic): 0051111111@siswa.sman1contoh.sch.id");
-  console.log("  Bima (masih ada pelanggaran baru, tanpa potongan): 0052222222@siswa.sman1contoh.sch.id");
-  console.log("  Citra (potongan disimpan di seed sebagai bukti): 0053333333@siswa.sman1contoh.sch.id");
+  console.log("  Ali (otomatis lewat logic): 0051111111@siswa.seed.local");
+  console.log("  Bima (masih ada pelanggaran baru, tanpa potongan): 0052222222@siswa.seed.local");
+  console.log("  Citra (potongan disimpan di seed sebagai bukti): 0053333333@siswa.seed.local");
 }
 
 main()

@@ -10,7 +10,7 @@ export const GOOGLE_DISABLED_MESSAGE = "Login Google belum diaktifkan.";
 export const GOOGLE_CONFLICT_MESSAGE =
   "Akun Google tidak cocok dengan data pengguna. Hubungi Administrator.";
 export const GOOGLE_DOMAIN_MESSAGE =
-  "Gunakan akun Google dengan email domain sekolah (@smaalazhar1.sch.id).";
+  "Gunakan akun Google dengan email domain sekolah yang sudah dikonfigurasi.";
 
 const SESSION_ENDED_MESSAGE = "Sesi berakhir. Silakan login lagi.";
 
@@ -58,7 +58,7 @@ export function inferGooglePortal(callbackUrl: string | null | undefined): "stud
 /**
  * Domain email yang diizinkan untuk Google login.
  * Default: NEXT_PUBLIC_STAFF_DOMAIN + NEXT_PUBLIC_STUDENT_DOMAIN.
- * Override: AUTH_GOOGLE_ALLOWED_EMAIL_DOMAINS="smaalazhar1.sch.id"
+ * Override: AUTH_GOOGLE_ALLOWED_EMAIL_DOMAINS="domain1.sch.id,domain2.sch.id"
  */
 export function googleAllowedEmailDomains(): Set<string> {
   const raw = process.env.AUTH_GOOGLE_ALLOWED_EMAIL_DOMAINS?.trim();

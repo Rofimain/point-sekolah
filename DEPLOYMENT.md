@@ -64,9 +64,9 @@ npm run db:seed
 Akun contoh dari seed:
 | Role | Email | Password |
 |------|-------|----------|
-| Super Admin | admin@sman1contoh.sch.id | Admin@1234 |
-| Guru | s.rahayu@sman1contoh.sch.id | Guru@1234 |
-| Siswa | 0051234567@siswa.sman1contoh.sch.id | Siswa@123456 |
+| Super Admin | admin@seed.local | Admin@1234 |
+| Guru | s.rahayu@seed.local | Guru@1234 |
+| Siswa | 0051234567@siswa.seed.local | Siswa@123456 |
 
 ---
 

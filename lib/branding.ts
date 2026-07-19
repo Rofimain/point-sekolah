@@ -1,10 +1,9 @@
-export const SCHOOL_NAME = process.env.NEXT_PUBLIC_SCHOOL_NAME?.trim() || "SMA ISLAM AL AZHAR 1 JAKARTA";
+import { getSchoolName, getSchoolNameShort } from "@/lib/school-config";
+
+export const SCHOOL_NAME = getSchoolName();
 
 /**
- * Nama pendek untuk label TTD (mirip master Word: "Kepala SMA Islam Al Azhar 1").
+ * Nama pendek untuk label TTD.
  * Hindari wrap di kolom tanda tangan 3 kolom.
  */
-export const SCHOOL_NAME_SHORT =
-  process.env.NEXT_PUBLIC_SCHOOL_NAME_SHORT?.trim() ||
-  process.env.NEXT_PUBLIC_SCHOOL_SHORT?.trim() ||
-  "SMA Islam Al Azhar 1";
+export const SCHOOL_NAME_SHORT = getSchoolNameShort();

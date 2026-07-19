@@ -6,10 +6,9 @@ import {
   resolveDefaultStudentPassword,
   resolveStudentEmail,
 } from "@/lib/student-upsert";
+import { getStudentEmailDomain } from "@/lib/school-config";
 import { parseUserPhotoInput } from "@/lib/user-photo";
 import { validateNewPassword } from "@/lib/password-policy";
-
-const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
 
 export type BulkStudentRow = {
   name: string;
@@ -111,7 +110,7 @@ export async function runBulkStudentImport(
       const emailResolved = resolveStudentEmail({
         email: r.email,
         nisn: nisn || null,
-        domain: STUDENT_DOMAIN,
+        domain: getStudentEmailDomain(),
       });
       if (!emailResolved.ok) {
         errors.push({ row: rowNum, message: emailResolved.error });

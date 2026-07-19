@@ -16,9 +16,11 @@ import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
 import { USER_STATUS_LABEL } from "@/lib/user-status";
 import { formatClassLabel } from "@/lib/class-label";
 
+import { getStudentEmailDomain, getStaffEmailDomain } from "@/lib/school-config";
+
 const ROLES = ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN"] as const;
-const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
-const STAFF_DOMAIN = process.env.NEXT_PUBLIC_STAFF_DOMAIN || "sman1contoh.sch.id";
+const STUDENT_DOMAIN = getStudentEmailDomain();
+const STAFF_DOMAIN = getStaffEmailDomain();
 
 function RoleBadge({ role }: { role: string }) {
   const c: Record<string, string[]> = {

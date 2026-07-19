@@ -16,11 +16,11 @@ import { validateNewPassword } from "@/lib/password-policy";
 import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
 import { recordDataAccessLog } from "@/lib/access-log";
 
+import { getStudentEmailDomain } from "@/lib/school-config";
+
 function staffOk(role: string | undefined) {
   return canManageData(role);
 }
-
-const STUDENT_DOMAIN = process.env.NEXT_PUBLIC_STUDENT_DOMAIN || "siswa.sman1contoh.sch.id";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   const emailResolved = resolveStudentEmail({
     email,
     nisn: nisnTrim || null,
-    domain: STUDENT_DOMAIN,
+    domain: getStudentEmailDomain(),
   });
   if (!emailResolved.ok) {
     return NextResponse.json({ error: emailResolved.error }, { status: 400 });
