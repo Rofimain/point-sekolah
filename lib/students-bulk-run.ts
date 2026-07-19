@@ -152,8 +152,8 @@ export async function runBulkStudentImport(
       });
       created++;
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Gagal menyimpan";
-      errors.push({ row: rowNum, message: msg });
+      console.error("[students-bulk-run] row", rowNum, e);
+      errors.push({ row: rowNum, message: "Gagal menyimpan baris ini." });
     }
   }
 

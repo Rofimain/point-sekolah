@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getSafeServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import UsersClient from "./UsersClient";
-import { APP_ROLES, canManageData } from "@/lib/staff-roles";
+import { APP_ROLES, canManageUsers } from "@/lib/staff-roles";
 
 export default async function UsersPage({
   searchParams,
@@ -11,11 +11,11 @@ export default async function UsersPage({
 }) {
   const query = await searchParams;
   const session = await getSafeServerSession();
-  if (!canManageData(session?.user?.role)) redirect("/dashboard");
+  if (!canManageUsers(session?.user?.role)) redirect("/dashboard");
 
   const page = parseInt(query.page || "1");
   const perPage = 20;
-  const where: any = {};
+  const where: any = { deletedAt: null };
   if (query.role && (APP_ROLES as readonly string[]).includes(query.role)) {
     where.role = query.role;
   }
@@ -53,8 +53,8 @@ export default async function UsersPage({
     }),
     prisma.user.count({ where }),
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
-    prisma.user.count({ where: { role: "SUPER_ADMIN", status: { not: "LEFT" } } }),
-    prisma.user.count({ where: { role: "SUPER_ADMIN", status: "ACTIVE" } }),
+    prisma.user.count({ where: { role: "SUPER_ADMIN", status: { not: "LEFT" }, deletedAt: null } }),
+    prisma.user.count({ where: { role: "SUPER_ADMIN", status: "ACTIVE", deletedAt: null } }),
   ]);
 
   const users = rawUsers.map(({ parentTelegramLinkToken, ...u }) => ({

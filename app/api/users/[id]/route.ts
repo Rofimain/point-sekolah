@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { Role, UserStatus } from "@/generated/prisma/client";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { assertCanDemoteSuperAdmin, LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
-import { canDeleteUser, canManageData, canModifyUser, isAdminRole } from "@/lib/staff-roles";
+import { canDeleteUser, canManageUsers, canModifyUser, canCreateUserWithRole, isAdminRole } from "@/lib/staff-roles";
 import { validateNewPassword } from "@/lib/password-policy";
 import { parseUserPhotoPatch } from "@/lib/user-photo";
 import {
@@ -15,7 +15,7 @@ import {
   statusFromActiveToggle,
 } from "@/lib/user-status";
 import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
-import { hardDeleteUser } from "@/lib/user-hard-delete";
+import { softDeleteUser } from "@/lib/user-soft-delete";
 import { recordDataAccessLog } from "@/lib/access-log";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
@@ -24,8 +24,10 @@ const VALID_STATUSES = new Set<string>(Object.values(UserStatus));
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!session || !canManageUsers(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const existing = await prisma.user.findFirst({ where: { id, deletedAt: null } });
   if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
 
   const body = await req.json();
@@ -47,18 +49,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const adminEditingSelf = isAdminRole(session.user.role) && existing.id === session.user.id;
+  const teacherEditingSelf = session.user.role === "TEACHER" && existing.id === session.user.id;
 
   if (
-    (!canModifyUser(session.user.role, existing.role) && !adminEditingSelf) ||
-    (isAdminRole(session.user.role) && nextRole === "SUPER_ADMIN")
+    (!canModifyUser(session.user.role, existing.role) && !adminEditingSelf && !teacherEditingSelf) ||
+    (body.role !== undefined &&
+      String(body.role) !== existing.role &&
+      !canCreateUserWithRole(session.user.role, String(body.role)))
   ) {
-    return NextResponse.json({ error: "Admin tidak boleh mengubah akun Admin atau Super Admin." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Anda tidak boleh mengubah akun dengan level sama atau lebih tinggi." },
+      { status: 403 }
+    );
   }
   if (
-    adminEditingSelf &&
+    (adminEditingSelf || teacherEditingSelf) &&
     (nextRole !== existing.role || nextStatus !== existing.status)
   ) {
-    return NextResponse.json({ error: "Admin tidak boleh mengubah role atau status akunnya sendiri." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Anda tidak boleh mengubah role atau status akunnya sendiri." },
+      { status: 403 }
+    );
   }
 
   if (existing.role === "SUPER_ADMIN" && nextRole !== "SUPER_ADMIN") {
@@ -174,24 +185,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const existing = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true, name: true, email: true } });
+  if (!session || !canManageUsers(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const existing = await prisma.user.findFirst({
+    where: { id, deletedAt: null },
+    select: { id: true, role: true, name: true, email: true },
+  });
   if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
   if (existing.id === session.user.id) {
     return NextResponse.json({ error: "Tidak boleh menghapus akun sendiri." }, { status: 403 });
   }
   if (!canDeleteUser(session.user.role, existing.role)) {
-    return NextResponse.json({ error: "Admin tidak boleh menghapus akun Admin atau Super Admin." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Anda tidak boleh menghapus akun dengan level sama atau lebih tinggi." },
+      { status: 403 }
+    );
   }
-  const result = await hardDeleteUser({ userId: id });
+  const result = await softDeleteUser({ userId: id });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
   await recordDataAccessLog({
     session,
     action: "USER_DELETE",
-    summary: `Hapus permanen ${existing.name} (${existing.role})`,
+    summary: `Soft-delete ${existing.name} (${existing.role})`,
     targetType: "User",
     targetId: existing.id,
     meta: { role: existing.role, email: existing.email },
   });
-  return NextResponse.json({ ok: true, permanentlyDeleted: true });
+  return NextResponse.json({ ok: true, softDeleted: true });
 }

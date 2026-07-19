@@ -46,6 +46,8 @@ model User {
   photoData        String?           @db.Text
   /// Ringkas untuk UI daftar — ada foto (tanpa load kolom besar)
   photoPresent     Boolean           @default(false)
+  /// Soft-delete — null = aktif di daftar; set saat dihapus lewat UI/API
+  deletedAt        DateTime?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   authLoginEvents  AuthLoginEvent[]
@@ -53,6 +55,7 @@ model User {
 
   @@index([status])
   @@index([role, status])
+  @@index([deletedAt])
 }
 
 /// Audit perubahan lifecycle / linking (bukan hard delete)
@@ -219,11 +222,14 @@ model ViolationRecord {
   studentSignatureData  String?       @db.Text
   /// true jika laporan dikirim dari portal siswa (bukan input staf)
   submittedByStudent    Boolean       @default(false)
+  /// Soft-delete — null = tampil di daftar; set saat dihapus lewat UI/API
+  deletedAt             DateTime?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
   evidenceImages        ViolationEvidenceImage[]
 
   @@index([submittedByStudent, createdAt])
+  @@index([deletedAt])
 }
 
 /// Foto bukti pelanggaran (bisa banyak per catatan).

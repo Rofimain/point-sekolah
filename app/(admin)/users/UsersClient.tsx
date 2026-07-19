@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getRoleLabel } from "@/lib/utils";
-import { canDeleteUser, canModifyUser, isSuperAdmin } from "@/lib/staff-roles";
+import { canDeleteUser, canModifyUser, canCreateUserWithRole, isSuperAdmin } from "@/lib/staff-roles";
 import {
   compressImageToDataUrl,
   COMPRESS_MAX_DIM_AVATAR,
@@ -1121,7 +1121,11 @@ export default function UsersClient({
                         : undefined
                     }
                   >
-                    {ROLES.filter((r) => isSuperAdmin(viewerRole) || r !== "SUPER_ADMIN" || form.role === r).map(r => (
+                    {ROLES.filter(
+                      (r) =>
+                        canCreateUserWithRole(viewerRole, r) ||
+                        (modal !== "add" && form.role === r)
+                    ).map(r => (
                       <option key={r} value={r}>{getRoleLabel(r)}</option>
                     ))}
                   </select>

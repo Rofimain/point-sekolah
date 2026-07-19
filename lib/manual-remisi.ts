@@ -36,6 +36,7 @@ export async function getGrossPointsOnOrBefore(
   const agg = await prisma.violationRecord.aggregate({
     where: {
       studentId,
+      deletedAt: null,
       date: { lte: parsed.date },
     },
     _sum: { points: true },
@@ -69,7 +70,7 @@ export async function applyManualRemisiForStudent(input: {
   if (!resolved.ok) return resolved;
 
   const student = await prisma.user.findFirst({
-    where: { id: input.studentId, role: "STUDENT", status: "ACTIVE" },
+    where: { id: input.studentId, role: "STUDENT", status: "ACTIVE", deletedAt: null },
     select: { id: true, name: true },
   });
   if (!student) return { ok: false, error: "Siswa tidak ditemukan atau tidak aktif" };

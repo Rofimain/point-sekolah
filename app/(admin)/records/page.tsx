@@ -23,6 +23,7 @@ export default async function RecordsPage({
   const studentWhere: Prisma.UserWhereInput = {
     role: "STUDENT",
     status: "ACTIVE",
+    deletedAt: null,
   };
   if (query.classId) studentWhere.classId = query.classId;
   if (query.grade) studentWhere.class = { grade: query.grade };
@@ -34,7 +35,7 @@ export default async function RecordsPage({
     prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }] }),
     prisma.violationType.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { points: "asc" }] }),
     prisma.user.findMany({
-      where: { role: "STUDENT", status: "ACTIVE" },
+      where: { role: "STUDENT", status: "ACTIVE", deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -70,7 +71,7 @@ export default async function RecordsPage({
         : await Promise.all(
             studentIds.map((id) =>
               prisma.violationRecord.findMany({
-                where: { studentId: id },
+                where: { studentId: id, deletedAt: null },
                 take: ROSTER_RECORDS_PER_STUDENT,
                 orderBy: [{ createdAt: "desc" }, { id: "desc" }],
                 select: RECORD_LIST_SELECT,
@@ -97,7 +98,7 @@ export default async function RecordsPage({
     }
     total = studentCount;
   } else {
-    const recordWhere: Prisma.ViolationRecordWhereInput = {};
+    const recordWhere: Prisma.ViolationRecordWhereInput = { deletedAt: null };
     const studentNested: Prisma.UserWhereInput = {};
     if (query.search) {
       studentNested.name = { contains: query.search, mode: "insensitive" };

@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     parentTelegramNotify = { status: "skipped_no_token" };
   } else {
     const r = await sendParentViolationTelegram(chat, payload);
-    parentTelegramNotify = r.ok ? { status: "sent" } : { status: "failed", message: r.error };
+    parentTelegramNotify = r.ok ? { status: "sent" } : { status: "failed", message: "Gagal mengirim notifikasi Telegram ke ortu." };
     if (!r.ok) console.error("[telegram] kirim ke ortu gagal:", r.error);
   }
 
@@ -139,12 +139,12 @@ export async function POST(req: NextRequest) {
   );
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (session.user.role === "STUDENT") {
     const records = await prisma.violationRecord.findMany({
-      where: { studentId: session.user.id },
+      where: { studentId: session.user.id, deletedAt: null },
       select: studentRecordSelect,
       orderBy: { date: "desc" },
       take: 500,
@@ -154,10 +154,29 @@ export async function GET(_req: NextRequest) {
   if (!isStaffRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  const records = await prisma.violationRecord.findMany({
-    include: { student: { include: { class: true } }, violationType: true },
-    orderBy: { date: "desc" },
-    take: 3000,
+
+  const sp = req.nextUrl.searchParams;
+  const pageRaw = parseInt(sp.get("page") || "1", 10);
+  const perPageRaw = parseInt(sp.get("perPage") || "50", 10);
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
+  const perPage = Math.min(100, Math.max(1, Number.isFinite(perPageRaw) ? perPageRaw : 50));
+
+  const where = { deletedAt: null } as const;
+  const [records, total] = await Promise.all([
+    prisma.violationRecord.findMany({
+      where,
+      include: { student: { include: { class: true } }, violationType: true },
+      orderBy: { date: "desc" },
+      skip: (page - 1) * perPage,
+      take: perPage,
+    }),
+    prisma.violationRecord.count({ where }),
+  ]);
+  return NextResponse.json({
+    data: records,
+    page,
+    perPage,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / perPage)),
   });
-  return NextResponse.json(records);
 }

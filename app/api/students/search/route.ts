@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     where: {
       role: "STUDENT",
       status: "ACTIVE",
+      deletedAt: null,
       OR: [
         { name: { contains: q, mode: "insensitive" } },
         { nisn: { contains: q, mode: "insensitive" } },

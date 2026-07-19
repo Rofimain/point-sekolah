@@ -1,9 +1,13 @@
 import type { UserStatus } from "@/generated/prisma/client";
 
 /** Filter operasional: user yang masih “hidup” di sistem. */
-export const ACTIVE_USER_WHERE = { status: "ACTIVE" as const };
+export const ACTIVE_USER_WHERE = { status: "ACTIVE" as const, deletedAt: null };
 
-export function canUserLogin(status: UserStatus | string | null | undefined): boolean {
+export function canUserLogin(
+  status: UserStatus | string | null | undefined,
+  deletedAt?: Date | string | null
+): boolean {
+  if (deletedAt != null) return false;
   return status === "ACTIVE";
 }
 

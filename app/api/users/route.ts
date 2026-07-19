@@ -6,12 +6,17 @@ import bcrypt from "bcryptjs";
 import { Role } from "@/generated/prisma/client";
 import { buildParentTelegramDeepLink, newParentLinkToken } from "@/lib/parent-telegram-link";
 import { LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
-import { canManageData, isAdminRole } from "@/lib/staff-roles";
+import {
+  canCreateUserWithRole,
+  canDeleteUser,
+  canManageUsers,
+  canModifyUser,
+} from "@/lib/staff-roles";
 import { parseUserPhotoInput } from "@/lib/user-photo";
 import { validateNewPassword } from "@/lib/password-policy";
 import { ACTIVE_USER_WHERE, lifecycleFieldsForStatus, statusFromActiveToggle } from "@/lib/user-status";
 import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
-import { hardDeleteStudentsByClassId, hardDeleteUsersByIds } from "@/lib/user-hard-delete";
+import { softDeleteStudentsByClassId, softDeleteUsersByIds } from "@/lib/user-soft-delete";
 import { getTelegramBotUsername } from "@/lib/telegram-bot-username";
 import { recordDataAccessLog } from "@/lib/access-log";
 
@@ -19,24 +24,31 @@ const VALID_ROLES = new Set<string>(Object.values(Role));
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session || !canManageUsers(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const body = await req.json();
   const { name, email, password, role, nisn, nip, classId, active, photoData } = body;
   if (!name || !email || !password) return NextResponse.json({ error: "Nama, email, password wajib" }, { status: 400 });
   if (!role || !VALID_ROLES.has(String(role))) {
     return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
   }
+  if (!canCreateUserWithRole(session.user.role, String(role))) {
+    return NextResponse.json(
+      { error: "Anda tidak boleh membuat akun dengan role tersebut." },
+      { status: 403 }
+    );
+  }
   const nextPassword = validateNewPassword(password);
   if (!nextPassword.ok) return NextResponse.json({ error: nextPassword.error }, { status: 400 });
   const photo = parseUserPhotoInput(photoData);
   if ("error" in photo) return NextResponse.json({ error: photo.error }, { status: 400 });
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await prisma.user.findFirst({
+    where: { email, deletedAt: null },
+  });
   if (existing) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
   const hashed = await bcrypt.hash(nextPassword.value, 12);
   const r = role as Role;
-  if (isAdminRole(session.user.role) && r === "SUPER_ADMIN") {
-    return NextResponse.json({ error: "Admin tidak boleh membuat akun Super Admin." }, { status: 403 });
-  }
   const wantActive = active ?? true;
   const statusFields = lifecycleFieldsForStatus(statusFromActiveToggle(Boolean(wantActive)));
   const user = await prisma.user.create({
@@ -81,7 +93,9 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session || !canManageUsers(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const ids = Array.isArray(body?.ids) ? body.ids.filter((x: unknown) => typeof x === "string" && x.trim()) : [];
@@ -95,12 +109,12 @@ export async function PATCH(req: NextRequest) {
   const statusFields = lifecycleFieldsForStatus(nextStatus);
 
   const targets = await prisma.user.findMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, deletedAt: null },
     select: { id: true, role: true, status: true, active: true },
   });
-  if (isAdminRole(session.user.role) && targets.some((t) => t.role === "ADMIN" || t.role === "SUPER_ADMIN")) {
+  if (targets.some((t) => !canModifyUser(session.user.role, t.role))) {
     return NextResponse.json(
-      { error: "Admin tidak boleh mengubah akun Admin atau Super Admin." },
+      { error: "Anda tidak boleh mengubah akun dengan level sama atau lebih tinggi." },
       { status: 403 }
     );
   }
@@ -118,7 +132,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const res = await prisma.user.updateMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, deletedAt: null },
     data: statusFields,
   });
 
@@ -150,7 +164,9 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session || !canManageUsers(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const classId = typeof body?.classId === "string" && body.classId.trim() ? body.classId.trim() : null;
@@ -159,24 +175,24 @@ export async function DELETE(req: NextRequest) {
 
   if (classId) {
     try {
-      const count = await hardDeleteStudentsByClassId({ classId });
+      const count = await softDeleteStudentsByClassId({ classId });
       await recordDataAccessLog({
         session,
         action: "USER_DELETE_BY_CLASS",
-        summary: `Hapus permanen ${count} siswa di kelas`,
+        summary: `Soft-delete ${count} siswa di kelas`,
         targetType: "Class",
         targetId: classId,
         meta: { count },
       });
-      return NextResponse.json({ ok: true, count, permanentlyDeleted: true });
+      return NextResponse.json({ ok: true, count, softDeleted: true });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Gagal menghapus";
-      return NextResponse.json({ error: msg }, { status: 400 });
+      console.error("[users DELETE by class]", e);
+      return NextResponse.json({ error: "Gagal menghapus siswa di kelas ini." }, { status: 400 });
     }
   }
 
   const found = await prisma.user.findMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, deletedAt: null },
     select: { id: true, role: true, name: true },
   });
 
@@ -188,20 +204,24 @@ export async function DELETE(req: NextRequest) {
     );
   }
 
+  if (found.some((u) => !canDeleteUser(session.user.role, u.role))) {
+    return NextResponse.json({ error: "Anda tidak boleh menghapus salah satu akun yang dipilih." }, { status: 403 });
+  }
+
   try {
-    const count = await hardDeleteUsersByIds({
+    const count = await softDeleteUsersByIds({
       ids: found.map((u) => u.id),
     });
     await recordDataAccessLog({
       session,
       action: "USER_BULK_DELETE",
-      summary: `Hapus permanen ${count} siswa`,
+      summary: `Soft-delete ${count} siswa`,
       targetType: "User",
       meta: { count, names: found.slice(0, 20).map((u) => u.name) },
     });
-    return NextResponse.json({ ok: true, count, permanentlyDeleted: true });
+    return NextResponse.json({ ok: true, count, softDeleted: true });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Gagal menghapus";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    console.error("[users DELETE bulk]", e);
+    return NextResponse.json({ error: "Gagal menghapus pengguna." }, { status: 400 });
   }
 }

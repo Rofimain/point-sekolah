@@ -22,7 +22,7 @@ export default async function StudentFormPage() {
   });
 
   const records = await prisma.violationRecord.findMany({
-    where: { studentId: session.user.id },
+    where: { studentId: session.user.id, deletedAt: null },
     select: {
       id: true,
       studentId: true,

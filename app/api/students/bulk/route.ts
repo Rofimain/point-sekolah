@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(result);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Impor gagal";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    console.error("[students/bulk] import gagal:", e);
+    return NextResponse.json({ error: "Impor gagal. Periksa data dan coba lagi." }, { status: 400 });
   }
 }

@@ -26,6 +26,7 @@ export function quietPeriodMs(): number {
 export async function getGrossPointsByStudent(): Promise<Map<string, number>> {
   const rows = await prisma.violationRecord.groupBy({
     by: ["studentId"],
+    where: { deletedAt: null },
     _sum: { points: true },
   });
   const m = new Map<string, number>();
@@ -72,7 +73,7 @@ export async function getEffectivePointsBreakdown(studentId: string): Promise<{
   effective: number;
 }> {
   const grossAgg = await prisma.violationRecord.aggregate({
-    where: { studentId },
+    where: { studentId, deletedAt: null },
     _sum: { points: true },
   });
   const gross = grossAgg._sum.points ?? 0;

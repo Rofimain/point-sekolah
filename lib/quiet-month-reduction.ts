@@ -22,7 +22,7 @@ export { findUnclaimedQuietGaps, isLastWindowClaimed } from "@/lib/quiet-month-g
  */
 export async function getLastViolationDate(studentId: string): Promise<Date | null> {
   const last = await prisma.violationRecord.findFirst({
-    where: { studentId },
+    where: { studentId, deletedAt: null },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     select: { date: true },
   });
@@ -86,7 +86,7 @@ export async function hasAnyQuietMonthWork(
 ): Promise<boolean> {
   const quietDays = await getQuietPeriodDays();
   const records = await prisma.violationRecord.findMany({
-    where: { studentId },
+    where: { studentId, deletedAt: null },
     select: { date: true, points: true },
     orderBy: [{ date: "asc" }, { createdAt: "asc" }],
   });
@@ -212,7 +212,7 @@ export async function applyAllQuietMonthReductionsForStudent(
 ): Promise<QuietMonthApplyResult[]> {
   const quietDays = await getQuietPeriodDays();
   const records = await prisma.violationRecord.findMany({
-    where: { studentId },
+    where: { studentId, deletedAt: null },
     select: { date: true, points: true },
     orderBy: [{ date: "asc" }, { createdAt: "asc" }],
   });
@@ -252,7 +252,7 @@ export async function applyAllQuietMonthReductionsForStudent(
       const lastVioYmd = dateToYmdInput(lastVio);
       if (!claimed.has(lastVioYmd)) {
         const grossAgg = await prisma.violationRecord.aggregate({
-          where: { studentId },
+          where: { studentId, deletedAt: null },
           _sum: { points: true },
         });
         const gross = grossAgg._sum.points ?? 0;
@@ -275,7 +275,7 @@ export async function applyQuietMonthReductionForAllStudents(
   now: Date = new Date()
 ): Promise<QuietMonthApplyResult[]> {
   const students = await prisma.user.findMany({
-    where: { role: "STUDENT", status: "ACTIVE" },
+    where: { role: "STUDENT", status: "ACTIVE", deletedAt: null },
     select: { id: true },
   });
   const out: QuietMonthApplyResult[] = [];
@@ -290,7 +290,7 @@ export async function previewEligibleQuietMonthStudents(
   now: Date = new Date()
 ): Promise<{ id: string; name: string; lastIncidentYmd: string; daysQuiet: number }[]> {
   const students = await prisma.user.findMany({
-    where: { role: "STUDENT", status: "ACTIVE" },
+    where: { role: "STUDENT", status: "ACTIVE", deletedAt: null },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
@@ -298,7 +298,7 @@ export async function previewEligibleQuietMonthStudents(
   const out: { id: string; name: string; lastIncidentYmd: string; daysQuiet: number }[] = [];
   for (const s of students) {
     const records = await prisma.violationRecord.findMany({
-      where: { studentId: s.id },
+      where: { studentId: s.id, deletedAt: null },
       select: { date: true },
       orderBy: [{ date: "asc" }, { createdAt: "asc" }],
     });

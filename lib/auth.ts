@@ -94,13 +94,13 @@ async function authorizeCredentials(
     throw new Error(AUTH_GENERIC_CREDENTIALS_ERROR);
   }
 
-  if (!canUserLogin(user.status)) {
+  if (!canUserLogin(user.status, user.deletedAt)) {
     await recordAuthLoginEvent({
       userId: user.id,
       identifier,
       provider,
       success: false,
-      reason: `STATUS_${user.status}`,
+      reason: user.deletedAt ? "DELETED" : `STATUS_${user.status}`,
       ip: meta.ip,
       userAgent: meta.userAgent,
     });
@@ -267,7 +267,7 @@ export const authOptions: NextAuthOptions = {
               })
             : null;
 
-        if (!dbUser || !canUserLogin(dbUser.status)) {
+        if (!dbUser || !canUserLogin(dbUser.status) || dbUser.deletedAt) {
           token.error = "AccountInactive";
           return token;
         }
@@ -309,10 +309,11 @@ export const authOptions: NextAuthOptions = {
             classId: true,
             authVersion: true,
             lockedUntil: true,
+            deletedAt: true,
             class: { select: { name: true } },
           },
         });
-        if (!dbUser || !canUserLogin(dbUser.status)) {
+        if (!dbUser || !canUserLogin(dbUser.status, dbUser.deletedAt)) {
           token.error = "AccountInactive";
         } else if (isAccountLocked(dbUser.lockedUntil)) {
           token.error = "AccountInactive";

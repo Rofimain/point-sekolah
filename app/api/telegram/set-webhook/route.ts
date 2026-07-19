@@ -91,9 +91,10 @@ export async function POST(_req: NextRequest) {
       body: JSON.stringify(body),
     });
   } catch (e) {
+    console.error("[telegram set-webhook] network:", e);
     return NextResponse.json(
       {
-        error: `Gagal menghubungi api.telegram.org: ${e instanceof Error ? e.message : "network error"}`,
+        error: "Gagal menghubungi Telegram. Coba lagi nanti.",
         webhookUrl,
       },
       { status: 502 }
@@ -108,28 +109,21 @@ export async function POST(_req: NextRequest) {
 
   if (!data.ok) {
     const desc = data.description?.trim() || "";
-    let error = desc || `setWebhook gagal (HTTP ${res.status})`;
+    console.error("[telegram set-webhook] gagal:", data.error_code, desc, "http", res.status);
+    let error = `setWebhook gagal (HTTP ${res.status})`;
     if (data.error_code === 401 || /unauthorized/i.test(desc) || res.status === 401) {
       error =
         "Token bot ditolak Telegram (Unauthorized). Cek TELEGRAM_BOT_TOKEN di ENV_FILE_CONTENT — pastikan sama persis dari BotFather, tanpa kutipan lengkung “ ”.";
     } else if (/ssl|certificate|handshake/i.test(desc)) {
-      error = `${desc} — sertifikat HTTPS domain harus valid untuk ${configuredUrl.host} (Cloudflare SSL Full / Full Strict).`;
+      error = `Sertifikat HTTPS domain harus valid untuk ${configuredUrl.host} (Cloudflare SSL Full / Full Strict).`;
     } else if (/resolve host|getaddrinfo|timed out|timeout/i.test(desc)) {
-      error = `${desc} — pastikan domain ${configuredUrl.host} bisa diakses publik dari internet.`;
-    } else if (desc) {
-      error = desc;
+      error = `Domain ${configuredUrl.host} harus bisa diakses publik dari internet.`;
     }
 
     return NextResponse.json(
       {
         error,
         webhookUrl,
-        telegram: {
-          ok: data.ok ?? false,
-          error_code: data.error_code ?? null,
-          description: desc || null,
-          httpStatus: res.status,
-        },
       },
       { status: 502 }
     );

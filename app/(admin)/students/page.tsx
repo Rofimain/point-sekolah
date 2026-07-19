@@ -20,7 +20,7 @@ export default async function StudentsPage({
 
   const page = parseInt(query.page || "1", 10);
   const perPage = 25;
-  const where: Prisma.UserWhereInput = { role: "STUDENT" };
+  const where: Prisma.UserWhereInput = { role: "STUDENT", deletedAt: null };
   if (query.classId) {
     where.classId = query.classId;
   }

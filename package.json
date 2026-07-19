@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit --incremental false",
     "quality": "npm run lint && npm test && npm run typecheck && prisma validate",
-    "test": "tsx --test tests/document-html.test.ts tests/print-templates.test.ts tests/remisi-rules.test.ts tests/security-and-sorting.test.ts tests/student-import-photo.test.ts tests/telegram-env.test.ts tests/violation-name.test.ts",
+    "test": "tsx --test tests/document-html.test.ts tests/print-templates.test.ts tests/remisi-rules.test.ts tests/security-and-sorting.test.ts tests/student-import-photo.test.ts tests/telegram-env.test.ts tests/violation-name.test.ts tests/staff-roles.test.ts",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:sync-pasal-15": "tsx scripts/sync-pasal-15-violations.ts",

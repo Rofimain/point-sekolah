@@ -34,20 +34,20 @@ async function getDashboardData() {
     effectivePointsMap,
     ...monthCounts
   ] = await Promise.all([
-    prisma.user.count({ where: { role: "STUDENT", status: "ACTIVE" } }),
-    prisma.user.count({ where: { role: { not: "STUDENT" }, status: "ACTIVE" } }),
-    prisma.violationRecord.count({ where: { date: { gte: startOfMonth } } }),
+    prisma.user.count({ where: { role: "STUDENT", status: "ACTIVE", deletedAt: null } }),
+    prisma.user.count({ where: { role: { not: "STUDENT" }, status: "ACTIVE", deletedAt: null } }),
+    prisma.violationRecord.count({ where: { date: { gte: startOfMonth }, deletedAt: null } }),
     prisma.violationRecord.count({
-      where: { date: { gte: lastMonthStart, lte: endLastMonth } },
+      where: { date: { gte: lastMonthStart, lte: endLastMonth }, deletedAt: null },
     }),
     prisma.violationRecord.groupBy({
       by: ["violationTypeId"],
-      where: { date: { gte: startOfMonth } },
+      where: { date: { gte: startOfMonth }, deletedAt: null },
       _count: { id: true },
     }),
     getEffectivePointsMap(),
     ...monthRanges.map(({ d, end }) =>
-      prisma.violationRecord.count({ where: { date: { gte: d, lte: end } } })
+      prisma.violationRecord.count({ where: { date: { gte: d, lte: end }, deletedAt: null } })
     ),
   ]);
 

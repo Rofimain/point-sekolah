@@ -62,7 +62,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") {
       return NextResponse.json({ error: "Jenis tidak ditemukan" }, { status: 404 });
     }
-    throw e;
+    console.error("[violations DELETE]", e);
+    return NextResponse.json({ error: "Gagal menonaktifkan jenis pelanggaran." }, { status: 500 });
   }
   await recordDataAccessLog({
     session,

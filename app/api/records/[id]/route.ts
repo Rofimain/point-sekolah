@@ -11,6 +11,7 @@ import {
   listRecordEvidenceImageData,
   replaceRecordEvidenceImages,
 } from "@/lib/record-evidence-images";
+import { softDeleteViolationRecord } from "@/lib/user-soft-delete";
 import { recordDataAccessLog } from "@/lib/access-log";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -18,8 +19,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const existing = await prisma.violationRecord.findUnique({
-    where: { id },
+  const existing = await prisma.violationRecord.findFirst({
+    where: { id, deletedAt: null },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -101,8 +102,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const record = await prisma.violationRecord.findUnique({
-    where: { id },
+  const record = await prisma.violationRecord.findFirst({
+    where: { id, deletedAt: null },
     select: {
       id: true,
       studentId: true,
@@ -142,13 +143,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  await prisma.violationRecord.delete({ where: { id } });
+  const ok = await softDeleteViolationRecord(id);
+  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
   await recordDataAccessLog({
     session,
     action: "RECORD_DELETE",
-    summary: `Menghapus catatan pelanggaran ${id}`,
+    summary: `Soft-delete catatan pelanggaran ${id}`,
     targetType: "ViolationRecord",
     targetId: id,
   });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, softDeleted: true });
 }

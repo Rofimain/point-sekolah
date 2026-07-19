@@ -43,8 +43,11 @@ export async function POST(req: NextRequest) {
   try {
     parsed = await parseStudentImportPackage(buf);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Gagal membaca file";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    console.error("[students/import-file] parse gagal:", e);
+    return NextResponse.json(
+      { error: "Gagal membaca file. Pastikan format .xlsx atau .zip valid." },
+      { status: 400 }
+    );
   }
 
   try {
@@ -68,7 +71,7 @@ export async function POST(req: NextRequest) {
       photoErrors: parsed.photoErrors.slice(0, 20),
     });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Impor gagal";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    console.error("[students/import-file] import gagal:", e);
+    return NextResponse.json({ error: "Impor gagal. Periksa data dan coba lagi." }, { status: 400 });
   }
 }

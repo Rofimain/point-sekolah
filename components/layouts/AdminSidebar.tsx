@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { cn, getRoleLabel } from "@/lib/utils";
-import { canManageData, isSuperAdmin } from "@/lib/staff-roles";
+import { canManageData, canManageUsers, isSuperAdmin } from "@/lib/staff-roles";
 
 export type SidebarClass = { id: string; name: string; grade: string };
 
@@ -190,6 +190,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const canManage = canManageData(session?.user?.role);
+  const canUsers = canManageUsers(session?.user?.role);
   const superAdmin = isSuperAdmin(session?.user?.role);
 
   const [openMenu, setOpenMenu] = useState<null | "records" | "students" | "users" | "settings">(null);
@@ -361,7 +362,7 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             label="Jenis Pelanggaran"
           />
 
-          {canManage && (
+          {canUsers && (
             <SplitNavRow
               href="/users"
               active={pathname.startsWith("/users")}

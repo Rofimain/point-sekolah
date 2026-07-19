@@ -30,18 +30,34 @@ export async function GET() {
   }
 
   const res = await fetch(`${TG}/bot${encodeURIComponent(token)}/getWebhookInfo`);
-  const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  const data = (await res.json().catch(() => ({}))) as {
+    ok?: boolean;
+    description?: string;
+    result?: {
+      url?: string;
+      pending_update_count?: number;
+      has_custom_certificate?: boolean;
+      last_error_message?: string;
+      last_error_date?: number;
+    };
+  };
   if (data.ok === false) {
-    return NextResponse.json(
-      {
-        error:
-          typeof data.description === "string"
-            ? data.description
-            : "getWebhookInfo gagal — biasanya token salah/Unauthorized",
-        telegram: data,
-      },
-      { status: 502 }
-    );
+    console.error("[telegram webhook-info] gagal:", data.description);
+    return NextResponse.json({ error: "Gagal membaca status webhook." }, { status: 502 });
   }
-  return NextResponse.json(data);
+
+  const result = data.result ?? {};
+  if (result.last_error_message) {
+    console.warn("[telegram webhook-info] last_error:", result.last_error_message);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    result: {
+      url: result.url ?? "",
+      pending_update_count: result.pending_update_count ?? 0,
+      has_custom_certificate: Boolean(result.has_custom_certificate),
+      has_last_error: Boolean(result.last_error_message),
+    },
+  });
 }
