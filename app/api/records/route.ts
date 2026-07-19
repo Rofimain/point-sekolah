@@ -10,6 +10,7 @@ import { normalizeEvidenceImagesFromBody } from "@/lib/evidence-data-url";
 import { replaceRecordEvidenceImages } from "@/lib/record-evidence-images";
 import { formatStaffDisplayName } from "@/lib/staff-roles";
 import { recordDataAccessLog } from "@/lib/access-log";
+import { parseRecordsListPagination } from "@/lib/records-pagination";
 
 const studentRecordSelect = {
   id: true,
@@ -179,10 +180,7 @@ export async function GET(req: NextRequest) {
   }
 
   const sp = req.nextUrl.searchParams;
-  const pageRaw = parseInt(sp.get("page") || "1", 10);
-  const perPageRaw = parseInt(sp.get("perPage") || "50", 10);
-  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
-  const perPage = Math.min(100, Math.max(1, Number.isFinite(perPageRaw) ? perPageRaw : 50));
+  const { page, perPage, skip } = parseRecordsListPagination(sp);
 
   const where = { deletedAt: null } as const;
   const [records, total] = await Promise.all([
@@ -190,7 +188,7 @@ export async function GET(req: NextRequest) {
       where,
       include: { student: { include: { class: true } }, violationType: true },
       orderBy: { date: "desc" },
-      skip: (page - 1) * perPage,
+      skip,
       take: perPage,
     }),
     prisma.violationRecord.count({ where }),
