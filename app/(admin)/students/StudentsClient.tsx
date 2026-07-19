@@ -15,6 +15,7 @@ import {
   isProbablyImageFile,
 } from "@/lib/compress-image-client";
 import { PointBadge, StatusBadge } from "@/components/PointThresholdBadges";
+import { PaginationBar } from "@/components/PaginationBar";
 import { lockAppScroll, Z_MODAL_CLASS, Z_MODAL_ELEVATED_CLASS } from "@/lib/ui-layers";
 
 const GRADES = ["X", "XI", "XII"] as const;
@@ -790,37 +791,15 @@ export default function StudentsClient({
               </>
             )}
           </div>
-          {totalPages > 1 && (
-            <div
-              className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4"
-              style={{ borderColor: "var(--border)" }}
-            >
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Halaman {page} / {totalPages}
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => {
-                      const sp = new URLSearchParams(searchParams as Record<string, string>);
-                      sp.set("page", String(p));
-                      router.push(`${pathname}?${sp.toString()}`);
-                    }}
-                    className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs"
-                    style={{
-                      background: p === page ? "var(--accent)" : "var(--bg-primary)",
-                      color: p === page ? "white" : "var(--text-secondary)",
-                      border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}`,
-                    }}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            onPageChange={(p) => {
+              const sp = new URLSearchParams(searchParams as Record<string, string>);
+              sp.set("page", String(p));
+              router.push(`${pathname}?${sp.toString()}`);
+            }}
+          />
         </div>
       </div>
 

@@ -15,6 +15,7 @@ import { EvidencePreviewModal } from "@/components/records/EvidencePreviewModal"
 import { EvidenceMultiUploader } from "@/components/records/EvidenceMultiUploader";
 import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
 import { PointBadge, StatusBadge } from "@/components/PointThresholdBadges";
+import { PaginationBar } from "@/components/PaginationBar";
 import type { ViolationBagianRow } from "@/lib/violation-sections";
 
 const SESSION_SLOTS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
@@ -840,36 +841,16 @@ export default function RecordsClient({
             </div>
           </>
         )}
-        {totalPages > 1 && (
-          <div
-            className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Halaman {page} dari {totalPages}
-            </span>
-            <div className="flex flex-wrap gap-1">
-              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => {
-                    const sp = new URLSearchParams(searchParams);
-                    sp.set("page", String(p));
-                    router.push(`${pathname}?${sp.toString()}`);
-                  }}
-                  className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs"
-                  style={{
-                    background: p === page ? "var(--accent)" : "var(--bg-primary)",
-                    color: p === page ? "white" : "var(--text-secondary)",
-                    border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}`,
-                  }}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          label={`Halaman ${page} dari ${totalPages}`}
+          onPageChange={(p) => {
+            const sp = new URLSearchParams(searchParams);
+            sp.set("page", String(p));
+            router.push(`${pathname}?${sp.toString()}`);
+          }}
+        />
       </div>
 
       {/* Edit Modal */}

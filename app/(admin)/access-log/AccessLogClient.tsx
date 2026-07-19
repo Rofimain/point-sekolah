@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { PaginationBar } from "@/components/PaginationBar";
 
 type AccessLogRow = {
   id: string;
@@ -284,31 +285,11 @@ export default function AccessLogClient() {
         </table>
       </div>
 
-      {data && data.totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            disabled={page <= 1 || loading}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-40"
-            style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
-          >
-            Sebelumnya
-          </button>
-          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-            Halaman {data.page} / {data.totalPages}
-          </span>
-          <button
-            type="button"
-            disabled={page >= data.totalPages || loading}
-            onClick={() => setPage((p) => p + 1)}
-            className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-40"
-            style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
-          >
-            Berikutnya
-          </button>
+      {data && !loading && data.totalPages > 1 ? (
+        <div className="mt-4 overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)" }}>
+          <PaginationBar page={data.page} totalPages={data.totalPages} onPageChange={(p) => setPage(p)} />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
