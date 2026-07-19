@@ -5,6 +5,7 @@ import { parseStudentImportPackage } from "@/lib/parse-student-import-package";
 import { runBulkStudentImport } from "@/lib/students-bulk-run";
 import { canManageData } from "@/lib/staff-roles";
 import { recordDataAccessLog } from "@/lib/access-log";
+import { isDefaultStudentPasswordConfigError } from "@/lib/student-upsert";
 
 function staffOk(role: string | undefined) {
   return canManageData(role);
@@ -72,6 +73,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (e: unknown) {
     console.error("[students/import-file] import gagal:", e);
+    if (isDefaultStudentPasswordConfigError(e)) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "DEFAULT_STUDENT_PASSWORD belum diatur." },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: "Impor gagal. Periksa data dan coba lagi." }, { status: 400 });
   }
 }

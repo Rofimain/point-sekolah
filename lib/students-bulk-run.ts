@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import {
   buildStudentCreateInput,
+  isDefaultStudentPasswordConfigError,
   resolveDefaultStudentPassword,
   resolveStudentEmail,
 } from "@/lib/student-upsert";
@@ -53,7 +54,13 @@ export async function runBulkStudentImport(
   }
 
   const classes = await prisma.class.findMany();
-  const pwdDefaultRaw = (opts?.defaultPassword?.trim() || resolveDefaultStudentPassword()).slice(0, 72);
+  let pwdDefaultRaw: string;
+  try {
+    pwdDefaultRaw = (opts?.defaultPassword?.trim() || resolveDefaultStudentPassword()).slice(0, 72);
+  } catch (e) {
+    if (isDefaultStudentPasswordConfigError(e)) throw e;
+    throw e;
+  }
   const pwdDefaultCheck = validateNewPassword(pwdDefaultRaw);
   if (!pwdDefaultCheck.ok) {
     throw new Error(pwdDefaultCheck.error);

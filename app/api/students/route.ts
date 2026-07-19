@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import {
   buildStudentCreateInput,
+  isDefaultStudentPasswordConfigError,
   resolveDefaultStudentPassword,
   resolveStudentEmail,
 } from "@/lib/student-upsert";
@@ -66,7 +67,19 @@ export async function POST(req: NextRequest) {
   const existingEmail = await prisma.user.findUnique({ where: { email: finalEmail } });
   if (existingEmail) return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
 
-  const pwdRaw = (password?.trim() || resolveDefaultStudentPassword()).slice(0, 72);
+  let pwdRaw: string;
+  try {
+    pwdRaw = (password?.trim() || resolveDefaultStudentPassword()).slice(0, 72);
+  } catch (e) {
+    if (isDefaultStudentPasswordConfigError(e)) {
+      console.error("[students POST]", e instanceof Error ? e.message : e);
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "DEFAULT_STUDENT_PASSWORD belum diatur." },
+        { status: 503 }
+      );
+    }
+    throw e;
+  }
   const pwdCheck = validateNewPassword(pwdRaw);
   if (!pwdCheck.ok) return NextResponse.json({ error: pwdCheck.error }, { status: 400 });
 

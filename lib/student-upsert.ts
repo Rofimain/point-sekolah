@@ -2,6 +2,12 @@ import type { Prisma } from "@/generated/prisma/client";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { parseParentTelegramForDb } from "@/lib/parent-telegram-field";
 
+/** Pesan jelas ke admin/ops bila DEFAULT_STUDENT_PASSWORD belum di-set di production. */
+export const DEFAULT_STUDENT_PASSWORD_MISSING_MSG =
+  "DEFAULT_STUDENT_PASSWORD belum diatur di environment production (ENV_FILE_CONTENT / GitHub Secrets). " +
+  "Tambahkan variabel ini, deploy ulang, lalu coba lagi. " +
+  "Tanpa password default, pembuatan/impor siswa tidak bisa dilanjutkan.";
+
 /**
  * Password default siswa dari environment.
  * Production: wajib DEFAULT_STUDENT_PASSWORD (tanpa fallback hardcoded).
@@ -11,9 +17,13 @@ export function resolveDefaultStudentPassword(): string {
   const fromEnv = process.env.DEFAULT_STUDENT_PASSWORD?.trim();
   if (fromEnv) return fromEnv;
   if (process.env.NODE_ENV === "production") {
-    throw new Error("DEFAULT_STUDENT_PASSWORD wajib diisi di environment production.");
+    throw new Error(DEFAULT_STUDENT_PASSWORD_MISSING_MSG);
   }
   return "Siswa@123456";
+}
+
+export function isDefaultStudentPasswordConfigError(e: unknown): boolean {
+  return e instanceof Error && e.message.includes("DEFAULT_STUDENT_PASSWORD");
 }
 
 /** @deprecated Gunakan resolveDefaultStudentPassword() — nilai di-resolve saat dipanggil. */
@@ -51,8 +61,16 @@ export function resolveStudentEmail(opts: {
   if (!nisn) {
     return { ok: false, error: "Email wajib diisi (atau isi NISN untuk membuat email otomatis)" };
   }
+  const domain = opts.domain?.trim() || "";
+  if (!domain || domain.includes("Belum Diatur") || domain.startsWith("[")) {
+    return {
+      ok: false,
+      error:
+        "NEXT_PUBLIC_STUDENT_DOMAIN belum diatur — tidak bisa membuat email otomatis dari NISN. Isi email siswa secara manual atau set domain di environment build.",
+    };
+  }
   try {
-    return { ok: true, email: studentEmailFromNisn(nisn, opts.domain) };
+    return { ok: true, email: studentEmailFromNisn(nisn, domain) };
   } catch {
     return { ok: false, error: "NISN tidak valid untuk email otomatis" };
   }
