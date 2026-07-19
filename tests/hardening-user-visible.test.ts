@@ -139,8 +139,12 @@ test("telegram webhook rejects missing or wrong secret", async () => {
   else process.env.TELEGRAM_WEBHOOK_SECRET = prev;
 });
 
-/** (b) Soft-delete ViolationRecord — butuh DATABASE_URL (smoke DB). */
+/** (b) Soft-delete ViolationRecord — opt-in: HARDENING_DB_INTEGRATION=1 + DB sudah migrate. */
 test("soft-delete violation record: hidden from list queries but row remains with deletedAt", async (t) => {
+  if (process.env.HARDENING_DB_INTEGRATION !== "1") {
+    t.skip("set HARDENING_DB_INTEGRATION=1 after migrate+seed to run DB soft-delete check");
+    return;
+  }
   if (!process.env.DATABASE_URL || process.env.DATABASE_URL === "postgresql://") {
     t.skip("DATABASE_URL tidak tersedia untuk integration soft-delete");
     return;
@@ -185,8 +189,12 @@ test("soft-delete violation record: hidden from list queries but row remains wit
   }
 });
 
-/** (g) Pagination data berbeda antar halaman — butuh DB dengan cukup baris. */
+/** (g) Pagination data berbeda antar halaman — opt-in DB. */
 test("records pagination pages return disjoint id sets when enough rows exist", async (t) => {
+  if (process.env.HARDENING_DB_INTEGRATION !== "1") {
+    t.skip("set HARDENING_DB_INTEGRATION=1 after migrate+seed to run DB pagination check");
+    return;
+  }
   if (!process.env.DATABASE_URL || process.env.DATABASE_URL === "postgresql://") {
     t.skip("DATABASE_URL tidak tersedia");
     return;
