@@ -135,10 +135,69 @@ jobs:
             git switch main
             git pull --ff-only origin main
 
-            echo "$ENV_FILE_CONTENT" > .env
+            # Tulis .env via Python (hindari echo + history expand `!` di password).
+            # Strip kutip, lalu paksa DATABASE_URL/DIRECT_URL dari POSTGRES_* (URL-encode).
+            python3 - <<'PY'
+            import os
+            from pathlib import Path
+            from urllib.parse import quote_plus
+
+            raw = os.environ.get("ENV_FILE_CONTENT", "")
+            if not raw.strip():
+                raise SystemExit("ENV_FILE_CONTENT kosong")
+
+            env = {}
+            other_lines = []
+            for line in raw.splitlines():
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#") or "=" not in line:
+                    other_lines.append(line)
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+                if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+                    value = value[1:-1]
+                env[key] = value
+
+            user = env.get("POSTGRES_USER", "").strip()
+            password = env.get("POSTGRES_PASSWORD", "").strip()
+            dbname = env.get("POSTGRES_DB", "").strip()
+            if not user or not password or not dbname:
+                raise SystemExit("POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB wajib ada")
+
+            url = "postgresql://%s:%s@db:5432/%s" % (user, quote_plus(password), dbname)
+            env["DATABASE_URL"] = url
+            env["DIRECT_URL"] = url
+
+            preferred = [
+                "POSTGRES_USER",
+                "POSTGRES_PASSWORD",
+                "POSTGRES_DB",
+                "DATABASE_URL",
+                "DIRECT_URL",
+            ]
+            out = []
+            seen = set()
+            for key in preferred:
+                out.append("%s=%s" % (key, env[key]))
+                seen.add(key)
+            for key, value in env.items():
+                if key in seen:
+                    continue
+                out.append("%s=%s" % (key, value))
+            for line in other_lines:
+                if line.strip():
+                    out.append(line)
+
+            Path(".env").write_text("\n".join(out) + "\n", encoding="utf-8")
+            print(
+                "env ok: user=%s db=%s password_len=%s urls_synced=1"
+                % (user, dbname, len(password))
+            )
+            PY
             mkdir -p certs
-            echo "$ORIGIN_CERT" > certs/origin-cert.pem
-            echo "$ORIGIN_KEY" > certs/origin-key.pem
+            python3 -c 'import os; from pathlib import Path; Path("certs/origin-cert.pem").write_text(os.environ["ORIGIN_CERT"], encoding="utf-8"); Path("certs/origin-key.pem").write_text(os.environ["ORIGIN_KEY"], encoding="utf-8")'
             chmod 600 certs/origin-key.pem .env
 
             echo "$GHCR_TOKEN" | sudo docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
