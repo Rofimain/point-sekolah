@@ -146,6 +146,14 @@ jobs:
             if not raw.strip():
                 raise SystemExit("ENV_FILE_CONTENT kosong")
 
+            def strip_wrapping_quotes(value):
+                value = value.strip()
+                # ASCII + curly/smart quotes (sering dari paste Docs/Word/macOS)
+                quotes = "\"'“”‘’"
+                while len(value) >= 2 and value[0] in quotes and value[-1] in quotes:
+                    value = value[1:-1].strip()
+                return value
+
             env = {}
             other_lines = []
             for line in raw.splitlines():
@@ -155,10 +163,7 @@ jobs:
                     continue
                 key, value = line.split("=", 1)
                 key = key.strip()
-                value = value.strip()
-                if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
-                    value = value[1:-1]
-                env[key] = value
+                env[key] = strip_wrapping_quotes(value)
 
             user = env.get("POSTGRES_USER", "").strip()
             password = env.get("POSTGRES_PASSWORD", "").strip()
