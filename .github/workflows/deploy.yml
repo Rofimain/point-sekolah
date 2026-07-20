@@ -136,44 +136,67 @@ jobs:
             git pull --ff-only origin main
 
             # Tulis .env via Python (hindari echo + history expand `!` di password).
-            # Strip kutip, lalu paksa DATABASE_URL/DIRECT_URL dari POSTGRES_* (URL-encode).
+            # Strip kutip ASCII/curly, validasi key wajib, sync DATABASE_URL dari POSTGRES_*.
             python3 - <<'PY'
             import os
             from pathlib import Path
             from urllib.parse import quote_plus
 
             raw = os.environ.get("ENV_FILE_CONTENT", "")
+            if raw.startswith("\ufeff"):
+                raw = raw.lstrip("\ufeff")
             if not raw.strip():
                 raise SystemExit("ENV_FILE_CONTENT kosong")
 
+            QUOTES = "\"'“”‘’"
+
             def strip_wrapping_quotes(value):
                 value = value.strip()
-                # ASCII + curly/smart quotes (sering dari paste Docs/Word/macOS)
-                quotes = "\"'“”‘’"
-                while len(value) >= 2 and value[0] in quotes and value[-1] in quotes:
+                while len(value) >= 2 and value[0] in QUOTES and value[-1] in QUOTES:
                     value = value[1:-1].strip()
                 return value
 
             env = {}
-            other_lines = []
             for line in raw.splitlines():
                 stripped = line.strip()
                 if not stripped or stripped.startswith("#") or "=" not in line:
-                    other_lines.append(line)
                     continue
                 key, value = line.split("=", 1)
-                key = key.strip()
+                key = strip_wrapping_quotes(key.replace("\ufeff", "").strip())
                 env[key] = strip_wrapping_quotes(value)
 
-            user = env.get("POSTGRES_USER", "").strip()
-            password = env.get("POSTGRES_PASSWORD", "").strip()
-            dbname = env.get("POSTGRES_DB", "").strip()
-            if not user or not password or not dbname:
-                raise SystemExit("POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB wajib ada")
+            required = [
+                "POSTGRES_USER",
+                "POSTGRES_PASSWORD",
+                "POSTGRES_DB",
+                "NEXTAUTH_SECRET",
+                "NEXTAUTH_URL",
+                "CRON_SECRET",
+            ]
+            missing = [k for k in required if not env.get(k, "").strip()]
+            if missing:
+                raise SystemExit("ENV_FILE_CONTENT kurang key: %s" % ", ".join(missing))
+
+            user = env["POSTGRES_USER"].strip()
+            password = env["POSTGRES_PASSWORD"].strip()
+            dbname = env["POSTGRES_DB"].strip()
+            if any(ch in user for ch in QUOTES) or any(ch in dbname for ch in QUOTES):
+                raise SystemExit("POSTGRES_USER/DB masih mengandung kutip — paste ulang tanpa kutip")
+
+            # Username bot tanpa @
+            bot = env.get("TELEGRAM_BOT_USERNAME", "").strip().lstrip("@")
+            if bot:
+                env["TELEGRAM_BOT_USERNAME"] = bot
+
+            if not env.get("TZ", "").strip():
+                env["TZ"] = "Asia/Jakarta"
 
             url = "postgresql://%s:%s@db:5432/%s" % (user, quote_plus(password), dbname)
             env["DATABASE_URL"] = url
             env["DIRECT_URL"] = url
+            env["POSTGRES_USER"] = user
+            env["POSTGRES_PASSWORD"] = password
+            env["POSTGRES_DB"] = dbname
 
             preferred = [
                 "POSTGRES_USER",
@@ -181,24 +204,32 @@ jobs:
                 "POSTGRES_DB",
                 "DATABASE_URL",
                 "DIRECT_URL",
+                "NEXTAUTH_SECRET",
+                "NEXTAUTH_URL",
+                "CRON_SECRET",
+                "TZ",
             ]
             out = []
             seen = set()
             for key in preferred:
-                out.append("%s=%s" % (key, env[key]))
-                seen.add(key)
-            for key, value in env.items():
+                if key in env:
+                    out.append("%s=%s" % (key, env[key]))
+                    seen.add(key)
+            for key in sorted(env.keys()):
                 if key in seen:
                     continue
-                out.append("%s=%s" % (key, value))
-            for line in other_lines:
-                if line.strip():
-                    out.append(line)
+                out.append("%s=%s" % (key, env[key]))
 
             Path(".env").write_text("\n".join(out) + "\n", encoding="utf-8")
             print(
-                "env ok: user=%s db=%s password_len=%s urls_synced=1"
-                % (user, dbname, len(password))
+                "env ok: user=%r db=%r password_len=%s cron_len=%s nextauth_url=%s urls_synced=1"
+                % (
+                    user,
+                    dbname,
+                    len(password),
+                    len(env["CRON_SECRET"]),
+                    env["NEXTAUTH_URL"],
+                )
             )
             PY
             mkdir -p certs
