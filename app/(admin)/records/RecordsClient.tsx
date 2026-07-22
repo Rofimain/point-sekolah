@@ -355,8 +355,8 @@ export default function RecordsClient({
               </h1>
               <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
                 {rosterMode
-                  ? `${total} siswa sesuai kategori — tiap halaman ${perPage} siswa (catatan terbaru, maks. 40 per siswa)`
-                  : `${total} catatan ditemukan — urut input terbaru. Pilih kelas di menu samping untuk fokus satu kelas.`}
+                  ? `${total} siswa sesuai kategori — tiap halaman ${perPage} siswa (tanggal pelanggaran terbaru, maks. 40 per siswa)`
+                  : `${total} catatan ditemukan — urut tanggal pelanggaran terbaru. Pilih kelas di menu samping untuk fokus satu kelas.`}
               </p>
             </>
           )}

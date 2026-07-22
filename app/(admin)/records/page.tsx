@@ -72,7 +72,7 @@ export default async function RecordsPage({
         ? []
         : await prisma.violationRecord.findMany({
             where: { studentId: { in: studentIds }, deletedAt: null },
-            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            orderBy: [{ date: "desc" }, { id: "desc" }],
             select: RECORD_LIST_SELECT,
           });
 
@@ -87,7 +87,7 @@ export default async function RecordsPage({
     for (const st of students) {
       const rs = byStudent.get(st.id);
       if (rs?.length) {
-        const sorted = [...rs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const sorted = [...rs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         for (const r of sorted) rows.push({ type: "record", record: r });
       } else {
         rows.push({ type: "placeholder", student: st });
@@ -111,7 +111,7 @@ export default async function RecordsPage({
       prisma.violationRecord.findMany({
         where: recordWhere,
         select: RECORD_LIST_SELECT,
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        orderBy: [{ date: "desc" }, { id: "desc" }],
         skip: (page - 1) * perPage,
         take: perPage,
       }),
