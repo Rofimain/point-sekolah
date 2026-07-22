@@ -83,6 +83,8 @@ step "3. Siswa submit catatan pelanggaran"
 create_code=$(curl -sS -o /tmp/smoke-create.json -w "%{http_code}" -b "$COOKIE_STUDENT" \
   -X POST "$BASE_URL/api/records" \
   -H "Content-Type: application/json" \
+  -H "Origin: ${BASE_URL}" \
+  -H "Sec-Fetch-Site: same-origin" \
   -d "{\"violationTypeId\":\"${VT_ID}\",\"session\":\"Istirahat / Umum\",\"notes\":\"smoke-e2e\",\"date\":\"$(date -u +%Y-%m-%d)\",\"studentSignatureData\":\"Saya mengakui pelanggaran ini sebagai pengakuan tertulis.\"}")
 if [[ "$create_code" == "201" || "$create_code" == "200" ]]; then
   ok "siswa create record $create_code"

@@ -228,6 +228,7 @@ export default function RecordsClient({
     setLoading(true);
     const res = await fetch("/api/records", {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         studentId: addStudentId,
@@ -242,7 +243,7 @@ export default function RecordsClient({
     setLoading(false);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      toast.error(data.error || "Gagal menyimpan");
+      toast.error(data.error || (res.status === 401 ? "Sesi berakhir. Login ulang." : "Gagal menyimpan"));
       return;
     }
     const n = data.parentTelegramNotify as
@@ -252,7 +253,9 @@ export default function RecordsClient({
       | { status: "failed"; message: string }
       | undefined;
     if (n?.status === "failed") {
-      toast.error(`Notifikasi Telegram ortu gagal: ${n.message}`);
+      toast.message("Catatan tersimpan", {
+        description: `Notifikasi ortu gagal: ${n.message}`,
+      });
     }
     const st = studentsForPicker.find((s) => s.id === addStudentId);
     const detailRows: QrisSuccessDetail[] = [

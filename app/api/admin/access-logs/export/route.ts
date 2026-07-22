@@ -35,8 +35,10 @@ export async function GET(req: NextRequest) {
     { header: "Pelaku", key: "actorName", width: 24 },
     { header: "Role", key: "actorRole", width: 12 },
     { header: "Ringkasan", key: "summary", width: 48 },
+    { header: "Detail / Meta", key: "meta", width: 56 },
     { header: "Target", key: "target", width: 28 },
     { header: "IP", key: "ip", width: 16 },
+    { header: "User-Agent", key: "userAgent", width: 40 },
   ];
   ws.getRow(1).font = { bold: true };
 
@@ -50,8 +52,10 @@ export async function GET(req: NextRequest) {
       actorName: row.actorName || "—",
       actorRole: row.actorRole || "—",
       summary: row.summary,
+      meta: row.meta || "—",
       target: [row.targetType, row.targetId].filter(Boolean).join(" / ") || "—",
       ip: row.ip || "—",
+      userAgent: row.userAgent || "—",
     });
   }
 

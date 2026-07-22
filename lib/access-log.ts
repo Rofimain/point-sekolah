@@ -47,7 +47,7 @@ export async function recordAccessLog(input: RecordAccessLogInput): Promise<void
         actorRole: input.actor?.role ? String(input.actor.role).slice(0, 64) : undefined,
         targetType: input.targetType ? String(input.targetType).slice(0, 64) : undefined,
         targetId: input.targetId ? String(input.targetId).slice(0, 191) : undefined,
-        summary: input.summary.slice(0, 500),
+        summary: input.summary.slice(0, 800),
         meta: safeMetaJson(input.meta),
         ip: input.ip ? String(input.ip).slice(0, 64) : undefined,
         userAgent: input.userAgent ? String(input.userAgent).slice(0, 512) : undefined,

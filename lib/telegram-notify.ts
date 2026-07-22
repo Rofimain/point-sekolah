@@ -62,6 +62,9 @@ function parseDmChatId(raw: string): { ok: true; chatId: string } | { ok: false;
  * Mengirim pesan ke orang tua. Field `parentTelegram` di DB harus **chat ID angka**
  * (hasil tautan ortu via webhook, atau salin dari getUpdates untuk **bot yang sama**).
  */
+/** Batas tunggu kirim Telegram — jangan biarkan API catatan hang/timeout ke user. */
+const TELEGRAM_SEND_TIMEOUT_MS = 8_000;
+
 export async function sendParentViolationTelegram(
   chatIdOrUsername: string,
   payload: ParentViolationNotifyPayload
@@ -78,23 +81,36 @@ export async function sendParentViolationTelegram(
   const chat_id = parsed.chatId;
   const text = buildMessage(payload);
   const url = `${TG_API}/bot${encodeURIComponent(token)}/sendMessage`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id,
-      text,
-      parse_mode: "HTML",
-      disable_web_page_preview: true,
-    }),
-  });
 
-  const data = (await res.json().catch(() => ({}))) as { ok?: boolean; description?: string };
-  if (!res.ok || data.ok === false) {
-    const raw = data.description || res.statusText || "";
-    return { ok: false, error: humanizeTelegramSendError(raw, true) };
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+      }),
+      signal: AbortSignal.timeout(TELEGRAM_SEND_TIMEOUT_MS),
+    });
+
+    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; description?: string };
+    if (!res.ok || data.ok === false) {
+      const raw = data.description || res.statusText || "";
+      return { ok: false, error: humanizeTelegramSendError(raw, true) };
+    }
+    return { ok: true };
+  } catch (err) {
+    const aborted =
+      (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) ||
+      (typeof DOMException !== "undefined" && err instanceof DOMException && err.name === "TimeoutError");
+    if (aborted) {
+      return { ok: false, error: "Notifikasi Telegram ortu timeout. Catatan tetap tersimpan." };
+    }
+    console.error("[telegram] fetch error:", err);
+    return { ok: false, error: "Gagal menghubungi Telegram. Catatan tetap tersimpan." };
   }
-  return { ok: true };
 }
 
 /** Pesan API Telegram → bahasa yang bisa langsung dipahami orang sekolah */

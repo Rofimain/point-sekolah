@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   canCreateUserWithRole,
+  canCreateViolationRecord,
   canDeleteUser,
   canManageUsers,
   canModifyUser,
@@ -75,4 +76,13 @@ test("formatStaffDisplayName appends jabatan when present", () => {
   assert.equal(formatStaffDisplayName({ name: "Budi", jabatan: "Piket" }), "Budi (Piket)");
   assert.equal(formatStaffDisplayName({ name: "Ani", jabatan: "  " }), "Ani");
   assert.equal(formatStaffDisplayName({ name: "Siti" }), "Siti");
+});
+
+test("canCreateViolationRecord: siswa dan staf boleh, role lain tidak", () => {
+  assert.equal(canCreateViolationRecord("STUDENT"), true);
+  assert.equal(canCreateViolationRecord("TEACHER"), true);
+  assert.equal(canCreateViolationRecord("ADMIN"), true);
+  assert.equal(canCreateViolationRecord("SUPER_ADMIN"), true);
+  assert.equal(canCreateViolationRecord("INACTIVE"), false);
+  assert.equal(canCreateViolationRecord(null), false);
 });

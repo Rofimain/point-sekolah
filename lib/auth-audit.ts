@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { portalFromAuthProvider, recordAccessLog } from "@/lib/access-log";
+import { classifyLoginIdentifier, loginMethodLabel } from "@/lib/access-log-diff";
 
 export type AuthAuditInput = {
   userId?: string | null;
@@ -34,10 +35,12 @@ export async function recordAuthLoginEvent(input: AuthAuditInput): Promise<void>
   }
 
   const portal = portalFromAuthProvider(input.provider, input.googlePortal);
+  const kind = classifyLoginIdentifier(input.identifier, input.provider);
+  const method = loginMethodLabel(input.provider, kind);
   const idLabel = input.identifier?.trim() || "tanpa identifier";
   const summary = input.success
-    ? `Login berhasil (${input.provider}): ${idLabel}`
-    : `Login gagal (${input.provider}): ${idLabel}${input.reason ? ` — ${input.reason}` : ""}`;
+    ? `Login berhasil (${method}): ${idLabel}`
+    : `Login gagal (${method}): ${idLabel}${input.reason ? ` — ${input.reason}` : ""}`;
 
   await recordAccessLog({
     portal,
@@ -56,8 +59,11 @@ export async function recordAuthLoginEvent(input: AuthAuditInput): Promise<void>
     summary,
     meta: {
       provider: input.provider,
+      method,
+      identifierKind: kind,
       reason: input.reason ?? null,
       identifier: input.identifier ?? null,
+      authType: input.provider === "google" ? "oauth" : "credentials",
     },
     ip: input.ip,
     userAgent: input.userAgent,

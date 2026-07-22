@@ -13,6 +13,7 @@ import { recordUserLifecycleEvent } from "@/lib/user-lifecycle-audit";
 import { softDeleteUser } from "@/lib/user-soft-delete";
 import { recordDataAccessLog } from "@/lib/access-log";
 import { normalizeEmail } from "@/lib/normalize-email";
+import { buildUserFieldChanges, formatChangesSummary } from "@/lib/access-log-diff";
 
 const VALID_ROLES = new Set<string>(Object.values(Role));
 const VALID_STATUSES = new Set<string>(Object.values(UserStatus));
@@ -149,6 +150,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     updateData.photoPresent = photo.photoPresent;
   }
 
+  const passwordChanged = Boolean(updateData.password);
+  const photoChanged = photo != null;
+
+  const beforeSnap = {
+    name: existing.name,
+    email: existing.email,
+    role: existing.role,
+    status: existing.status,
+    active: existing.active,
+    nisn: existing.nisn,
+    nip: existing.nip,
+    jabatan: existing.jabatan,
+    classId: existing.classId,
+    lastAcademicYear: existing.lastAcademicYear,
+    photoPresent: existing.photoPresent,
+    parentTelegram: existing.parentTelegram,
+  };
+
   const user = await prisma.user.update({ where: { id }, data: updateData as never });
 
   if (nextStatus !== existing.status) {
@@ -167,18 +186,73 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
-  await recordDataAccessLog({
-    session,
-    action: "USER_UPDATE",
-    summary: `Mengubah pengguna ${user.name}`,
-    targetType: "User",
-    targetId: user.id,
-    meta: {
-      role: user.role,
-      status: user.status,
-      fields: Object.keys(body).filter((k) => !["password", "photoData"].includes(k)),
-    },
+  const afterSnap = {
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    active: user.active,
+    nisn: user.nisn,
+    nip: user.nip,
+    jabatan: user.jabatan,
+    classId: user.classId,
+    lastAcademicYear: user.lastAcademicYear,
+    photoPresent: user.photoPresent,
+    parentTelegram: user.parentTelegram,
+  };
+
+  const changes = buildUserFieldChanges({
+    before: beforeSnap,
+    after: afterSnap,
+    passwordChanged,
+    photoChanged,
   });
+  const changeText = formatChangesSummary(changes);
+  const changedFields = changes.map((c) => c.field);
+
+  if (passwordChanged) {
+    await recordDataAccessLog({
+      session,
+      action: "PASSWORD_RESET",
+      summary: `Reset password ${user.name} oleh ${session.user.role}${changeText && changedFields.length > 1 ? ` (+ ${changedFields.filter((f) => f !== "password").join(", ")})` : ""}`,
+      targetType: "User",
+      targetId: user.id,
+      meta: {
+        method: "admin_reset",
+        actorRole: session.user.role,
+        actorId: session.user.id,
+        targetRole: user.role,
+        targetEmail: user.email,
+        passwordChanged: true,
+        changes,
+        fields: changedFields,
+      },
+    });
+  }
+
+  const nonPasswordChanges = changes.filter((c) => c.field !== "password");
+  if (nonPasswordChanges.length > 0 || !passwordChanged) {
+    const detail = formatChangesSummary(nonPasswordChanges.length > 0 ? nonPasswordChanges : changes);
+    await recordDataAccessLog({
+      session,
+      action: "USER_UPDATE",
+      summary: detail
+        ? `Mengubah ${user.name}: ${detail}`
+        : `Mengubah pengguna ${user.name}`,
+      targetType: "User",
+      targetId: user.id,
+      meta: {
+        role: user.role,
+        status: user.status,
+        email: user.email,
+        fields: changedFields,
+        changes: nonPasswordChanges.length > 0 ? nonPasswordChanges : changes,
+        passwordChanged,
+        photoChanged,
+        actorRole: session.user.role,
+      },
+    });
+  }
 
   const { password: _, parentTelegramLinkToken: __, photoData: ___, ...safe } = user;
   return NextResponse.json(safe);

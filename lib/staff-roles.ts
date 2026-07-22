@@ -42,9 +42,13 @@ export function canManageUsers(role: string | undefined | null): boolean {
   return isAdminRole(role) || isSuperAdmin(role);
 }
 
-/** Semua staf boleh menambah catatan pelanggaran. */
+/**
+ * Boleh membuat catatan pelanggaran:
+ * - STUDENT: laporan mandiri (self-submit)
+ * - staf: catat untuk siswa lain
+ */
 export function canCreateViolationRecord(role: string | undefined | null): boolean {
-  return isStaffRole(role);
+  return role === "STUDENT" || isStaffRole(role);
 }
 
 /**

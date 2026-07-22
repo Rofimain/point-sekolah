@@ -32,6 +32,19 @@ export async function PATCH(request: NextRequest) {
   const next = validateNewPassword(body?.newPassword);
   if (typeof currentPassword !== "string" || !next.ok) {
     recordFailedPasswordAttempt(session.user.id);
+    await recordDataAccessLog({
+      session,
+      action: "PASSWORD_CHANGE",
+      summary: `Gagal ganti password akun sendiri`,
+      targetType: "User",
+      targetId: session.user.id,
+      success: false,
+      meta: {
+        method: "self",
+        actorRole: session.user.role ?? null,
+        reason: next.ok ? "MISSING_CURRENT" : "INVALID_NEW_PASSWORD",
+      },
+    });
     return NextResponse.json({ error: next.ok ? "Password saat ini wajib diisi." : next.error }, { status: 400 });
   }
   if (currentPassword === next.value) {
@@ -46,6 +59,19 @@ export async function PATCH(request: NextRequest) {
     Boolean(user && canUserLogin(user.status)) && (await bcrypt.compare(currentPassword, user?.password ?? ""));
   if (!currentIsValid) {
     recordFailedPasswordAttempt(session.user.id);
+    await recordDataAccessLog({
+      session,
+      action: "PASSWORD_CHANGE",
+      summary: `Gagal ganti password akun sendiri — password lama salah`,
+      targetType: "User",
+      targetId: session.user.id,
+      success: false,
+      meta: {
+        method: "self",
+        actorRole: session.user.role ?? null,
+        reason: "INVALID_CURRENT_PASSWORD",
+      },
+    });
     return NextResponse.json({ error: "Password saat ini tidak benar." }, { status: 400 });
   }
 
@@ -64,9 +90,15 @@ export async function PATCH(request: NextRequest) {
   await recordDataAccessLog({
     session,
     action: "PASSWORD_CHANGE",
-    summary: `Ganti password akun sendiri`,
+    summary: `Ganti password akun sendiri (${session.user.role || "user"})`,
     targetType: "User",
     targetId: session.user.id,
+    meta: {
+      method: "self",
+      actorRole: session.user.role ?? null,
+      actorId: session.user.id,
+      passwordChanged: true,
+    },
   });
   return NextResponse.json(
     { ok: true },

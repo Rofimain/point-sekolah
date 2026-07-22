@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 import { QrisStyleSuccessSheet, type QrisSuccessDetail } from "@/components/QrisStyleSuccessSheet";
 import { TopBar } from "@/components/layouts/TopBar";
@@ -196,6 +197,7 @@ export default function StudentFormClient({
     try {
       const res = await fetch("/api/records", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           violationTypeId: vtId,
@@ -206,18 +208,41 @@ export default function StudentFormClient({
           studentSignatureData: signatureText.trim() || undefined,
         }),
       });
-      const data = await res.json();
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+        id?: string;
+        date?: string | Date;
+        createdAt?: string | Date;
+        parentTelegramNotify?:
+          | { status: "sent" }
+          | { status: "skipped_no_recipient" }
+          | { status: "skipped_no_token" }
+          | { status: "failed"; message: string };
+      };
       if (!res.ok) {
-        throw new Error(data.error || "Gagal mengirim");
+        const authCode = data.code === "SESSION_REPLACED" || data.code === "SESSION_EXPIRED" || data.code === "SESSION_INVALID";
+        if (res.status === 401 || authCode) {
+          const msg =
+            data.error ||
+            (data.code === "SESSION_REPLACED"
+              ? "Sesi diganti karena akun ini masuk dari perangkat lain. Silakan login lagi."
+              : "Sesi berakhir. Silakan login ulang, lalu kirim lagi.");
+          setError(msg);
+          toast.error(msg);
+          await signOut({ callbackUrl: data.code === "SESSION_REPLACED" ? "/login?error=SESSION_REPLACED" : "/login" });
+          return;
+        }
+        throw new Error(data.error || `Gagal mengirim (kode ${res.status}).`);
       }
-      const n = data.parentTelegramNotify as
-        | { status: "sent" }
-        | { status: "skipped_no_recipient" }
-        | { status: "skipped_no_token" }
-        | { status: "failed"; message: string }
-        | undefined;
+      if (!data.id) {
+        throw new Error("Server tidak mengembalikan ID catatan. Coba muat ulang halaman.");
+      }
+      const n = data.parentTelegramNotify;
       if (n?.status === "failed") {
-        toast.error(`Notifikasi Telegram ortu gagal: ${n.message}`);
+        toast.message("Laporan tersimpan", {
+          description: `Notifikasi ortu gagal dikirim: ${n.message}`,
+        });
       }
       const vtLabel = selectedVt?.name ?? "Pelanggaran";
       const pts = resolvedPoints;

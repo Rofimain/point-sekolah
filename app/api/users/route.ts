@@ -76,10 +76,30 @@ export async function POST(req: NextRequest) {
   await recordDataAccessLog({
     session,
     action: "USER_CREATE",
-    summary: `Membuat pengguna ${user.name} (${user.role})`,
+    summary: `Membuat pengguna ${user.name} (${user.role})${photo.photoPresent ? " + foto" : ""}`,
     targetType: "User",
     targetId: user.id,
-    meta: { role: user.role, email: user.email },
+    meta: {
+      role: user.role,
+      email: user.email,
+      nisn: user.nisn,
+      nip: user.nip,
+      classId: user.classId,
+      jabatan: user.jabatan,
+      status: user.status,
+      photoAdded: photo.photoPresent,
+      fields: [
+        "name",
+        "email",
+        "role",
+        "password",
+        ...(user.nisn ? ["nisn"] : []),
+        ...(user.nip ? ["nip"] : []),
+        ...(user.classId ? ["classId"] : []),
+        ...(user.jabatan ? ["jabatan"] : []),
+        ...(photo.photoPresent ? ["photo"] : []),
+      ],
+    },
   });
   const { password: _, parentTelegramLinkToken: linkTok, photoData: __, ...safe } = user;
   const bot = getTelegramBotUsername();
