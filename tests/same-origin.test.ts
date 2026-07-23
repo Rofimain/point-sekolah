@@ -69,3 +69,35 @@ test("falls back to Referer when Origin is missing", () => {
     else process.env.NEXTAUTH_URL = previous;
   }
 });
+
+test("allows Sec-Fetch-Site same-origin even if Origin not in allowed Docker hosts", () => {
+  const previous = process.env.NEXTAUTH_URL;
+  delete process.env.NEXTAUTH_URL;
+  try {
+    const request = req("http://app:3000/api/records", {
+      origin: "https://tanse.smai-alazhar1.com",
+      host: "app:3000",
+      "sec-fetch-site": "same-origin",
+    });
+    assert.equal(isSameOriginRequest(request), true);
+  } finally {
+    if (previous === undefined) delete process.env.NEXTAUTH_URL;
+    else process.env.NEXTAUTH_URL = previous;
+  }
+});
+
+test("rejects cross-site Sec-Fetch-Site even with session-like Host", () => {
+  const previous = process.env.NEXTAUTH_URL;
+  process.env.NEXTAUTH_URL = "https://tanse.smai-alazhar1.com";
+  try {
+    const request = req("https://tanse.smai-alazhar1.com/api/records", {
+      origin: "https://evil.example",
+      host: "tanse.smai-alazhar1.com",
+      "sec-fetch-site": "cross-site",
+    });
+    assert.equal(isSameOriginRequest(request), false);
+  } finally {
+    if (previous === undefined) delete process.env.NEXTAUTH_URL;
+    else process.env.NEXTAUTH_URL = previous;
+  }
+});

@@ -190,14 +190,14 @@ export async function POST(req: NextRequest) {
   };
 
   /**
-   * Notifikasi ortu tidak boleh menggagalkan response sukses.
-   * Timeout/error jaringan Telegram sebelumnya membuat siswa melihat "gagal"
-   * padahal catatan sudah tersimpan.
+   * Jangan biarkan notifikasi Telegram menahan response simpan.
+   * Kirim di background setelah catatan sukses tersimpan (runtime Docker/Node tetap hidup).
    */
   let parentTelegramNotify:
     | { status: "sent" }
     | { status: "skipped_no_recipient" }
     | { status: "skipped_no_token" }
+    | { status: "queued" }
     | { status: "failed"; message: string };
 
   const chat = record.student.parentTelegram?.trim();
@@ -207,19 +207,15 @@ export async function POST(req: NextRequest) {
     console.warn("[telegram] TELEGRAM_BOT_TOKEN kosong — notifikasi ortu tidak dikirim");
     parentTelegramNotify = { status: "skipped_no_token" };
   } else {
-    try {
-      const r = await sendParentViolationTelegram(chat, payload);
-      parentTelegramNotify = r.ok
-        ? { status: "sent" }
-        : { status: "failed", message: r.error || "Gagal mengirim notifikasi Telegram ke ortu." };
-      if (!r.ok) console.error("[telegram] kirim ke ortu gagal:", r.error);
-    } catch (e) {
-      console.error("[telegram] exception setelah simpan catatan:", e);
-      parentTelegramNotify = {
-        status: "failed",
-        message: "Gagal mengirim notifikasi Telegram ke ortu. Catatan tetap tersimpan.",
-      };
-    }
+    parentTelegramNotify = { status: "queued" };
+    const notifyPayload = payload;
+    void sendParentViolationTelegram(chat, notifyPayload)
+      .then((r) => {
+        if (!r.ok) console.error("[telegram] kirim ke ortu gagal:", r.error);
+      })
+      .catch((e) => {
+        console.error("[telegram] exception setelah simpan catatan:", e);
+      });
   }
 
   await recordDataAccessLog({

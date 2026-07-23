@@ -172,43 +172,49 @@ export default function RecordsClient({
       return;
     }
     setLoading(true);
-    const body: Record<string, unknown> = {
-      points: editPoints,
-      notes: editNotes,
-      violationTypeId: editVtId,
-      date: editIncidentDate,
-      evidenceImages: editEvidenceImages,
-    };
-    if (editSignatureText.trim()) body.studentSignatureData = editSignatureText.trim();
-    const res = await fetch(`/api/records/${editModal.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    setLoading(false);
-    if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
-      toast.error(d.error || "Gagal menyimpan");
-      return;
+    try {
+      const body: Record<string, unknown> = {
+        points: editPoints,
+        notes: editNotes,
+        violationTypeId: editVtId,
+        date: editIncidentDate,
+        evidenceImages: editEvidenceImages,
+      };
+      if (editSignatureText.trim()) body.studentSignatureData = editSignatureText.trim();
+      const res = await fetch(`/api/records/${editModal.id}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        toast.error(d.error || "Gagal menyimpan");
+        return;
+      }
+      const updated = await res.json();
+      const vt = violationTypes.find((v) => v.id === editVtId);
+      setSuccessSheet({
+        title: "Berhasil",
+        subtitle: "Perubahan catatan pelanggaran telah disimpan.",
+        details: [
+          { label: "Siswa", value: editModal.student?.name ?? "—" },
+          { label: "Pelanggaran", value: vt?.name ?? "—" },
+          { label: "Poin", value: `${editPoints} poin` },
+          { label: "Tanggal pelanggaran", value: formatIncidentDateOnly(updated.date) },
+          { label: "Waktu penginputan", value: formatInputDateTime(updated.updatedAt) },
+        ],
+        receiptRecordId: editModal.id,
+      });
+      setEditModal(null);
+      setEditEvidenceImages([]);
+      setEditSignatureText("");
+      router.refresh();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan");
+    } finally {
+      setLoading(false);
     }
-    const updated = await res.json();
-    const vt = violationTypes.find((v) => v.id === editVtId);
-    setSuccessSheet({
-      title: "Berhasil",
-      subtitle: "Perubahan catatan pelanggaran telah disimpan.",
-      details: [
-        { label: "Siswa", value: editModal.student?.name ?? "—" },
-        { label: "Pelanggaran", value: vt?.name ?? "—" },
-        { label: "Poin", value: `${editPoints} poin` },
-        { label: "Tanggal pelanggaran", value: formatIncidentDateOnly(updated.date) },
-        { label: "Waktu penginputan", value: formatInputDateTime(updated.updatedAt) },
-      ],
-      receiptRecordId: editModal.id,
-    });
-    setEditModal(null);
-    setEditEvidenceImages([]);
-    setEditSignatureText("");
-    router.refresh();
   }
 
   async function handleAdd() {
@@ -226,63 +232,69 @@ export default function RecordsClient({
       return;
     }
     setLoading(true);
-    const res = await fetch("/api/records", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        studentId: addStudentId,
-        violationTypeId: addVtId,
-        session: addSession,
-        notes: addNotes,
-        date: addIncidentDate,
-        evidenceImages: addEvidenceImages.length > 0 ? addEvidenceImages : undefined,
-        studentSignatureData: addSignatureText.trim() || undefined,
-      }),
-    });
-    setLoading(false);
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      toast.error(data.error || (res.status === 401 ? "Sesi berakhir. Login ulang." : "Gagal menyimpan"));
-      return;
-    }
-    const n = data.parentTelegramNotify as
-      | { status: "sent" }
-      | { status: "skipped_no_recipient" }
-      | { status: "skipped_no_token" }
-      | { status: "failed"; message: string }
-      | undefined;
-    if (n?.status === "failed") {
-      toast.message("Catatan tersimpan", {
-        description: `Notifikasi ortu gagal: ${n.message}`,
+    try {
+      const res = await fetch("/api/records", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: addStudentId,
+          violationTypeId: addVtId,
+          session: addSession,
+          notes: addNotes,
+          date: addIncidentDate,
+          evidenceImages: addEvidenceImages.length > 0 ? addEvidenceImages : undefined,
+          studentSignatureData: addSignatureText.trim() || undefined,
+        }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || (res.status === 401 ? "Sesi berakhir. Login ulang." : "Gagal menyimpan"));
+        return;
+      }
+      const n = data.parentTelegramNotify as
+        | { status: "sent" }
+        | { status: "skipped_no_recipient" }
+        | { status: "skipped_no_token" }
+        | { status: "queued" }
+        | { status: "failed"; message: string }
+        | undefined;
+      if (n?.status === "failed") {
+        toast.message("Catatan tersimpan", {
+          description: `Notifikasi ortu gagal: ${n.message}`,
+        });
+      }
+      const st = studentsForPicker.find((s) => s.id === addStudentId);
+      const detailRows: QrisSuccessDetail[] = [
+        { label: "Siswa", value: st?.name ?? "—" },
+        { label: "Pelanggaran", value: vt?.name ?? "—" },
+        { label: "Poin", value: `${pts} poin` },
+      ];
+      if (addSession.trim()) detailRows.push({ label: "Sesi", value: addSession.trim() });
+      detailRows.push(
+        { label: "Tanggal pelanggaran", value: formatIncidentDateOnly(data.date) },
+        { label: "Waktu penginputan", value: formatInputDateTime(data.createdAt) }
+      );
+      setSuccessSheet({
+        title: "Berhasil",
+        subtitle: "Catatan pelanggaran sudah masuk ke sistem.",
+        details: detailRows,
+        receiptRecordId: data.id,
+      });
+      setAddModal(false);
+      setAddStudentId("");
+      setAddVtId("");
+      setAddSession("");
+      setAddNotes("");
+      setAddEvidenceImages([]);
+      setAddSignatureText("");
+      setAddIncidentDate(calendarTodayYmd());
+      router.refresh();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan");
+    } finally {
+      setLoading(false);
     }
-    const st = studentsForPicker.find((s) => s.id === addStudentId);
-    const detailRows: QrisSuccessDetail[] = [
-      { label: "Siswa", value: st?.name ?? "—" },
-      { label: "Pelanggaran", value: vt?.name ?? "—" },
-      { label: "Poin", value: `${pts} poin` },
-    ];
-    if (addSession.trim()) detailRows.push({ label: "Sesi", value: addSession.trim() });
-    detailRows.push(
-      { label: "Tanggal pelanggaran", value: formatIncidentDateOnly(data.date) },
-      { label: "Waktu penginputan", value: formatInputDateTime(data.createdAt) }
-    );
-    setSuccessSheet({
-      title: "Berhasil",
-      subtitle: "Catatan pelanggaran sudah masuk ke sistem.",
-      details: detailRows,
-      receiptRecordId: data.id,
-    });
-    setAddModal(false);
-    setAddStudentId("");
-    setAddVtId("");
-    setAddSession("");
-    setAddNotes("");
-    setAddEvidenceImages([]);
-    setAddSignatureText("");
-    setAddIncidentDate(calendarTodayYmd());
-    router.refresh();
   }
 
   async function handleExport() {

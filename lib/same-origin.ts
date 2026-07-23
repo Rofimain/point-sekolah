@@ -33,6 +33,7 @@ export function allowedRequestHosts(request: NextRequest): Set<string> {
   add(normalizeHost(request.headers.get("host")));
   add(normalizeHost(request.nextUrl.host));
   add(hostFromUrlHeader(process.env.NEXTAUTH_URL));
+  add(hostFromUrlHeader(process.env.APP_URL));
 
   return hosts;
 }
@@ -40,7 +41,7 @@ export function allowedRequestHosts(request: NextRequest): Set<string> {
 /**
  * CSRF guard for cookie-authenticated mutating routes.
  * Accepts Origin (preferred) or Referer, matched against public Host /
- * X-Forwarded-Host / NEXTAUTH_URL — not only request.nextUrl.host, which can
+ * X-Forwarded-Host / NEXTAUTH_URL / APP_URL — not only request.nextUrl.host, which can
  * be the internal Docker hostname behind Caddy.
  */
 export function isSameOriginRequest(request: NextRequest): boolean {
@@ -53,10 +54,19 @@ export function isSameOriginRequest(request: NextRequest): boolean {
   const refererHost = hostFromUrlHeader(request.headers.get("referer"));
   if (refererHost && allowed.has(refererHost)) return true;
 
-  // Some browsers omit Origin on same-origin PATCH; Sec-Fetch-Site is set by the UA.
+  /**
+   * Browser sets Sec-Fetch-Site. Same-origin POST from the admin/student UI must pass
+   * even when Origin is present but allowed hosts only contain an internal Docker Host
+   * (misconfigured forward headers) — cross-site CSRF sends Sec-Fetch-Site: cross-site.
+   */
   const site = request.headers.get("sec-fetch-site");
-  if (site === "same-origin" && (originHost === null || allowed.has(originHost))) {
-    return Boolean(normalizeHost(request.headers.get("host")) || normalizeHost(request.headers.get("x-forwarded-host")));
+  if (site === "same-origin") {
+    return Boolean(
+      normalizeHost(request.headers.get("x-forwarded-host")) ||
+        normalizeHost(request.headers.get("host")) ||
+        hostFromUrlHeader(process.env.NEXTAUTH_URL) ||
+        hostFromUrlHeader(process.env.APP_URL)
+    );
   }
 
   return false;
