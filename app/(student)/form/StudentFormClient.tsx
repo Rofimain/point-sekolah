@@ -24,7 +24,8 @@ import { EvidenceMultiUploader } from "@/components/records/EvidenceMultiUploade
 import UserAvatar from "@/components/ui/UserAvatar";
 import { SectionAccordion, useSectionAccordionState } from "@/components/SectionAccordion";
 
-const SESSIONS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
+import { SESSION_SLOTS } from "@/lib/session-slots";
+
 const CRITICAL = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
 const WARNING = parseInt(process.env.NEXT_PUBLIC_WARNING_POINTS || "50", 10);
 
@@ -616,7 +617,7 @@ export default function StudentFormClient({
                     }}
                   >
                     <option value="">— Pilih sesi —</option>
-                    {SESSIONS.map((s) => (
+                    {SESSION_SLOTS.map((s) => (
                       <option key={s} value={s}>
                         {s}
                       </option>

@@ -84,6 +84,33 @@ export function canModifyUser(actorRole: string | undefined | null, targetRole: 
 }
 
 /**
+ * Reset password akun target (tanpa membuka ubah role / hapus / blokir).
+ * - SUPER_ADMIN: semua role
+ * - ADMIN: STUDENT, TEACHER, dan peer ADMIN (bukan SUPER_ADMIN)
+ * - TEACHER: tidak boleh
+ */
+export function canResetUserPassword(
+  actorRole: string | undefined | null,
+  targetRole: string | undefined | null
+): boolean {
+  if (isSuperAdmin(actorRole)) return true;
+  if (isAdminRole(actorRole)) {
+    return targetRole === "STUDENT" || targetRole === "TEACHER" || targetRole === "ADMIN";
+  }
+  return false;
+}
+
+/** Buka form edit user: full modify, atau reset password saja (peer admin). */
+export function canOpenUserEditor(
+  actorRole: string | undefined | null,
+  targetRole: string | undefined | null,
+  opts?: { isSelf?: boolean }
+): boolean {
+  if (opts?.isSelf && (isAdminRole(actorRole) || actorRole === "TEACHER")) return true;
+  return canModifyUser(actorRole, targetRole) || canResetUserPassword(actorRole, targetRole);
+}
+
+/**
  * Hapus akun target — sama batasan dengan canModifyUser.
  */
 export function canDeleteUser(actorRole: string | undefined | null, targetRole: string | undefined | null): boolean {

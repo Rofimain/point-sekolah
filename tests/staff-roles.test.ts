@@ -6,6 +6,8 @@ import {
   canDeleteUser,
   canManageUsers,
   canModifyUser,
+  canOpenUserEditor,
+  canResetUserPassword,
   formatStaffDisplayName,
   getRoleLabel,
   roleRank,
@@ -55,6 +57,17 @@ test("ADMIN can fully manage TEACHER and STUDENT only", () => {
   assert.equal(canDeleteUser("ADMIN", "ADMIN"), false);
   assert.equal(canModifyUser("ADMIN", "SUPER_ADMIN"), false);
   assert.equal(canDeleteUser("ADMIN", "SUPER_ADMIN"), false);
+});
+
+test("ADMIN may reset peer ADMIN password but not SUPER_ADMIN", () => {
+  assert.equal(canResetUserPassword("ADMIN", "STUDENT"), true);
+  assert.equal(canResetUserPassword("ADMIN", "TEACHER"), true);
+  assert.equal(canResetUserPassword("ADMIN", "ADMIN"), true);
+  assert.equal(canResetUserPassword("ADMIN", "SUPER_ADMIN"), false);
+  assert.equal(canOpenUserEditor("ADMIN", "ADMIN"), true);
+  assert.equal(canOpenUserEditor("ADMIN", "SUPER_ADMIN"), false);
+  assert.equal(canResetUserPassword("SUPER_ADMIN", "ADMIN"), true);
+  assert.equal(canResetUserPassword("TEACHER", "ADMIN"), false);
 });
 
 test("TEACHER cannot create, modify, or delete any user", () => {

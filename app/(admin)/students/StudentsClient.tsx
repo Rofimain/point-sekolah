@@ -17,10 +17,59 @@ import {
 import { PointBadge, StatusBadge } from "@/components/PointThresholdBadges";
 import { PaginationBar } from "@/components/PaginationBar";
 import { lockAppScroll, Z_MODAL_CLASS, Z_MODAL_ELEVATED_CLASS } from "@/lib/ui-layers";
+import {
+  nextStudentsListSort,
+  parseStudentsListSort,
+  type StudentsListSort,
+  type StudentsListSortKey,
+} from "@/lib/students-list-sort";
 
 const GRADES = ["X", "XI", "XII"] as const;
 
 type FlashMsg = { type: "ok" | "err"; text: string };
+
+function StudentsSortHeader({
+  label,
+  column,
+  sort,
+  onSort,
+}: {
+  label: string;
+  column: StudentsListSortKey;
+  sort: StudentsListSort;
+  onSort: (key: StudentsListSortKey) => void;
+}) {
+  const active = sort.key === column;
+  return (
+    <th
+      className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
+      style={{ color: "var(--text-muted)" }}
+      aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className="inline-flex min-h-11 touch-manipulation items-center gap-1 rounded text-left hover:opacity-80"
+        title={
+          column === "name"
+            ? active
+              ? sort.direction === "asc"
+                ? "Urutkan Z–A"
+                : "Urutkan A–Z"
+              : "Urutkan nama A–Z"
+            : active
+              ? sort.direction === "desc"
+                ? "Urutkan poin kecil→besar"
+                : "Urutkan poin besar→kecil"
+              : "Urutkan poin besar→kecil"
+        }
+      >
+        {label}
+        <span aria-hidden>{active ? (sort.direction === "asc" ? "↑" : "↓") : "↕"}</span>
+      </button>
+    </th>
+  );
+}
 
 function PointsSummary({ points }: { points: number }) {
   return (
@@ -81,7 +130,7 @@ export default function StudentsClient({
   page: number;
   perPage: number;
   classes: ClassOpt[];
-  searchParams: { search?: string; page?: string; tab?: string; classId?: string };
+  searchParams: { search?: string; page?: string; tab?: string; classId?: string; sort?: string; dir?: string };
   studentDomain: string;
   viewerRole: string;
   suggestedYear: string;
@@ -460,6 +509,12 @@ export default function StudentsClient({
       : null;
 
   const selectedClass = searchParams.classId ? (classes.find((c) => c.id === searchParams.classId) ?? null) : null;
+  const listSort = parseStudentsListSort(searchParams.sort, searchParams.dir);
+
+  function toggleSort(column: StudentsListSortKey) {
+    const next = nextStudentsListSort(listSort, column);
+    navigate({ sort: next.key, dir: next.direction });
+  }
 
   return (
     <div>
@@ -641,6 +696,39 @@ export default function StudentsClient({
               </div>
             ) : (
               <>
+                <div
+                  className="flex flex-wrap items-center gap-2 border-b px-3 py-2 md:hidden"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                    Urutkan
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("name")}
+                    className="inline-flex min-h-11 touch-manipulation items-center gap-1 rounded border px-3 py-1.5 text-[11px]"
+                    style={{
+                      borderColor: listSort.key === "name" ? "var(--accent)" : "var(--border)",
+                      color: listSort.key === "name" ? "var(--accent)" : "var(--text-secondary)",
+                      background: "var(--bg-primary)",
+                    }}
+                  >
+                    Nama {listSort.key === "name" ? (listSort.direction === "asc" ? "A–Z" : "Z–A") : ""}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("points")}
+                    className="inline-flex min-h-11 touch-manipulation items-center gap-1 rounded border px-3 py-1.5 text-[11px]"
+                    style={{
+                      borderColor: listSort.key === "points" ? "var(--accent)" : "var(--border)",
+                      color: listSort.key === "points" ? "var(--accent)" : "var(--text-secondary)",
+                      background: "var(--bg-primary)",
+                    }}
+                  >
+                    Poin{" "}
+                    {listSort.key === "points" ? (listSort.direction === "desc" ? "besar→kecil" : "kecil→besar") : ""}
+                  </button>
+                </div>
                 <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
                   {students.map((u) => (
                     <li
@@ -701,18 +789,40 @@ export default function StudentsClient({
                 <table className="hidden w-full min-w-[520px] md:table">
                   <thead>
                     <tr style={{ background: "var(--bg-primary)" }}>
-                      {(selectedClass
-                        ? ["Siswa", "NISN", "Email", "Total poin", "Status", "Aksi"]
-                        : ["Siswa", "NISN", "Email", "Kelas", "Total poin", "Status", "Aksi"]
-                      ).map((h) => (
+                      <StudentsSortHeader label="Siswa" column="name" sort={listSort} onSort={toggleSort} />
+                      <th
+                        className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        NISN
+                      </th>
+                      <th
+                        className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        Email
+                      </th>
+                      {!selectedClass && (
                         <th
-                          key={h}
                           className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
                           style={{ color: "var(--text-muted)" }}
                         >
-                          {h}
+                          Kelas
                         </th>
-                      ))}
+                      )}
+                      <StudentsSortHeader label="Total poin" column="points" sort={listSort} onSort={toggleSort} />
+                      <th
+                        className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        Status
+                      </th>
+                      <th
+                        className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        Aksi
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

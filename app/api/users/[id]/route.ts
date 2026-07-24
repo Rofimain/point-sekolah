@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { Role, UserStatus } from "@/generated/prisma/client";
 import { newParentLinkToken } from "@/lib/parent-telegram-link";
 import { assertCanDemoteSuperAdmin, LAST_ACTIVE_SA_MSG } from "@/lib/super-admin-policy";
-import { canDeleteUser, canModifyUser, canCreateUserWithRole, isAdminRole } from "@/lib/staff-roles";
+import { canDeleteUser, canModifyUser, canCreateUserWithRole, canResetUserPassword, isAdminRole } from "@/lib/staff-roles";
 import { validateNewPassword } from "@/lib/password-policy";
 import { parseUserPhotoPatch } from "@/lib/user-photo";
 import { ACTIVE_USER_WHERE, lifecycleFieldsForStatus, statusFromActiveToggle } from "@/lib/user-status";
@@ -46,12 +46,43 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const adminEditingSelf = isAdminRole(session.user.role) && existing.id === session.user.id;
   const teacherEditingSelf = session.user.role === "TEACHER" && existing.id === session.user.id;
+  const fullModify = canModifyUser(session.user.role, existing.role) || adminEditingSelf || teacherEditingSelf;
+  const passwordOnlyReset =
+    !fullModify && canResetUserPassword(session.user.role, existing.role) && Boolean(body.password);
+
+  if (!fullModify && !passwordOnlyReset) {
+    return NextResponse.json(
+      { error: "Anda tidak boleh mengubah akun dengan level sama atau lebih tinggi." },
+      { status: 403 }
+    );
+  }
+
+  if (passwordOnlyReset) {
+    const extraKeys = [
+      "name",
+      "email",
+      "role",
+      "status",
+      "active",
+      "nisn",
+      "nip",
+      "jabatan",
+      "classId",
+      "photoData",
+      "lastAcademicYear",
+    ].filter((key) => body[key] !== undefined);
+    if (extraKeys.length > 0) {
+      return NextResponse.json(
+        { error: "Untuk akun Admin peer, Anda hanya boleh mereset password (tanpa ubah role/data lain)." },
+        { status: 403 }
+      );
+    }
+  }
 
   if (
-    (!canModifyUser(session.user.role, existing.role) && !adminEditingSelf && !teacherEditingSelf) ||
-    (body.role !== undefined &&
-      String(body.role) !== existing.role &&
-      !canCreateUserWithRole(session.user.role, String(body.role)))
+    body.role !== undefined &&
+    String(body.role) !== existing.role &&
+    !canCreateUserWithRole(session.user.role, String(body.role))
   ) {
     return NextResponse.json(
       { error: "Anda tidak boleh mengubah akun dengan level sama atau lebih tinggi." },
@@ -75,6 +106,74 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (otherActive < 1) {
       return NextResponse.json({ error: LAST_ACTIVE_SA_MSG }, { status: 400 });
     }
+  }
+
+  if (passwordOnlyReset) {
+    const nextPassword = validateNewPassword(body.password);
+    if (!nextPassword.ok) return NextResponse.json({ error: nextPassword.error }, { status: 400 });
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        password: await bcrypt.hash(nextPassword.value, 12),
+        authVersion: { increment: 1 },
+        passwordChangedAt: null,
+        failedLoginCount: 0,
+        lockedUntil: null,
+      },
+    });
+    const changes = buildUserFieldChanges({
+      before: {
+        name: existing.name,
+        email: existing.email,
+        role: existing.role,
+        status: existing.status,
+        active: existing.active,
+        nisn: existing.nisn,
+        nip: existing.nip,
+        jabatan: existing.jabatan,
+        classId: existing.classId,
+        lastAcademicYear: existing.lastAcademicYear,
+        photoPresent: existing.photoPresent,
+        parentTelegram: existing.parentTelegram,
+      },
+      after: {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        active: user.active,
+        nisn: user.nisn,
+        nip: user.nip,
+        jabatan: user.jabatan,
+        classId: user.classId,
+        lastAcademicYear: user.lastAcademicYear,
+        photoPresent: user.photoPresent,
+        parentTelegram: user.parentTelegram,
+      },
+      passwordChanged: true,
+    });
+    const changedFields = changes.map((c) => c.field);
+    const changeText = formatChangesSummary(changes);
+    await recordDataAccessLog({
+      session,
+      action: "PASSWORD_RESET",
+      summary: `Reset password ${user.name} oleh ${session.user.role}${changeText && changedFields.length > 1 ? ` (+ ${changedFields.filter((f) => f !== "password").join(", ")})` : ""}`,
+      targetType: "User",
+      targetId: user.id,
+      meta: {
+        method: "admin_reset",
+        actorRole: session.user.role,
+        actorId: session.user.id,
+        targetRole: user.role,
+        targetEmail: user.email,
+        passwordChanged: true,
+        changes,
+        fields: changedFields,
+        peerAdminPasswordOnly: true,
+      },
+    });
+    const { password: _, parentTelegramLinkToken: __, photoData: ___, ...safe } = user;
+    return NextResponse.json(safe);
   }
 
   const updateData: Record<string, unknown> = {};

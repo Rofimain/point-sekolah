@@ -17,8 +17,7 @@ import { lockAppScroll, Z_MODAL_CLASS } from "@/lib/ui-layers";
 import { PointBadge, StatusBadge } from "@/components/PointThresholdBadges";
 import { PaginationBar } from "@/components/PaginationBar";
 import type { ViolationBagianRow } from "@/lib/violation-sections";
-
-const SESSION_SLOTS = ["Jam 1-2", "Jam 3-4", "Jam 5-6", "Jam 7-8", "Istirahat / Umum"];
+import { SESSION_SLOTS } from "@/lib/session-slots";
 
 export default function RecordsClient({
   rows,

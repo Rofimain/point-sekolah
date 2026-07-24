@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getRoleLabel } from "@/lib/utils";
-import { canDeleteUser, canModifyUser, canCreateUserWithRole, isSuperAdmin } from "@/lib/staff-roles";
+import { canDeleteUser, canModifyUser, canCreateUserWithRole, canOpenUserEditor, canResetUserPassword, isSuperAdmin } from "@/lib/staff-roles";
 import {
   compressImageToDataUrl,
   COMPRESS_MAX_DIM_AVATAR,
@@ -224,6 +224,39 @@ export default function UsersClient({
   }
 
   async function handleSave() {
+    const passwordResetOnly =
+      modal &&
+      modal !== "add" &&
+      !canModifyUser(viewerRole, modal.role) &&
+      !(viewerRole === "ADMIN" && modal.id === viewerId) &&
+      canResetUserPassword(viewerRole, modal.role);
+
+    if (passwordResetOnly) {
+      if (!form.password) {
+        setError("Isi password baru untuk mereset");
+        return;
+      }
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch(`/api/users/${modal.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: form.password }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Gagal mereset password");
+        toast.success("Password direset. User wajib ganti password saat login berikutnya.");
+        setModal(null);
+        router.refresh();
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (!form.name.trim() || !form.email.trim()) {
       setError("Nama dan email wajib diisi");
       return;
@@ -538,6 +571,13 @@ export default function UsersClient({
     { v: "SUPER_ADMIN", l: "Super Admin" },
   ];
 
+  const passwordResetOnlyModal =
+    Boolean(modal) &&
+    modal !== "add" &&
+    !canModifyUser(viewerRole, modal.role) &&
+    !(viewerRole === "ADMIN" && modal.id === viewerId) &&
+    canResetUserPassword(viewerRole, modal.role);
+
   const roleParam = (searchParams.role || "").trim();
   const roleTotalLabel =
     roleParam === "STUDENT"
@@ -844,7 +884,11 @@ export default function UsersClient({
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <button
-                      disabled={!canModifyUser(viewerRole, u.role) && !(viewerRole === "ADMIN" && u.id === viewerId)}
+                      disabled={
+                        !canOpenUserEditor(viewerRole, u.role, {
+                          isSelf: u.id === viewerId,
+                        })
+                      }
                       onClick={() => openEdit(u)}
                       className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
                       style={{
@@ -853,7 +897,11 @@ export default function UsersClient({
                         background: "var(--bg-primary)",
                       }}
                     >
-                      Edit
+                      {canModifyUser(viewerRole, u.role) || (viewerRole === "ADMIN" && u.id === viewerId)
+                        ? "Edit"
+                        : canResetUserPassword(viewerRole, u.role)
+                          ? "Reset password"
+                          : "Edit"}
                     </button>
                     <button
                       type="button"
@@ -1025,7 +1073,9 @@ export default function UsersClient({
                         <div className="flex flex-wrap gap-1.5">
                           <button
                             disabled={
-                              !canModifyUser(viewerRole, u.role) && !(viewerRole === "ADMIN" && u.id === viewerId)
+                              !canOpenUserEditor(viewerRole, u.role, {
+                                isSelf: u.id === viewerId,
+                              })
                             }
                             onClick={() => openEdit(u)}
                             className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
@@ -1035,7 +1085,11 @@ export default function UsersClient({
                               background: "var(--bg-primary)",
                             }}
                           >
-                            Edit
+                            {canModifyUser(viewerRole, u.role) || (viewerRole === "ADMIN" && u.id === viewerId)
+                              ? "Edit"
+                              : canResetUserPassword(viewerRole, u.role)
+                                ? "Reset password"
+                                : "Edit"}
                           </button>
                           <button
                             type="button"
@@ -1143,8 +1197,47 @@ export default function UsersClient({
                   className="text-sm font-serif mb-4 pb-3 border-b"
                   style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
                 >
-                  {modal === "add" ? "Tambah Pengguna Baru" : `Edit: ${modal.name}`}
+                  {modal === "add"
+                    ? "Tambah Pengguna Baru"
+                    : passwordResetOnlyModal
+                      ? `Reset password: ${modal.name}`
+                      : `Edit: ${modal.name}`}
                 </h3>
+                {passwordResetOnlyModal ? (
+                  <div className="space-y-3">
+                    <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                      Hanya reset password untuk Admin peer. Role dan data lain tidak dapat diubah.
+                    </p>
+                    <div>
+                      <label
+                        className="block text-xs font-semibold mb-1 uppercase tracking-wide"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Password baru *
+                      </label>
+                      <input
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        type="password"
+                        placeholder="Minimal 12 karakter"
+                        className="w-full px-3 py-2 rounded-lg border text-sm"
+                        style={{
+                          background: "var(--bg-primary)",
+                          borderColor: "var(--border)",
+                          color: "var(--text-primary)",
+                        }}
+                      />
+                    </div>
+                    {error && (
+                      <div
+                        className="p-3 rounded-lg text-xs"
+                        style={{ background: "var(--danger-bg)", color: "var(--danger)" }}
+                      >
+                        ⚠ {error}
+                      </div>
+                    )}
+                  </div>
+                ) : (
                 <div className="space-y-3">
                   <div
                     className="flex items-center gap-4 rounded-lg border p-3"
@@ -1477,6 +1570,7 @@ export default function UsersClient({
                     </div>
                   )}
                 </div>
+                )}
                 <div className="flex justify-end gap-2 mt-4">
                   <button
                     onClick={() => setModal(null)}
@@ -1491,7 +1585,7 @@ export default function UsersClient({
                     className="px-4 py-2 rounded-lg text-sm text-white disabled:opacity-60"
                     style={{ background: "var(--accent)" }}
                   >
-                    Simpan
+                    {passwordResetOnlyModal ? "Reset password" : "Simpan"}
                   </button>
                 </div>
               </div>
