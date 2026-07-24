@@ -5,6 +5,7 @@ export const SESSION_SLOTS = [
   "Jam 3-4",
   "Jam 5-6",
   "Jam 7-8",
+  "Jam 9-10",
   "Istirahat / Umum",
 ] as const;
 
