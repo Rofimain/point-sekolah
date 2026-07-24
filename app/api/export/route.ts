@@ -6,6 +6,7 @@ import ExcelJS from "exceljs";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { visibleViolationRecordWhere } from "@/lib/record-visibility";
+import { parseRecordsListSort, sortRecordsListRows } from "@/lib/records-list-sort";
 
 export async function GET(req: NextRequest) {
   const auth = await requireManageData();
@@ -15,6 +16,7 @@ export async function GET(req: NextRequest) {
   const grade = searchParams.get("grade");
   const classId = searchParams.get("classId");
   const search = searchParams.get("search");
+  const listSort = parseRecordsListSort(searchParams.get("sort"), searchParams.get("dir"));
 
   const studentFilter: Record<string, unknown> = { deletedAt: null };
   if (search) studentFilter.name = { contains: search, mode: "insensitive" };
@@ -23,14 +25,27 @@ export async function GET(req: NextRequest) {
 
   const where = visibleViolationRecordWhere({ student: studentFilter });
 
-  const [records, effectivePointsMap] = await Promise.all([
+  const [recordsRaw, effectivePointsMap] = await Promise.all([
     prisma.violationRecord.findMany({
       where,
       include: { student: { include: { class: true } }, violationType: true },
-      orderBy: { createdAt: "desc" },
     }),
     getEffectivePointsMap(),
   ]);
+
+  const ranked = sortRecordsListRows(
+    recordsRaw.map((r) => ({
+      id: r.id,
+      studentId: r.studentId,
+      studentName: r.student.name,
+      violationName: r.violationType.name,
+      date: r.date,
+      totalPoints: effectivePointsMap.get(r.studentId) ?? 0,
+      record: r,
+    })),
+    listSort
+  );
+  const records = ranked.map((row) => row.record);
 
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Sistem Poin Pelanggaran";

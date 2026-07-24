@@ -18,6 +18,43 @@ import { PointBadge, StatusBadge } from "@/components/PointThresholdBadges";
 import { PaginationBar } from "@/components/PaginationBar";
 import type { ViolationBagianRow } from "@/lib/violation-sections";
 import { SESSION_SLOTS } from "@/lib/session-slots";
+import {
+  nextRecordsListSort,
+  parseRecordsListSort,
+  recordsSortLabel,
+  type RecordsListSort,
+  type RecordsListSortKey,
+} from "@/lib/records-list-sort";
+
+function RecordsSortHeader({
+  label,
+  column,
+  sort,
+  onSort,
+}: {
+  label: string;
+  column: RecordsListSortKey;
+  sort: RecordsListSort;
+  onSort: (key: RecordsListSortKey) => void;
+}) {
+  const active = sort.key === column;
+  return (
+    <th
+      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+      style={{ color: "var(--text-muted)" }}
+      aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className="inline-flex min-h-11 touch-manipulation items-center gap-1 rounded text-left hover:opacity-80"
+      >
+        {label}
+        <span aria-hidden>{active ? (sort.direction === "asc" ? "↑" : "↓") : "↕"}</span>
+      </button>
+    </th>
+  );
+}
 
 export default function RecordsClient({
   rows,
@@ -42,7 +79,7 @@ export default function RecordsClient({
   bagian?: ViolationBagianRow[];
   studentsForPicker: PickerStudent[];
   totalPointsMap: Record<string, number>;
-  searchParams: { grade?: string; classId?: string; search?: string; page?: string };
+  searchParams: { grade?: string; classId?: string; search?: string; page?: string; sort?: string; dir?: string };
   rosterMode: boolean;
   canManage: boolean;
 }) {
@@ -94,6 +131,12 @@ export default function RecordsClient({
   }, [searchParams.search]);
 
   const selectedClass = searchParams.classId ? (classes.find((c) => c.id === searchParams.classId) ?? null) : null;
+  const listSort = parseRecordsListSort(searchParams.sort, searchParams.dir);
+
+  function toggleSort(column: RecordsListSortKey) {
+    const next = nextRecordsListSort(listSort, column);
+    navigate({ sort: next.key, dir: next.direction });
+  }
 
   function openReceiptSheetForRecord(r: ViolationRecordListItem) {
     const details: QrisSuccessDetail[] = [
@@ -352,8 +395,8 @@ export default function RecordsClient({
               </h1>
               <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
                 {rosterMode
-                  ? `${total} siswa di kelas ini — tiap halaman ${perPage} siswa`
-                  : `${total} catatan di kelas ini`}
+                  ? `${total} siswa di kelas ini — tiap halaman ${perPage} siswa · ${recordsSortLabel(listSort)}`
+                  : `${total} catatan di kelas ini · ${recordsSortLabel(listSort)}`}
               </p>
             </>
           ) : (
@@ -366,8 +409,8 @@ export default function RecordsClient({
               </h1>
               <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
                 {rosterMode
-                  ? `${total} siswa sesuai kategori — tiap halaman ${perPage} siswa (tanggal pelanggaran terbaru, maks. 40 per siswa)`
-                  : `${total} catatan ditemukan — urut tanggal pelanggaran terbaru. Pilih kelas di menu samping untuk fokus satu kelas.`}
+                  ? `${total} siswa sesuai kategori — tiap halaman ${perPage} siswa · ${recordsSortLabel(listSort)} (maks. 40 catatan per siswa)`
+                  : `${total} catatan ditemukan — ${recordsSortLabel(listSort)}. Pilih kelas di menu samping untuk fokus satu kelas.`}
               </p>
             </>
           )}
@@ -495,6 +538,37 @@ export default function RecordsClient({
         ) : (
           <>
             {/* Dual layout: card (md:hidden) + table (md+) — aksi memakai handler yang sama; jaga sinkron saat edit. */}
+            <div
+              className="flex flex-wrap items-center gap-2 border-b px-3 py-2 md:hidden"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                Urutkan
+              </span>
+              {(
+                [
+                  ["name", "Nama"],
+                  ["violation", "Pelanggaran"],
+                  ["date", "Tanggal"],
+                  ["points", "Total poin"],
+                ] as const
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleSort(key)}
+                  className="inline-flex min-h-11 touch-manipulation items-center gap-1 rounded border px-3 py-1.5 text-[11px]"
+                  style={{
+                    borderColor: listSort.key === key ? "var(--accent)" : "var(--border)",
+                    color: listSort.key === key ? "var(--accent)" : "var(--text-secondary)",
+                    background: "var(--bg-primary)",
+                  }}
+                >
+                  {label}
+                  {listSort.key === key ? (listSort.direction === "asc" ? " ↑" : " ↓") : ""}
+                </button>
+              ))}
+            </div>
             {/* Mobile cards */}
             <ul className="divide-y md:hidden" style={{ borderColor: "var(--border)" }}>
               {rows.map((row) => {
@@ -650,25 +724,40 @@ export default function RecordsClient({
               <table className="w-full min-w-[960px]">
                 <thead>
                   <tr style={{ background: "color-mix(in srgb, var(--bg-primary) 75%, var(--accent-light))" }}>
-                    {[
-                      "Nama Siswa",
-                      "Kelas",
-                      "Pelanggaran",
-                      "Tanggal",
-                      "Poin",
-                      "Total Poin",
-                      "Status",
-                      "Bukti",
-                      "Aksi",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        {h}
-                      </th>
-                    ))}
+                    <RecordsSortHeader label="Nama Siswa" column="name" sort={listSort} onSort={toggleSort} />
+                    <th
+                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Kelas
+                    </th>
+                    <RecordsSortHeader label="Pelanggaran" column="violation" sort={listSort} onSort={toggleSort} />
+                    <RecordsSortHeader label="Tanggal" column="date" sort={listSort} onSort={toggleSort} />
+                    <th
+                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Poin
+                    </th>
+                    <RecordsSortHeader label="Total Poin" column="points" sort={listSort} onSort={toggleSort} />
+                    <th
+                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Status
+                    </th>
+                    <th
+                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Bukti
+                    </th>
+                    <th
+                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Aksi
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
