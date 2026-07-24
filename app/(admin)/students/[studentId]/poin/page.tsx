@@ -19,7 +19,7 @@ export default async function StaffStudentPointsDetailPage({ params }: { params:
     }),
     getEffectivePointsBreakdown(studentId),
     prisma.violationRecord.findMany({
-      where: { studentId },
+      where: { studentId, deletedAt: null },
       orderBy: { date: "desc" },
       take: 60,
       select: {
