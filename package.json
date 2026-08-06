@@ -79,9 +79,10 @@
   },
   "overrides": {
     "sharp": "^0.35.3",
-    "brace-expansion": "^2.1.2",
-    "fast-uri": "^3.1.4",
+    "brace-expansion": "^2.1.4",
+    "fast-uri": "^3.1.5",
     "find-my-way": "^9.7.0",
-    "postcss": "^8.5.22"
+    "postcss": "^8.5.22",
+    "undici": "^7.29.0"
   }
 }
