@@ -138,7 +138,7 @@ async function main() {
   await staffLogin(page, TEACHER_EMAIL, TEACHER_PASSWORD);
   await page.goto(`${BASE}/records`, { waitUntil: "domcontentloaded" });
   const teacherExport = await page.getByRole("button", { name: /Export Excel/i }).count();
-  check(teacherExport === 0, "TEACHER cannot export excel", "TEACHER sees export excel");
+  check(teacherExport > 0, "TEACHER can export excel", "TEACHER missing export excel");
 
   await page.goto(`${BASE}/users`, { waitUntil: "domcontentloaded" });
   const createUser = await page.getByRole("button", { name: /Tambah User|Tambah Pengguna|\+ User/i }).count();

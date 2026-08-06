@@ -34,6 +34,11 @@ export function canManageData(role: string | undefined | null): boolean {
   return isAdminRole(role) || isSuperAdmin(role);
 }
 
+/** Staf (termasuk Guru) boleh unduh Excel catatan pelanggaran. */
+export function canExportRecords(role: string | undefined | null): boolean {
+  return isStaffRole(role);
+}
+
 /**
  * Akses halaman/API manajemen pengguna.
  * TEACHER tidak mengelola user (tidak boleh membuat/hapus/ubah role siapa pun).

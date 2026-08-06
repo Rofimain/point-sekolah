@@ -105,7 +105,7 @@ export const SAMPLE_PRINT_VARS: Record<string, string> = {
   tanggal: "19 Juli 2026",
   nomor_surat: "123/SP1/VII/2026",
   daftar_pelanggaran:
-    "1. Terlambat masuk kelas (10 poin) — 02/07/2026\n2. Tidak memakai atribut lengkap (15 poin) — 08/07/2026",
+    "1. Terlambat masuk kelas (10 poin) — 2 Juli 2026\n2. Tidak memakai atribut lengkap (15 poin) — 8 Juli 2026",
   sekolah: getSchoolName(),
   kepala_sekolah: "Drs. H. Contoh Kepala, M.Pd.",
   alamat: "Jl. Melati No. 10, Jakarta Selatan",
@@ -125,7 +125,7 @@ export const SAMPLE_PRINT_VARS: Record<string, string> = {
   urutan_poin: "1",
   periode_awal: "1 Agustus 2025",
   periode_akhir: "3 Desember 2025",
-  batas_remisi: "03 Januari 2026",
+  batas_remisi: "3 Januari 2026",
   jenis_sp: "SP-2",
   tanggal_perjanjian: "Jakarta, 19 Juli 2026",
 };

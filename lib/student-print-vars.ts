@@ -1,5 +1,11 @@
 import { SCHOOL_NAME } from "@/lib/branding";
-import { formatDate } from "@/lib/utils";
+
+/** Tanggal surat: hari tanpa nol depan + nama bulan penuh, mis. "6 Agustus 2026". */
+function formatSuratTanggal(date: Date | string = new Date()): string {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+}
 
 export type StudentPrintSource = {
   name: string;
@@ -70,7 +76,7 @@ export function poinTerbilang(n: number): string {
 }
 
 export function buildStudentPrintVars(src: StudentPrintSource): Record<string, string> {
-  const tanggal = formatDate(new Date());
+  const tanggal = formatSuratTanggal();
   const lama = src.lamaSkorsing ?? src.hariSkorsing ?? "…";
   const tMulai = src.tanggalMulaiSkorsing ?? src.tanggalSkorsing ?? "…";
   const tKembali = src.tanggalMasukKembali ?? src.tanggalKembali ?? "…";

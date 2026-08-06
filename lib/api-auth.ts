@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession, type Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { canManageData, canManageUsers, isSuperAdmin } from "@/lib/staff-roles";
+import { canExportRecords, canManageData, canManageUsers, isSuperAdmin } from "@/lib/staff-roles";
 
 type AuthOk = { session: Session };
 type AuthFail = { response: NextResponse };
@@ -10,6 +10,15 @@ type AuthFail = { response: NextResponse };
 export async function requireManageData(): Promise<AuthOk | AuthFail> {
   const session = await getServerSession(authOptions);
   if (!session || !canManageData(session.user.role)) {
+    return { response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+  }
+  return { session };
+}
+
+/** Session wajib + role boleh export Excel catatan pelanggaran (staf termasuk Guru). */
+export async function requireExportRecords(): Promise<AuthOk | AuthFail> {
+  const session = await getServerSession(authOptions);
+  if (!session || !canExportRecords(session.user.role)) {
     return { response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
   return { session };

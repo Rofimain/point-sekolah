@@ -4,7 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { RECORD_LIST_SELECT, RECORD_STUDENT_SELECT, type RecordsRow } from "./records-view";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import { getSafeServerSession } from "@/lib/auth";
-import { canManageData } from "@/lib/staff-roles";
+import { canExportRecords, canManageData } from "@/lib/staff-roles";
 import { listViolationBagian } from "@/lib/violation-bagian";
 import { visibleViolationRecordWhere } from "@/lib/record-visibility";
 import {
@@ -217,6 +217,7 @@ export default async function RecordsPage({
       searchParams={query}
       rosterMode={rosterMode}
       canManage={canManageData(session?.user?.role)}
+      canExport={canExportRecords(session?.user?.role)}
     />
   );
 }

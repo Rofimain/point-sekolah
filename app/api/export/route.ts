@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireManageData, isAuthFail } from "@/lib/api-auth";
+import { requireExportRecords, isAuthFail } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePointsMap } from "@/lib/student-effective-points";
 import ExcelJS from "exceljs";
@@ -9,7 +9,7 @@ import { visibleViolationRecordWhere } from "@/lib/record-visibility";
 import { parseRecordsListSort, sortRecordsListRows } from "@/lib/records-list-sort";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireManageData();
+  const auth = await requireExportRecords();
   if (isAuthFail(auth)) return auth.response;
 
   const { searchParams } = new URL(req.url);

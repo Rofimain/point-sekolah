@@ -4,6 +4,7 @@ import {
   canCreateUserWithRole,
   canCreateViolationRecord,
   canDeleteUser,
+  canExportRecords,
   canManageUsers,
   canModifyUser,
   canOpenUserEditor,
@@ -31,6 +32,14 @@ test("canManageUsers: only ADMIN and SUPER_ADMIN", () => {
   assert.equal(canManageUsers("ADMIN"), true);
   assert.equal(canManageUsers("TEACHER"), false);
   assert.equal(canManageUsers("STUDENT"), false);
+});
+
+test("canExportRecords: staf termasuk Guru, siswa tidak", () => {
+  assert.equal(canExportRecords("SUPER_ADMIN"), true);
+  assert.equal(canExportRecords("ADMIN"), true);
+  assert.equal(canExportRecords("TEACHER"), true);
+  assert.equal(canExportRecords("STUDENT"), false);
+  assert.equal(canExportRecords(null), false);
 });
 
 test("SUPER_ADMIN can create and manage all roles", () => {

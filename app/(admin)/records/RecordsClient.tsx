@@ -69,6 +69,7 @@ export default function RecordsClient({
   searchParams,
   rosterMode,
   canManage,
+  canExport,
 }: {
   rows: RecordsRow[];
   total: number;
@@ -82,6 +83,7 @@ export default function RecordsClient({
   searchParams: { grade?: string; classId?: string; search?: string; page?: string; sort?: string; dir?: string };
   rosterMode: boolean;
   canManage: boolean;
+  canExport: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -432,7 +434,7 @@ export default function RecordsClient({
           >
             + Tambah Catatan
           </button>
-          {canManage && (
+          {canExport && (
             <button
               type="button"
               onClick={handleExport}

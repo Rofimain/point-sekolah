@@ -102,6 +102,11 @@ test("buildStudentPrintVars", () => {
   assert.equal(vars.nama, "Ani");
   assert.equal(vars.poin, "40");
   assert.equal(vars.kelas, "XI IPA 2");
+  // Tanggal surat: nama bulan penuh, tanpa singkatan (mis. "6 Agustus 2026")
+  assert.match(
+    vars.tanggal,
+    /^\d{1,2} (Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember) \d{4}$/
+  );
 });
 
 test("sanitizeDocumentHtml strips script and event handlers from letter HTML", async () => {
