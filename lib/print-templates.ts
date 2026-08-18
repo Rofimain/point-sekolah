@@ -21,6 +21,7 @@ export const PRINT_PLACEHOLDERS: { key: string; label: string }[] = [
   { key: "nomor_surat", label: "Nomor surat" },
   { key: "daftar_pelanggaran", label: "Daftar pelanggaran" },
   { key: "kepala_sekolah", label: "Nama kepala sekolah" },
+  { key: "wali_kelas", label: "Nama wali kelas" },
   { key: "alamat", label: "Alamat siswa" },
   { key: "tanggal_hijriah", label: "Tanggal Hijriah" },
   { key: "tanggal_masehi", label: "Tanggal Masehi" },
@@ -112,14 +113,25 @@ export const TEMPLATE_OFFICIAL_PLACEHOLDERS: Record<string, readonly string[]> =
     "periode_akhir",
     "poin",
     "batas_remisi",
-    "kepala_sekolah",
+    "wali_kelas",
   ],
   "perjanjian-khusus": ["nama", "kelas", "alamat", "jenis_sp", "poin", "tanggal_perjanjian"],
 };
 
 const ALL_OFFICIAL_KEYS = new Set(PRINT_PLACEHOLDERS.map((p) => p.key));
 
-/** Ambil token {{key}} dan data-placeholder dari HTML/teks redaksi. */
+/** Satu kali: pindahkan TTD Surat Info Poin dari kepala sekolah ke wali kelas tanpa menimpa redaksi lain. */
+export function migrateInfoPoinSignatory(body: string, schoolName?: string): string {
+  let next = body
+    .replace(/\{\{\s*kepala_sekolah\s*\}\}/gi, "{{wali_kelas}}")
+    .replace(/data-placeholder\s*=\s*["']kepala_sekolah["']/gi, 'data-placeholder="wali_kelas"');
+  if (schoolName) {
+    const oldRole = `Kepala ${schoolName}`;
+    if (next.includes(oldRole)) next = next.split(oldRole).join("Wali Kelas {{kelas}}");
+  }
+  return next;
+}
+
 export function extractPlaceholderKeys(body: string): string[] {
   const keys = new Set<string>();
   const reBrace = /\{\{\s*([a-z0-9_]+)\s*\}\}/gi;
@@ -324,7 +336,7 @@ ${ttdOne("Kepala " + SCHOOL_NAME, "{{kepala_sekolah}}")}`,
 <p>Jika Ananda tidak melakukan pelanggaran tata tertib kembali sampai tanggal {{batas_remisi}} maka Ananda akan mendapat remisi/pengurangan poin sebesar 25% dari total poin.</p>
 <p>Demikian surat informasi dari kami, atas perhatian Bapak/Ibu kami ucapkan terima kasih.</p>
 <p>Billahit Taufiq Walhidayah<br/>Wassalamu 'alaikum Wr. Wb.</p>
-${ttdTwo("Kepala " + SCHOOL_NAME, "Mengetahui<br/>Orangtua Murid", "{{kepala_sekolah}}", "................................")}
+${ttdTwo("Wali Kelas {{kelas}}", "Mengetahui<br/>Orangtua Murid", "{{wali_kelas}}", "................................")}
 <p class="doc-note">Catatan : Surat ini di kembalikan ke sekolah setelah di tandatangani oleh orangtua murid paling lambat 2 hari sejak tanggal pemberian surat.</p>`,
   },
   {

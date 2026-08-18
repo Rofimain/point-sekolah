@@ -79,6 +79,7 @@ export function StudentPointsPrintClient({
   const [coordinatorName, setCoordinatorName] = useState("");
   const [coordinatorTitle, setCoordinatorTitle] = useState("");
   const [kepalaSekolah, setKepalaSekolah] = useState("");
+  const [waliKelas, setWaliKelas] = useState("");
   const [namaPic, setNamaPic] = useState("");
   const [selectedDoc, setSelectedDoc] = useState(initialDoc);
   const [nomorSurat, setNomorSurat] = useState("");
@@ -106,8 +107,9 @@ export function StudentPointsPrintClient({
 
   const overrideKeys = useMemo(() => {
     if (isPointsDoc) return new Set<string>();
+    const fromBody = selectedTemplate ? extractPlaceholderKeys(selectedTemplate.body) : [];
     const official = TEMPLATE_OFFICIAL_PLACEHOLDERS[slug];
-    const keys = official ? [...official] : selectedTemplate ? extractPlaceholderKeys(selectedTemplate.body) : [];
+    const keys = official ? [...new Set([...official, ...fromBody])] : fromBody;
     return new Set(keys.filter((k) => !AUTO_FILLED_KEYS.has(k)));
   }, [isPointsDoc, slug, selectedTemplate]);
 
@@ -133,6 +135,7 @@ export function StudentPointsPrintClient({
         address,
         effectivePoints: articleProps.breakdown.effective,
         kepalaSekolah: kepalaSekolah.trim() || undefined,
+        waliKelas: waliKelas.trim() || undefined,
         nomorSurat: nomorSurat.trim() || undefined,
         daftarPelanggaran,
         lamaSkorsing,
@@ -161,6 +164,7 @@ export function StudentPointsPrintClient({
       articleProps.breakdown.effective,
       address,
       kepalaSekolah,
+      waliKelas,
       namaPic,
       nomorSurat,
       daftarPelanggaran,
@@ -254,6 +258,7 @@ export function StudentPointsPrintClient({
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {needs("kepala_sekolah") &&
                   field("Nama kepala sekolah", kepalaSekolah, setKepalaSekolah, "mis. H. Bahron Fathin, M.A.")}
+                {needs("wali_kelas") && field("Nama wali kelas", waliKelas, setWaliKelas, "mis. Bapak/Ibu Wali Kelas")}
                 {needs("nama_pic") && field("Nama PIC", namaPic, setNamaPic, "mis. Bapak Ahmad Fauzi")}
                 {needs("nomor_surat") && field("Nomor surat", nomorSurat, setNomorSurat, "123/SP1/VII/2026")}
                 {needs("lama_skorsing") && field("Lama skorsing (hari)", lamaSkorsing, setLamaSkorsing, "3")}

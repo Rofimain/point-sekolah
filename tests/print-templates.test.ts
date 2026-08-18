@@ -9,6 +9,7 @@ import {
   extractPlaceholderKeys,
   TEMPLATE_OFFICIAL_PLACEHOLDERS,
   DEFAULT_PRINT_TEMPLATES,
+  migrateInfoPoinSignatory,
 } from "../lib/print-templates";
 
 test("renderTemplate mengganti placeholder", () => {
@@ -57,4 +58,34 @@ test("default templates use only official placeholders for their slug", () => {
       assert.ok(official.has(key), `${t.slug} uses non-official {{${key}}}`);
     }
   }
+});
+
+test("surat info poin memakai tanda tangan wali kelas, bukan kepala sekolah", () => {
+  const info = DEFAULT_PRINT_TEMPLATES.find((t) => t.slug === "info-poin");
+  assert.ok(info);
+  assert.match(info!.body, /Wali Kelas \{\{kelas\}\}/);
+  assert.match(info!.body, /\{\{wali_kelas\}\}/);
+  assert.doesNotMatch(info!.body, /\{\{kepala_sekolah\}\}/);
+  assert.ok(TEMPLATE_OFFICIAL_PLACEHOLDERS["info-poin"]?.includes("wali_kelas"));
+  assert.ok(!TEMPLATE_OFFICIAL_PLACEHOLDERS["info-poin"]?.includes("kepala_sekolah"));
+});
+
+test("migrateInfoPoinSignatory mengganti placeholder kepala sekolah jadi wali kelas", () => {
+  const html =
+    `<p class="doc-sign-role">Wali Kelas {{kelas}}</p>` +
+    `<span data-placeholder="kepala_sekolah">{{kepala_sekolah}}</span>`;
+  const next = migrateInfoPoinSignatory(html, "SMA Islam Al Azhar 1 Jakarta");
+  assert.match(next, /data-placeholder="wali_kelas"/);
+  assert.match(next, /\{\{wali_kelas\}\}/);
+  assert.doesNotMatch(next, /kepala_sekolah/);
+});
+
+test("migrateInfoPoinSignatory merapikan jabatan Kepala sekolah default", () => {
+  const next = migrateInfoPoinSignatory(
+    `<p class="doc-sign-role">Kepala SMA Contoh</p>{{kepala_sekolah}}`,
+    "SMA Contoh"
+  );
+  assert.match(next, /Wali Kelas \{\{kelas\}\}/);
+  assert.match(next, /\{\{wali_kelas\}\}/);
+  assert.doesNotMatch(next, /Kepala SMA Contoh/);
 });

@@ -5,6 +5,7 @@ import { getPrintBlock, getQuietPeriodDays } from "@/lib/app-settings";
 import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 import { isStaffRole } from "@/lib/staff-roles";
 import { StudentPointsPrintClient } from "@/components/StudentPointsPrintClient";
+import { syncDefaultTemplates } from "@/lib/sync-print-templates";
 import { Prisma } from "@/generated/prisma/client";
 
 function isPrintTemplateTableMissing(e: unknown): boolean {
@@ -65,6 +66,8 @@ export default async function StaffStudentPrintPointsPage({
   ]);
 
   if (!student) notFound();
+
+  await syncDefaultTemplates();
 
   let letterTemplates: { id: string; slug: string; title: string; body: string; pageSettings: string | null }[] = [];
   try {

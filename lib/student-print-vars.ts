@@ -14,6 +14,7 @@ export type StudentPrintSource = {
   address?: string | null;
   effectivePoints: number;
   kepalaSekolah?: string;
+  waliKelas?: string;
   nomorSurat?: string;
   daftarPelanggaran?: string;
   /** Alias lama / baru untuk skorsing */
@@ -94,6 +95,7 @@ export function buildStudentPrintVars(src: StudentPrintSource): Record<string, s
     daftar_pelanggaran: src.daftarPelanggaran?.trim() || "—",
     sekolah: SCHOOL_NAME,
     kepala_sekolah: src.kepalaSekolah?.trim() || "_______________________",
+    wali_kelas: src.waliKelas?.trim() || "_______________________",
     alamat: src.address?.trim() || "—",
     tanggal_hijriah: src.tanggalHijriah ?? tanggal,
     tanggal_masehi: src.tanggalMasehi ?? tanggal,

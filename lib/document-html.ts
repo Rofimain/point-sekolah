@@ -108,6 +108,7 @@ export const SAMPLE_PRINT_VARS: Record<string, string> = {
     "1. Terlambat masuk kelas (10 poin) — 2 Juli 2026\n2. Tidak memakai atribut lengkap (15 poin) — 8 Juli 2026",
   sekolah: getSchoolName(),
   kepala_sekolah: "Drs. H. Contoh Kepala, M.Pd.",
+  wali_kelas: "Bapak/Ibu Wali Kelas",
   alamat: "Jl. Melati No. 10, Jakarta Selatan",
   tanggal_hijriah: "Jakarta, 7 Dzulqo'dah 1446 H",
   tanggal_masehi: "5 Mei 2025 M",

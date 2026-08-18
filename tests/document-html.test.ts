@@ -102,6 +102,7 @@ test("buildStudentPrintVars", () => {
   assert.equal(vars.nama, "Ani");
   assert.equal(vars.poin, "40");
   assert.equal(vars.kelas, "XI IPA 2");
+  assert.equal(vars.wali_kelas, "_______________________");
   // Tanggal surat: nama bulan penuh, tanpa singkatan (mis. "6 Agustus 2026")
   assert.match(
     vars.tanggal,
