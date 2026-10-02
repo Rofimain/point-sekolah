@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { lockAppScroll } from "@/lib/ui-layers";
 
 function SidebarSkeleton() {
-  return <div className="h-full min-h-[120px] w-full animate-pulse bg-white/5" aria-hidden />;
+  return <div className="h-full min-h-[120px] w-full animate-pulse bg-[var(--sb-hover)]" aria-hidden />;
 }
 
 export default function AdminChrome({
@@ -64,16 +64,17 @@ export default function AdminChrome({
               navOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
             )}
             style={{
-              background: "linear-gradient(180deg, var(--bg-sidebar) 0%, var(--bg-sidebar) 60%, #091120 100%)",
-              borderColor: "rgba(255,255,255,0.06)",
-              boxShadow: "2px 0 24px rgba(0,0,0,0.12)",
+              background: "var(--sb-bg-grad)",
+              borderColor: "var(--sb-border)",
+              boxShadow: "var(--sb-shadow)",
             }}
           >
             <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden">
               <div
-                className="pointer-events-none absolute inset-x-0 top-0 h-20 opacity-60"
+                className="pointer-events-none absolute inset-x-0 top-0 h-px"
                 style={{
-                  background: "linear-gradient(180deg, color-mix(in srgb, var(--gold) 7%, transparent), transparent)",
+                  background: "linear-gradient(90deg, transparent, var(--gold), transparent)",
+                  opacity: 0.35,
                 }}
                 aria-hidden
               />

@@ -11,6 +11,18 @@
     --bg-sidebar: #0b1526;
     --bg-sidebar-hover: #152338;
     --bg-sidebar-active: #1c3148;
+    --sb-bg: #fbfcfd;
+    --sb-bg-grad: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+    --sb-border: #e6ebf1;
+    --sb-fg: #3f4b5e;
+    --sb-fg-strong: #0e1726;
+    --sb-muted: #8a95a6;
+    --sb-hover: #f1f4f8;
+    --sb-active: #e9f3f0;
+    --sb-icon-bg: #f1f4f8;
+    --sb-icon-active: #ffffff;
+    --sb-indicator: var(--gold);
+    --sb-shadow: 1px 0 0 #e6ebf1;
     --text-primary: #0e1726;
     --text-secondary: #3f4b5e;
     --text-muted: #6b7789;
@@ -46,6 +58,18 @@
     --bg-sidebar: #060b12;
     --bg-sidebar-hover: #121c2c;
     --bg-sidebar-active: #17253a;
+    --sb-bg: #0b1220;
+    --sb-bg-grad: linear-gradient(180deg, #0e1828 0%, #0b1220 45%, #080e19 100%);
+    --sb-border: rgba(255, 255, 255, 0.06);
+    --sb-fg: rgba(255, 255, 255, 0.78);
+    --sb-fg-strong: #ffffff;
+    --sb-muted: rgba(255, 255, 255, 0.42);
+    --sb-hover: rgba(255, 255, 255, 0.05);
+    --sb-active: rgba(255, 255, 255, 0.08);
+    --sb-icon-bg: rgba(255, 255, 255, 0.06);
+    --sb-icon-active: rgba(255, 255, 255, 0.12);
+    --sb-indicator: var(--gold);
+    --sb-shadow: 4px 0 32px rgba(0, 0, 0, 0.25);
     --text-primary: #e8eef6;
     --text-secondary: #9aa8bc;
     --text-muted: #7d8aa0;
@@ -168,15 +192,19 @@
     color: #fff;
     font-weight: 600;
     border-radius: 0.5rem;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 1px 2px rgba(14, 23, 38, 0.12);
     transition:
-      filter 0.15s ease,
-      transform 0.12s ease;
+      background-color 0.15s ease,
+      transform 0.12s ease,
+      box-shadow 0.15s ease;
   }
   .btn-primary:hover {
-    filter: brightness(1.06);
+    background: color-mix(in srgb, var(--accent) 88%, black);
   }
   .btn-primary:active {
-    transform: scale(0.98);
+    transform: translateY(0.5px);
   }
 
   .badge-soft {
@@ -253,9 +281,14 @@
       filter 0.15s ease,
       transform 0.12s ease;
   }
-  .btn:focus-visible {
+  .btn:focus,
+  .btn-icon:focus {
     outline: none;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .btn:focus-visible,
+  .btn-icon:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
   }
   .btn:disabled {
     opacity: 0.5;
@@ -266,10 +299,16 @@
     color: #fff;
     font-weight: 600;
     border-radius: var(--radius-control);
-    box-shadow: var(--shadow-sm);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 1px 2px rgba(14, 23, 38, 0.12);
   }
   .btn.btn-primary:hover {
-    filter: brightness(0.94);
+    background: color-mix(in srgb, var(--accent) 88%, black);
+    filter: none;
+  }
+  .btn.btn-primary:active {
+    transform: translateY(0.5px);
   }
   .btn-secondary {
     background: var(--bg-secondary);
@@ -279,6 +318,7 @@
   }
   .btn-secondary:hover {
     background: var(--bg-tertiary);
+    border-color: color-mix(in srgb, var(--text-muted) 40%, var(--border));
   }
   .btn-ghost {
     background: transparent;
@@ -289,13 +329,50 @@
     color: var(--text-primary);
   }
   .btn-danger {
-    background: var(--danger);
-    color: #fff;
+    background: var(--danger-bg);
+    color: var(--danger);
     font-weight: 600;
+    border-color: color-mix(in srgb, var(--danger) 22%, transparent);
   }
   .btn-danger:hover {
-    filter: brightness(0.94);
+    background: color-mix(in srgb, var(--danger) 18%, var(--danger-bg));
+    filter: none;
   }
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--text-secondary);
+    transition:
+      background-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  .btn-icon:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+  @keyframes menu-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  .menu-pop {
+    transform-origin: top right;
+    animation: menu-pop 120ms ease-out;
+  }
+
   .btn-sm {
     height: 2rem;
     padding: 0 0.75rem;

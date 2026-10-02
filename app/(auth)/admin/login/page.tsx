@@ -63,7 +63,7 @@ function AdminLoginForm() {
   return (
     <div className="card w-full max-w-sm p-6 sm:p-8 lg:max-w-md lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
       <div className="mb-6 text-center lg:text-left">
-        <BrandLogo size={56} priority className="mx-auto mb-3 h-14 w-14 lg:hidden" />
+        <BrandLogo variant="seal" size={56} priority className="mx-auto mb-3 h-14 w-14 lg:hidden" />
         <h1 className="page-title">Portal Admin — Guru & Staff</h1>
         <p className="page-subtitle">{SCHOOL_NAME} · Sistem Poin Pelanggaran</p>
       </div>
@@ -80,9 +80,6 @@ function AdminLoginForm() {
             required
             className="input"
           />
-          <p className="mt-1.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
-            * Guru / piket / wali kelas / super admin
-          </p>
         </div>
         <div>
           <label className="label">Password</label>
@@ -155,7 +152,7 @@ function BrandPanel() {
         style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--accent) 45%, transparent), transparent 70%)" }}
       />
       <div className="relative flex items-center gap-3">
-        <BrandLogo size={44} priority className="h-11 w-11" />
+        <BrandLogo variant="seal" size={44} priority className="h-11 w-11" />
         <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">Portal Admin — Guru & Staff</span>
       </div>
       <div className="relative">
@@ -165,7 +162,7 @@ function BrandPanel() {
         <div className="divider-gold my-6 max-w-[12rem] opacity-70" />
         <p className="max-w-md text-sm leading-relaxed text-white/65">Sistem Poin Pelanggaran</p>
       </div>
-      <div className="relative text-[11px] text-white/35">Guru / piket / wali kelas / super admin</div>
+      <div aria-hidden />
     </aside>
   );
 }

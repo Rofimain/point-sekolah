@@ -2,10 +2,14 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { BrandLogo } from "@/components/BrandLogo";
+import UserAvatar from "@/components/ui/UserAvatar";
 import Link from "next/link";
 import { SCHOOL_NAME } from "@/lib/branding";
+import { getRoleLabel } from "@/lib/utils";
+import { Z_INDEX } from "@/lib/ui-layers";
 import { ChangePasswordDialog } from "@/components/account/ChangePasswordDialog";
 
 export type AdminNavToggle = {
@@ -26,8 +30,42 @@ export function TopBar({
   const [mounted, setMounted] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [revokingSessions, setRevokingSessions] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountBtnRef = useRef<HTMLButtonElement>(null);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const [accountPos, setAccountPos] = useState<{ top: number; right: number } | null>(null);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!accountOpen) return;
+    function place() {
+      const rect = accountBtnRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setAccountPos({ top: rect.bottom + 8, right: Math.max(8, window.innerWidth - rect.right) });
+    }
+    place();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setAccountOpen(false);
+    }
+    function onPointer(e: MouseEvent) {
+      const target = e.target as Node;
+      if (accountMenuRef.current?.contains(target) || accountBtnRef.current?.contains(target)) return;
+      setAccountOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onPointer);
+    window.addEventListener("resize", place);
+    const focusId = window.requestAnimationFrame(() => {
+      accountMenuRef.current?.querySelector<HTMLElement>("button")?.focus();
+    });
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onPointer);
+      window.removeEventListener("resize", place);
+      window.cancelAnimationFrame(focusId);
+    };
+  }, [accountOpen]);
 
   async function revokeAllSessions() {
     if (!session || revokingSessions) return;
@@ -61,8 +99,7 @@ export function TopBar({
           {adminNav ? (
             <button
               type="button"
-              className="btn btn-ghost h-9 w-9 shrink-0 touch-manipulation rounded-full p-0 lg:hidden"
-              style={{ color: "var(--text-primary)" }}
+              className="btn-icon shrink-0 touch-manipulation lg:hidden"
               aria-label={adminNav.open ? "Tutup menu navigasi" : "Buka menu navigasi"}
               aria-expanded={adminNav.open}
               aria-controls="admin-sidebar-panel"
@@ -98,20 +135,21 @@ export function TopBar({
             className="relative shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             aria-label={session?.user.role === "STUDENT" ? "Kembali ke portal siswa" : "Kembali ke dashboard"}
           >
-            <BrandLogo size={34} priority className="h-[34px] w-[34px]" />
+            <BrandLogo variant="seal" size={36} priority />
           </Link>
+          <span className="hidden h-7 w-px shrink-0 sm:block" style={{ background: "var(--border)" }} aria-hidden />
           <div className="min-w-0 flex-1">
             <div
-              className="truncate font-serif text-[15px] font-semibold leading-tight"
+              className="truncate font-serif text-[16px] font-semibold leading-tight tracking-tight"
               style={{ color: "var(--text-primary)" }}
             >
               {SCHOOL_NAME}
             </div>
             <div
-              className="hidden text-[11px] font-medium tracking-[0.08em] sm:block"
-              style={{ color: "var(--text-muted)" }}
+              className="hidden text-[10px] font-medium uppercase tracking-[0.2em] sm:block"
+              style={{ color: "var(--gold)" }}
             >
-              Sistem Poin Pelanggaran
+              SISTEM POIN PELANGGARAN
             </div>
           </div>
         </div>
@@ -120,14 +158,14 @@ export function TopBar({
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="btn btn-ghost h-9 w-9 touch-manipulation rounded-full p-0"
+              className="btn-icon touch-manipulation"
               title="Toggle tema"
               type="button"
               aria-label={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
             >
-              {theme === "dark" ? (
+              <span className="relative h-4 w-4">
                 <svg
-                  className="h-4 w-4"
+                  className={`absolute inset-0 h-4 w-4 transition-all duration-200 ${theme === "dark" ? "rotate-0 opacity-100" : "rotate-90 opacity-0"}`}
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -140,9 +178,8 @@ export function TopBar({
                     strokeLinecap="round"
                   />
                 </svg>
-              ) : (
                 <svg
-                  className="h-4 w-4"
+                  className={`absolute inset-0 h-4 w-4 transition-all duration-200 ${theme === "dark" ? "-rotate-90 opacity-0" : "rotate-0 opacity-100"}`}
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -155,76 +192,109 @@ export function TopBar({
                     strokeLinejoin="round"
                   />
                 </svg>
-              )}
+              </span>
             </button>
           )}
-          {session && (
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <span
-                className="mx-1 hidden h-5 w-px sm:block"
-                style={{ background: "var(--border)" }}
-                aria-hidden
-              />
-              <span
-                className="hidden max-w-[8rem] truncate pr-1 text-xs font-medium sm:inline md:max-w-[12rem]"
-                style={{ color: "var(--text-secondary)" }}
+          {session ? (
+            <>
+              <span className="mx-0.5 h-5 w-px" style={{ background: "var(--border)" }} aria-hidden />
+              <button
+                ref={accountBtnRef}
+                type="button"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border py-0 pl-1 pr-2.5 transition-colors duration-150 hover:bg-[var(--bg-tertiary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
+                aria-haspopup="menu"
+                aria-expanded={accountOpen}
+                aria-label="Menu akun"
+                onClick={() => setAccountOpen((open) => !open)}
               >
-                {session.user.name}
-              </span>
+                <UserAvatar name={session.user.name ?? ""} size="sm" className="!h-7 !w-7" />
+                <span className="hidden max-w-[10rem] truncate text-[13px] font-medium sm:inline">{session.user.name}</span>
+                <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+                  <path d="M6 8l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </>
+          ) : null}
+        </div>
+      </header>
+      {session && accountOpen && accountPos && mounted
+        ? createPortal(
+            <div
+              ref={accountMenuRef}
+              role="menu"
+              className="card menu-pop w-64 overflow-hidden p-1.5"
+              style={{
+                position: "fixed",
+                top: accountPos.top,
+                right: accountPos.right,
+                zIndex: Z_INDEX.dropdown,
+                borderRadius: 14,
+                boxShadow: "var(--shadow-lg)",
+              }}
+            >
+              <div className="px-2.5 py-2">
+                <div className="truncate text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {session.user.name}
+                </div>
+                <span
+                  className="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium"
+                  style={{ background: "var(--gold-soft)", color: "var(--gold)" }}
+                >
+                  {getRoleLabel(session.user.role)}
+                </span>
+              </div>
               <button
                 type="button"
-                onClick={() => setPasswordOpen(true)}
-                className="btn btn-ghost btn-sm h-9 w-9 touch-manipulation rounded-full p-0 sm:w-auto sm:rounded-[var(--radius-control)] sm:px-3"
-                title="Ubah password akun"
-                aria-label="Ubah password"
+                role="menuitem"
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] hover:bg-[var(--bg-tertiary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                style={{ color: "var(--text-primary)" }}
+                onClick={() => {
+                  setAccountOpen(false);
+                  setPasswordOpen(true);
+                }}
               >
-                <svg
-                  className="h-4 w-4 sm:hidden"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  aria-hidden
-                >
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
                   <rect x="5" y="11" width="14" height="10" rx="2" />
                   <path d="M8 11V8a4 4 0 018 0v3" strokeLinecap="round" />
                 </svg>
-                <span className="sr-only sm:not-sr-only">Password</span>
+                Ubah password
               </button>
               <button
                 type="button"
-                onClick={() => void revokeAllSessions()}
+                role="menuitem"
                 disabled={revokingSessions}
-                className="btn btn-ghost btn-sm hidden h-9 touch-manipulation sm:inline-flex"
-                title="Keluar dari semua perangkat"
-                aria-label="Keluar semua perangkat"
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] hover:bg-[var(--bg-tertiary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-60"
+                style={{ color: "var(--text-primary)" }}
+                onClick={() => void revokeAllSessions()}
               >
-                {revokingSessions ? "..." : "Semua sesi"}
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+                  <rect x="3" y="5" width="14" height="12" rx="2" />
+                  <path d="M17 9h3a1 1 0 011 1v4a1 1 0 01-1 1h-3M8 9v4" strokeLinecap="round" />
+                </svg>
+                {revokingSessions ? "Memproses…" : "Keluar dari semua perangkat"}
               </button>
+              <div className="my-1 h-px" style={{ background: "var(--border)" }} />
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: session.user.role === "STUDENT" ? "/login" : "/admin/login" })}
-                className="btn btn-secondary btn-sm h-9 w-9 touch-manipulation rounded-full p-0 sm:w-auto sm:rounded-[var(--radius-control)] sm:px-3"
-                title="Keluar"
-                aria-label="Keluar"
+                role="menuitem"
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] hover:bg-[var(--bg-tertiary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                style={{ color: "var(--danger)" }}
+                onClick={() => {
+                  setAccountOpen(false);
+                  void signOut({ callbackUrl: session.user.role === "STUDENT" ? "/login" : "/admin/login" });
+                }}
               >
-                <svg
-                  className="h-4 w-4 sm:hidden"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  aria-hidden
-                >
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
                   <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                <span className="sr-only sm:not-sr-only">Keluar</span>
+                Keluar
               </button>
-            </div>
-          )}
-        </div>
-      </header>
+            </div>,
+            document.body
+          )
+        : null}
       {session && passwordOpen ? (
         <ChangePasswordDialog role={session.user.role} onClose={() => setPasswordOpen(false)} />
       ) : null}

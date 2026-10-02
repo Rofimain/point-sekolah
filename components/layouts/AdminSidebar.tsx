@@ -21,8 +21,8 @@ function IconBox({ children, className }: { children: React.ReactNode; className
   return (
     <span
       className={cn(
-        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/70 transition-colors duration-200",
-        "bg-white/[0.05] group-[.is-active]:bg-white/[0.1] group-[.is-active]:text-white group-hover:text-white/90",
+        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--sb-icon-bg)] text-[var(--sb-fg)] transition-colors duration-200",
+        "group-[.is-active]:bg-[var(--sb-icon-active)] group-[.is-active]:text-[var(--sb-fg-strong)] group-[.is-active]:shadow-sm group-hover:text-[var(--sb-fg-strong)]",
         className
       )}
     >
@@ -55,8 +55,8 @@ function ChevronToggle({ open, className }: { open: boolean; className?: string 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-2.5 flex items-center gap-2 px-2">
-      <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-white/40">{children}</span>
-      <span className="h-px flex-1 bg-gradient-to-r from-white/[0.08] to-transparent" aria-hidden />
+      <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--sb-muted)]">{children}</span>
+      <span className="h-px flex-1 bg-[var(--sb-border)]" aria-hidden />
     </div>
   );
 }
@@ -67,11 +67,11 @@ function SubmenuLink({ href, active, children }: { href: string; active: boolean
       href={href}
       className={cn(
         "block touch-manipulation rounded-lg px-2.5 py-2 font-sans text-[12px] leading-snug outline-none transition-all duration-200 ease-out",
-        "hover:bg-white/[0.06]",
-        "focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-0",
+        "hover:bg-[var(--sb-hover)]",
+        "focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-0",
         active
-          ? "bg-white/[0.08] font-medium text-white shadow-[inset_2px_0_0_var(--gold)]"
-          : "text-white/65 hover:text-white"
+          ? "bg-[var(--sb-active)] font-medium text-[var(--sb-fg-strong)] shadow-[inset_2px_0_0_var(--sb-indicator)]"
+          : "text-[var(--sb-fg)] hover:text-[var(--sb-fg-strong)]"
       )}
     >
       {children}
@@ -95,10 +95,10 @@ function SimpleNavLink({
       href={href}
       className={cn(
         "group mb-0.5 flex touch-manipulation items-center gap-2.5 rounded-lg px-2.5 py-2 font-sans outline-none transition-all duration-200 ease-out",
-        "hover:bg-white/[0.05] motion-safe:active:scale-[0.99]",
-        "focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-sidebar)]",
-        active && "is-active bg-white/[0.08] text-white shadow-[inset_2px_0_0_var(--gold)]",
-        !active && "text-white/70 hover:text-white/95"
+        "hover:bg-[var(--sb-hover)] motion-safe:active:scale-[0.99]",
+        "focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-0",
+        active && "is-active bg-[var(--sb-active)] text-[var(--sb-fg-strong)] shadow-[inset_2px_0_0_var(--sb-indicator)]",
+        !active && "text-[var(--sb-fg)] hover:text-[var(--sb-fg-strong)]"
       )}
     >
       <IconBox>{icon}</IconBox>
@@ -132,15 +132,15 @@ function SplitNavRow({
         className={cn(
           "group flex overflow-hidden rounded-lg transition-all duration-200 ease-out",
           active
-            ? "is-active bg-white/[0.08] text-white shadow-[inset_2px_0_0_var(--gold)]"
-            : "text-white/70 hover:bg-white/[0.05] hover:text-white/95"
+            ? "is-active bg-[var(--sb-active)] text-[var(--sb-fg-strong)] shadow-[inset_2px_0_0_var(--sb-indicator)]"
+            : "text-[var(--sb-fg)] hover:bg-[var(--sb-hover)] hover:text-[var(--sb-fg-strong)]"
         )}
       >
         <Link
           href={href}
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2.5 py-2 pl-2.5 pr-1 font-sans outline-none transition-colors duration-200",
-            "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/25"
+            "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]/40"
           )}
         >
           <IconBox>{icon}</IconBox>
@@ -156,9 +156,9 @@ function SplitNavRow({
             onToggle();
           }}
           className={cn(
-            "flex w-10 shrink-0 touch-manipulation items-center justify-center border-l border-white/[0.06] text-white/60 outline-none transition-all duration-200",
-            "hover:bg-black/15 hover:text-white active:bg-black/25 motion-safe:active:scale-[0.94]",
-            "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/30"
+            "flex w-10 shrink-0 touch-manipulation items-center justify-center border-l border-[var(--sb-border)] text-[var(--sb-muted)] outline-none transition-colors duration-200",
+            "hover:bg-[var(--sb-hover)] hover:text-[var(--sb-fg-strong)]",
+            "focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
           )}
         >
           <ChevronToggle open={open} className="opacity-90" />
@@ -170,7 +170,14 @@ function SplitNavRow({
           open ? "pointer-events-auto mt-1.5 max-h-[18rem] opacity-100" : "pointer-events-none max-h-0 opacity-0"
         )}
       >
-        <div className="ml-[1.1rem] max-h-[14rem] space-y-0.5 overflow-y-auto overflow-x-hidden border-l border-white/[0.07] py-0.5 pl-2.5 pr-1">
+        <div
+          className="ml-[1.1rem] max-h-[14rem] space-y-0.5 overflow-y-auto overflow-x-hidden border-l py-0.5 pl-2.5 pr-1"
+          style={{
+            borderColor: "var(--sb-border)",
+            maskImage: "linear-gradient(to bottom, black 85%, transparent)",
+            WebkitMaskImage: "linear-gradient(to bottom, black 85%, transparent)",
+          }}
+        >
           {children}
         </div>
       </div>
@@ -426,14 +433,12 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
         </div>
       </nav>
 
-      <div className="border-t p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+      <div className="border-t p-3" style={{ borderColor: "var(--sb-border)" }}>
         <div
-          className="rounded-xl border border-white/[0.07] px-3 py-2.5 transition-colors duration-200 hover:border-white/12"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(176,141,87,0.07))",
-          }}
+          className="rounded-xl border px-3 py-2.5"
+          style={{ background: "var(--sb-hover)", borderColor: "var(--sb-border)" }}
         >
-          <div className="truncate text-[12px] font-medium text-white/85">{session?.user?.name}</div>
+          <div className="truncate text-[12px] font-medium text-[var(--sb-fg-strong)]">{session?.user?.name}</div>
           <div className="mt-0.5 text-[11px] font-medium tracking-wide" style={{ color: "var(--gold)" }}>
             {session?.user?.role ? getRoleLabel(session.user.role) : ""}
           </div>

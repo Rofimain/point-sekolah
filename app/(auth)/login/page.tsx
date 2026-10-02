@@ -63,7 +63,7 @@ function StudentLoginForm() {
   return (
     <div className="card w-full max-w-sm p-6 sm:p-8 lg:max-w-md lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
       <div className="mb-6 text-center lg:text-left">
-        <BrandLogo size={56} priority className="mx-auto mb-3 h-14 w-14 lg:hidden" />
+        <BrandLogo variant="seal" size={56} priority className="mx-auto mb-3 h-14 w-14 lg:hidden" />
         <h1 className="page-title">{SCHOOL_NAME}</h1>
         <p className="page-subtitle">Portal Laporan Pelanggaran Siswa</p>
       </div>
@@ -159,7 +159,7 @@ function BrandPanel() {
         style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--accent) 45%, transparent), transparent 70%)" }}
       />
       <div className="relative flex items-center gap-3">
-        <BrandLogo size={44} priority className="h-11 w-11" />
+        <BrandLogo variant="seal" size={44} priority className="h-11 w-11" />
         <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">Sistem Poin Pelanggaran</span>
       </div>
       <div className="relative">
@@ -169,7 +169,7 @@ function BrandPanel() {
         <div className="divider-gold my-6 max-w-[12rem] opacity-70" />
         <p className="max-w-md text-sm leading-relaxed text-white/65">Portal Laporan Pelanggaran Siswa</p>
       </div>
-      <div className="relative text-[11px] text-white/35">Hanya satu perangkat aktif per akun.</div>
+      <div aria-hidden />
     </aside>
   );
 }
