@@ -80,7 +80,7 @@ export function EvidenceMultiUploader({ images, onChange, disabled, label = "Fot
     <div>
       <label
         htmlFor={inputId}
-        className="mb-1 block text-[10px] font-semibold uppercase tracking-wide"
+        className="mb-1 block text-[11px] font-semibold uppercase tracking-wide"
         style={{ color: "var(--text-muted)" }}
       >
         {label}
@@ -104,7 +104,7 @@ export function EvidenceMultiUploader({ images, onChange, disabled, label = "Fot
                 alt={`Foto bukti pelanggaran ${index + 1}`}
                 className="aspect-square w-full rounded-lg object-cover"
               />
-              <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+              <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[11px] font-medium text-white">
                 {index + 1}
               </span>
               <button

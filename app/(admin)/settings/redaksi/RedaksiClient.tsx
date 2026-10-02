@@ -297,18 +297,17 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
         <Link href="/settings" className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
           ← Pengaturan sekolah
         </Link>
-        <h1 className="text-lg font-serif mt-2" style={{ color: "var(--text-primary)" }}>
+        <h1 className="page-title mt-2">
           Redaksi cetak
         </h1>
-        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+        <p className="page-subtitle">
           Edit master surat dengan editor dokumen, lalu pratinjau, cetak, atau unduh HTML siap cetak.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside
-          className="no-print rounded-xl border p-3"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+          className="card no-print p-3"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
             <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
@@ -333,22 +332,12 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 placeholder="Judul jenis surat"
-                className="w-full rounded-md border px-2 py-1.5 text-xs"
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--bg-secondary)",
-                  color: "var(--text-primary)",
-                }}
+                className="input rounded-md text-xs"
               />
               <select
                 value={copyFromId}
                 onChange={(e) => setCopyFromId(e.target.value)}
-                className="w-full rounded-md border px-2 py-1.5 text-xs"
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--bg-secondary)",
-                  color: "var(--text-primary)",
-                }}
+                className="select rounded-md text-xs"
               >
                 <option value="">Mulai kosong</option>
                 {templates.map((t) => (
@@ -362,8 +351,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                   type="button"
                   disabled={saving}
                   onClick={() => void createTemplate()}
-                  className="min-h-11 flex-1 touch-manipulation rounded-md px-3 py-2 text-[11px] font-semibold text-white disabled:opacity-50"
-                  style={{ background: "var(--accent)" }}
+                  className="btn btn-primary flex-1 touch-manipulation rounded-md text-[11px] btn-sm"
                 >
                   Buat
                 </button>
@@ -409,8 +397,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
         </aside>
 
         <section
-          className="rounded-xl border p-4 sm:p-5 print:border-0 print:bg-transparent print:p-0"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+          className="card p-5 sm:p-5 print:border-0 print:bg-transparent print:p-0"
         >
           {!selected ? (
             <p className="text-sm no-print" style={{ color: "var(--text-muted)" }}>
@@ -430,12 +417,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                     <input
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{
-                        borderColor: "var(--border)",
-                        background: "var(--bg-primary)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input"
                     />
                   </div>
                   <div>
@@ -448,12 +430,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                     <input
                       value={slug}
                       onChange={(e) => setSlug(e.target.value)}
-                      className="w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{
-                        borderColor: "var(--border)",
-                        background: "var(--bg-primary)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input"
                     />
                   </div>
                 </div>
@@ -461,13 +438,12 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                 <div>
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <label
-                      className="block text-[11px] font-semibold uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Isi redaksi
                     </label>
                     <span
-                      className="text-[10px] font-semibold"
+                      className="text-[11px] font-semibold"
                       style={{
                         color:
                           saveStatus === "saved"
@@ -506,7 +482,7 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                         type="button"
                         title={p.label}
                         onClick={() => insertPlaceholder(p.key)}
-                        className="rounded-md border px-2 py-1 text-[10px] font-mono"
+                        className="rounded-md border px-2 py-1 text-[11px] font-mono"
                         style={{
                           borderColor: "var(--border)",
                           color: "var(--text-secondary)",
@@ -532,40 +508,28 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                     type="button"
                     disabled={saving || !dirty}
                     onClick={() => void saveCurrent()}
-                    className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                    style={{ background: "var(--accent)" }}
+                    className="btn btn-primary text-xs btn-sm"
                   >
                     {saving ? "Menyimpan…" : "Simpan"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowPreview((v) => !v)}
-                    className="rounded-lg border px-3 py-2 text-xs font-semibold"
-                    style={{
-                      borderColor: "var(--border)",
-                      color: "var(--text-primary)",
-                      background: "var(--bg-primary)",
-                    }}
+                    className="btn btn-secondary text-xs btn-sm"
                   >
                     {showPreview ? "Sembunyikan pratinjau" : "Pratinjau"}
                   </button>
                   <button
                     type="button"
                     onClick={handlePrint}
-                    className="rounded-lg px-3 py-2 text-xs font-semibold text-white"
-                    style={{ background: "var(--accent)" }}
+                    className="btn btn-primary text-xs btn-sm"
                   >
                     Cetak / Simpan PDF
                   </button>
                   <button
                     type="button"
                     onClick={downloadBlank}
-                    className="rounded-lg border px-3 py-2 text-xs font-semibold"
-                    style={{
-                      borderColor: "var(--border)",
-                      color: "var(--text-primary)",
-                      background: "var(--bg-primary)",
-                    }}
+                    className="btn btn-secondary text-xs btn-sm"
                   >
                     Unduh HTML
                   </button>
@@ -573,13 +537,12 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                     type="button"
                     disabled={saving}
                     onClick={() => void deleteCurrent()}
-                    className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-50"
-                    style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
+                    className="btn btn-danger text-xs disabled:opacity-50 btn-sm"
                   >
                     Hapus
                   </button>
                 </div>
-                <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                   Tip cetak: di dialog browser pilih Margins = <strong>None</strong> agar sama dengan halaman editor.
                 </p>
 
@@ -598,28 +561,21 @@ export default function RedaksiClient({ initial }: { initial: PrintTemplateRow[]
                       type="button"
                       disabled={saving || !dirty}
                       onClick={() => void saveCurrent()}
-                      className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                      style={{ background: "var(--accent)" }}
+                      className="btn btn-primary text-xs btn-sm"
                     >
                       {saving ? "Menyimpan…" : "Simpan"}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowPreview(false)}
-                      className="rounded-lg border px-3 py-2 text-xs font-semibold"
-                      style={{
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                        background: "var(--bg-primary)",
-                      }}
+                      className="btn btn-secondary text-xs btn-sm"
                     >
                       Kembali ke editor
                     </button>
                     <button
                       type="button"
                       onClick={handlePrint}
-                      className="rounded-lg px-3 py-2 text-xs font-semibold text-white"
-                      style={{ background: "var(--accent)" }}
+                      className="btn btn-primary text-xs btn-sm"
                     >
                       Cetak / Simpan PDF
                     </button>

@@ -21,8 +21,8 @@ function IconBox({ children, className }: { children: React.ReactNode; className
   return (
     <span
       className={cn(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/90 transition-colors duration-200",
-        "bg-white/[0.08] group-[.is-active]:bg-white/[0.12]",
+        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/70 transition-colors duration-200",
+        "bg-white/[0.05] group-[.is-active]:bg-white/[0.1] group-[.is-active]:text-white group-hover:text-white/90",
         className
       )}
     >
@@ -55,8 +55,8 @@ function ChevronToggle({ open, className }: { open: boolean; className?: string 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-2.5 flex items-center gap-2 px-2">
-      <span className="font-serif text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">{children}</span>
-      <span className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" aria-hidden />
+      <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-white/40">{children}</span>
+      <span className="h-px flex-1 bg-gradient-to-r from-white/[0.08] to-transparent" aria-hidden />
     </div>
   );
 }
@@ -66,12 +66,12 @@ function SubmenuLink({ href, active, children }: { href: string; active: boolean
     <Link
       href={href}
       className={cn(
-        "block touch-manipulation rounded-lg px-2.5 py-2.5 font-serif text-[11px] leading-snug outline-none transition-all duration-200 ease-out",
-        "hover:bg-white/[0.07] hover:pl-3 motion-safe:hover:translate-x-[1px]",
+        "block touch-manipulation rounded-lg px-2.5 py-2 font-sans text-[12px] leading-snug outline-none transition-all duration-200 ease-out",
+        "hover:bg-white/[0.06]",
         "focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-0",
         active
-          ? "bg-white/[0.1] font-medium text-white shadow-[inset_3px_0_0_var(--gold)]"
-          : "text-white/75 hover:text-white"
+          ? "bg-white/[0.08] font-medium text-white shadow-[inset_2px_0_0_var(--gold)]"
+          : "text-white/65 hover:text-white"
       )}
     >
       {children}
@@ -94,15 +94,15 @@ function SimpleNavLink({
     <Link
       href={href}
       className={cn(
-        "group mb-1 flex touch-manipulation items-center gap-2.5 rounded-xl px-2.5 py-2.5 font-serif outline-none transition-all duration-200 ease-out",
-        "hover:bg-[var(--bg-sidebar-hover)] motion-safe:active:scale-[0.99]",
+        "group mb-0.5 flex touch-manipulation items-center gap-2.5 rounded-lg px-2.5 py-2 font-sans outline-none transition-all duration-200 ease-out",
+        "hover:bg-white/[0.05] motion-safe:active:scale-[0.99]",
         "focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-sidebar)]",
-        active && "is-active bg-[var(--bg-sidebar-active)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-        !active && "text-white/75 hover:text-white/95"
+        active && "is-active bg-white/[0.08] text-white shadow-[inset_2px_0_0_var(--gold)]",
+        !active && "text-white/70 hover:text-white/95"
       )}
     >
       <IconBox>{icon}</IconBox>
-      <span className="min-w-0 flex-1 truncate text-[12px] font-semibold tracking-tight">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{label}</span>
     </Link>
   );
 }
@@ -127,25 +127,24 @@ function SplitNavRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mb-1">
+    <div className="mb-0.5">
       <div
         className={cn(
-          "group flex overflow-hidden rounded-xl transition-all duration-200 ease-out",
-          "ring-1 ring-transparent hover:ring-white/[0.06]",
+          "group flex overflow-hidden rounded-lg transition-all duration-200 ease-out",
           active
-            ? "is-active bg-[var(--bg-sidebar-active)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] ring-white/[0.08]"
-            : "text-white/75 hover:bg-[var(--bg-sidebar-hover)] hover:text-white/95"
+            ? "is-active bg-white/[0.08] text-white shadow-[inset_2px_0_0_var(--gold)]"
+            : "text-white/70 hover:bg-white/[0.05] hover:text-white/95"
         )}
       >
         <Link
           href={href}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-2.5 pr-1 font-serif outline-none transition-colors duration-200",
+            "flex min-w-0 flex-1 items-center gap-2.5 py-2 pl-2.5 pr-1 font-sans outline-none transition-colors duration-200",
             "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/25"
           )}
         >
           <IconBox>{icon}</IconBox>
-          <span className="truncate text-[12px] font-semibold tracking-tight">{label}</span>
+          <span className="truncate text-[13px] font-medium">{label}</span>
         </Link>
         <button
           type="button"
@@ -157,7 +156,7 @@ function SplitNavRow({
             onToggle();
           }}
           className={cn(
-            "flex w-10 shrink-0 touch-manipulation items-center justify-center border-l border-white/[0.08] text-white/80 outline-none transition-all duration-200",
+            "flex w-10 shrink-0 touch-manipulation items-center justify-center border-l border-white/[0.06] text-white/60 outline-none transition-all duration-200",
             "hover:bg-black/15 hover:text-white active:bg-black/25 motion-safe:active:scale-[0.94]",
             "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/30"
           )}
@@ -171,7 +170,7 @@ function SplitNavRow({
           open ? "pointer-events-auto mt-1.5 max-h-[18rem] opacity-100" : "pointer-events-none max-h-0 opacity-0"
         )}
       >
-        <div className="ml-1.5 max-h-[14rem] space-y-0.5 overflow-y-auto overflow-x-hidden border-l border-white/[0.07] py-0.5 pl-2.5 pr-1">
+        <div className="ml-[1.1rem] max-h-[14rem] space-y-0.5 overflow-y-auto overflow-x-hidden border-l border-white/[0.07] py-0.5 pl-2.5 pr-1">
           {children}
         </div>
       </div>
@@ -201,9 +200,9 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
   }, [pathname]);
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden font-serif">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden font-sans">
       <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-4 sm:py-5">
-        <div className="px-3 pb-2">
+        <div className="px-3 pb-3">
           <SectionLabel>Utama</SectionLabel>
 
           <SimpleNavLink
@@ -406,11 +405,11 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
         <div
           className="rounded-xl border border-white/[0.07] px-3 py-2.5 transition-colors duration-200 hover:border-white/12"
           style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.07), rgba(184,149,108,0.08))",
+            background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(176,141,87,0.07))",
           }}
         >
-          <div className="truncate text-[11px] font-semibold tracking-tight text-white/85">{session?.user?.name}</div>
-          <div className="mt-0.5 text-[10px] font-medium tracking-wide" style={{ color: "var(--gold)" }}>
+          <div className="truncate text-[12px] font-medium text-white/85">{session?.user?.name}</div>
+          <div className="mt-0.5 text-[11px] font-medium tracking-wide" style={{ color: "var(--gold)" }}>
             {session?.user?.role ? getRoleLabel(session.user.role) : ""}
           </div>
         </div>

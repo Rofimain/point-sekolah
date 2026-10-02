@@ -32,7 +32,7 @@ function RoleBadge({ role }: { role: string }) {
   };
   const [bg, color] = c[role] || ["var(--bg-tertiary)", "var(--text-muted)"];
   return (
-    <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: bg, color }}>
+    <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={{ background: bg, color }}>
       {getRoleLabel(role)}
     </span>
   );
@@ -86,7 +86,7 @@ function GoogleLinkBadge({ u }: { u: { googleSub?: string | null; email?: string
   if (linked) {
     return (
       <span
-        className="px-2 py-0.5 rounded text-[10px] font-semibold"
+        className="px-2 py-0.5 rounded text-[11px] font-semibold"
         style={{ background: "var(--accent-light)", color: "var(--accent)" }}
         title="Akun Google terhubung"
       >
@@ -97,7 +97,7 @@ function GoogleLinkBadge({ u }: { u: { googleSub?: string | null; email?: string
   if (!domainOk) {
     return (
       <span
-        className="px-2 py-0.5 rounded text-[10px] font-semibold"
+        className="px-2 py-0.5 rounded text-[11px] font-semibold"
         style={{ background: "var(--warning-bg)", color: "var(--warning)" }}
         title={`Email di luar @${STAFF_DOMAIN} — Google login tidak bisa`}
       >
@@ -107,7 +107,7 @@ function GoogleLinkBadge({ u }: { u: { googleSub?: string | null; email?: string
   }
   return (
     <span
-      className="px-2 py-0.5 rounded text-[10px] font-semibold"
+      className="px-2 py-0.5 rounded text-[11px] font-semibold"
       style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)" }}
       title="Belum link Google — user login Google sekali untuk menghubungkan"
     >
@@ -601,10 +601,10 @@ export default function UsersClient({
     <div>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>
+          <h1 className="page-title">
             Manajemen Pengguna
           </h1>
-          <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
+          <p className="page-subtitle">
             Total {roleTotalLabel}:{" "}
             <span className="font-semibold tabular-nums" style={{ color: "var(--text-secondary)" }}>
               {total}
@@ -615,8 +615,7 @@ export default function UsersClient({
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
           {selectedCount > 0 ? (
             <div
-              className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2"
-              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+              className="card flex flex-wrap items-center gap-2 px-3 py-2"
             >
               <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
                 {selectedCount} terpilih
@@ -643,8 +642,7 @@ export default function UsersClient({
                 type="button"
                 disabled={loading || !canBulkDeleteStudents}
                 onClick={() => void bulkDeleteStudents()}
-                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium disabled:opacity-60"
-                style={{ borderColor: "var(--danger)", color: "var(--danger)", background: "var(--danger-bg)" }}
+                className="btn btn-danger touch-manipulation text-[11px] disabled:opacity-60 btn-sm"
                 title={!canBulkDeleteStudents ? "Bulk delete hanya untuk akun siswa" : undefined}
               >
                 Hapus siswa
@@ -663,12 +661,7 @@ export default function UsersClient({
                 type="button"
                 disabled={loading}
                 onClick={() => setSelectedIds(new Set())}
-                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-60"
-                style={{
-                  borderColor: "var(--border)",
-                  color: "var(--text-secondary)",
-                  background: "var(--bg-primary)",
-                }}
+                className="btn btn-secondary touch-manipulation text-[11px] disabled:opacity-60 btn-sm"
               >
                 Clear
               </button>
@@ -679,8 +672,7 @@ export default function UsersClient({
               type="button"
               disabled={loading}
               onClick={() => void runGoogleReadinessAudit()}
-              className="w-full shrink-0 touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold disabled:opacity-60 sm:w-auto sm:py-1.5"
-              style={{ borderColor: "var(--border)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}
+              className="btn btn-secondary w-full shrink-0 touch-manipulation text-xs disabled:opacity-60 sm:w-auto sm:py-1.5 btn-sm"
               title="Ringkasan kesiapan Google login (tanpa ubah data)"
             >
               Audit Google
@@ -698,8 +690,7 @@ export default function UsersClient({
             <button
               type="button"
               onClick={openAdd}
-              className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
-              style={{ background: "var(--accent)" }}
+              className="btn btn-primary w-full shrink-0 touch-manipulation text-xs sm:w-auto sm:py-1.5 btn-sm"
             >
               + Tambah Pengguna
             </button>
@@ -709,21 +700,19 @@ export default function UsersClient({
 
       {/* Filters */}
       <div
-        className="rounded-xl border p-3 mb-4 flex flex-wrap gap-2"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="card p-3 mb-4 flex flex-wrap gap-2"
       >
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && navigate({ search: search.trim() })}
           placeholder="Cari nama..."
-          className="px-3 py-2 rounded-lg border text-xs flex-1 min-w-40"
-          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+          className="input text-xs flex-1 min-w-40"
         />
         <button
           type="button"
           onClick={() => navigate({ search: search.trim() })}
-          className="btn-primary px-4 py-2 text-xs"
+          className="btn btn-primary text-xs"
         >
           Cari
         </button>
@@ -734,8 +723,7 @@ export default function UsersClient({
             // Filter kelas hanya relevan untuk siswa
             navigate(role === "STUDENT" ? { role } : { role, classId: "" });
           }}
-          className="px-3 py-2 rounded-lg border text-xs"
-          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+          className="select text-xs"
         >
           {roleFilter.map((r) => (
             <option key={r.v} value={r.v}>
@@ -748,8 +736,7 @@ export default function UsersClient({
             <select
               value={searchParams.classId || ""}
               onChange={(e) => navigate({ classId: e.target.value })}
-              className="px-3 py-2 rounded-lg border text-xs"
-              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+              className="select text-xs"
             >
               <option value="">Semua Kelas</option>
               {classes.map((c: any) => (
@@ -788,8 +775,7 @@ export default function UsersClient({
                   setLoading(false);
                 }
               }}
-              className="px-3 py-2 rounded-lg border text-xs font-semibold disabled:opacity-60"
-              style={{ borderColor: "var(--danger)", background: "var(--danger-bg)", color: "var(--danger)" }}
+              className="btn btn-danger text-xs disabled:opacity-60 btn-sm"
               title={!(searchParams.classId || "").trim() ? "Pilih kelas dulu" : undefined}
             >
               Hapus siswa per kelas
@@ -799,8 +785,7 @@ export default function UsersClient({
       </div>
 
       <div
-        className="rounded-xl border overflow-hidden"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="card overflow-hidden"
       >
         {users.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
@@ -859,7 +844,7 @@ export default function UsersClient({
                         </span>
                         <RoleBadge role={u.role} />
                         <span
-                          className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                          className="px-2 py-0.5 rounded text-[11px] font-semibold"
                           style={{
                             background: statusBadgeActive(u) ? "var(--success-bg)" : "var(--bg-tertiary)",
                             color: statusBadgeActive(u) ? "var(--success)" : "var(--text-muted)",
@@ -890,12 +875,7 @@ export default function UsersClient({
                         })
                       }
                       onClick={() => openEdit(u)}
-                      className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
-                      style={{
-                        borderColor: "var(--border)",
-                        color: "var(--text-secondary)",
-                        background: "var(--bg-primary)",
-                      }}
+                      className="btn btn-secondary touch-manipulation text-[11px] disabled:opacity-50 btn-sm"
                     >
                       {canModifyUser(viewerRole, u.role) || (viewerRole === "ADMIN" && u.id === viewerId)
                         ? "Edit"
@@ -927,12 +907,7 @@ export default function UsersClient({
                         (!canModifyUser(viewerRole, u.role) && !(viewerRole === "ADMIN" && u.id === viewerId))
                       }
                       onClick={() => void unlinkGoogle(u.id, u.name)}
-                      className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
-                      style={{
-                        borderColor: "var(--border)",
-                        color: "var(--text-secondary)",
-                        background: "var(--bg-primary)",
-                      }}
+                      className="btn btn-secondary touch-manipulation text-[11px] disabled:opacity-50 btn-sm"
                       title={
                         u.googleSub ? "Putus tautan Google (relink = login Google lagi)" : "Belum terhubung Google"
                       }
@@ -965,12 +940,11 @@ export default function UsersClient({
             </ul>
 
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[720px]">
+              <table className="table-elegant w-full min-w-[720px]">
                 <thead>
-                  <tr style={{ background: "var(--bg-primary)" }}>
+                  <tr>
                     <th
-                      className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
-                      style={{ color: "var(--text-muted)" }}
+                      className="px-4 py-2.5 text-left whitespace-nowrap"
                     >
                       <label className="inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center">
                         <input
@@ -989,8 +963,7 @@ export default function UsersClient({
                       (h) => (
                         <th
                           key={h}
-                          className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
-                          style={{ color: "var(--text-muted)" }}
+                          className="px-4 py-2.5 text-left whitespace-nowrap"
                         >
                           {h}
                         </th>
@@ -1057,7 +1030,7 @@ export default function UsersClient({
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                          className="px-2 py-0.5 rounded text-[11px] font-semibold"
                           style={{
                             background: statusBadgeActive(u) ? "var(--success-bg)" : "var(--bg-tertiary)",
                             color: statusBadgeActive(u) ? "var(--success)" : "var(--text-muted)",
@@ -1078,12 +1051,7 @@ export default function UsersClient({
                               })
                             }
                             onClick={() => openEdit(u)}
-                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
-                            style={{
-                              borderColor: "var(--border)",
-                              color: "var(--text-secondary)",
-                              background: "var(--bg-primary)",
-                            }}
+                            className="btn btn-secondary touch-manipulation text-[11px] disabled:opacity-50 btn-sm"
                           >
                             {canModifyUser(viewerRole, u.role) || (viewerRole === "ADMIN" && u.id === viewerId)
                               ? "Edit"
@@ -1120,12 +1088,7 @@ export default function UsersClient({
                               (!canModifyUser(viewerRole, u.role) && !(viewerRole === "ADMIN" && u.id === viewerId))
                             }
                             onClick={() => void unlinkGoogle(u.id, u.name)}
-                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] disabled:opacity-50"
-                            style={{
-                              borderColor: "var(--border)",
-                              color: "var(--text-secondary)",
-                              background: "var(--bg-primary)",
-                            }}
+                            className="btn btn-secondary touch-manipulation text-[11px] disabled:opacity-50 btn-sm"
                             title={
                               u.googleSub
                                 ? "Putus tautan Google (relink = login Google lagi)"
@@ -1185,12 +1148,11 @@ export default function UsersClient({
       {modal && mounted
         ? createPortal(
             <div
-              className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+              className={`modal-overlay ${Z_MODAL_CLASS} flex items-end justify-center p-0 sm:items-center sm:p-4`}
               onClick={() => setModal(null)}
             >
               <div
-                className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom sm:rounded-xl sm:p-6"
-                style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+                className="modal-surface max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-[1.25rem] rounded-b-none px-4 pt-4 pb-sheet-bottom sm:rounded-[1.25rem] sm:p-6"
                 onClick={(e) => e.stopPropagation()}
               >
                 <h3
@@ -1210,8 +1172,7 @@ export default function UsersClient({
                     </p>
                     <div>
                       <label
-                        className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                        style={{ color: "var(--text-secondary)" }}
+                        className="label"
                       >
                         Password baru *
                       </label>
@@ -1220,12 +1181,7 @@ export default function UsersClient({
                         onChange={(e) => setForm({ ...form, password: e.target.value })}
                         type="password"
                         placeholder="Minimal 12 karakter"
-                        className="w-full px-3 py-2 rounded-lg border text-sm"
-                        style={{
-                          background: "var(--bg-primary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="input"
                       />
                     </div>
                     {error && (
@@ -1272,12 +1228,7 @@ export default function UsersClient({
                             type="button"
                             disabled={photoBusy || loading}
                             onClick={() => setPhotoDraft("")}
-                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                            style={{
-                              borderColor: "var(--danger)",
-                              color: "var(--danger)",
-                              background: "var(--danger-bg)",
-                            }}
+                            className="btn btn-danger touch-manipulation text-[11px] btn-sm"
                           >
                             Hapus foto
                           </button>
@@ -1294,7 +1245,7 @@ export default function UsersClient({
                           </button>
                         )}
                       </div>
-                      <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                         {photoBusy
                           ? "Mengompres foto…"
                           : "JPG/PNG/HEIC · otomatis dikompres. Kosongkan jika tidak diubah."}
@@ -1304,26 +1255,19 @@ export default function UsersClient({
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="col-span-2">
                       <label
-                        className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                        style={{ color: "var(--text-secondary)" }}
+                        className="label"
                       >
                         Nama Lengkap *
                       </label>
                       <input
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border text-sm"
-                        style={{
-                          background: "var(--bg-primary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="input"
                       />
                     </div>
                     <div className="col-span-2">
                       <label
-                        className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                        style={{ color: "var(--text-secondary)" }}
+                        className="label"
                       >
                         Email *
                       </label>
@@ -1331,21 +1275,15 @@ export default function UsersClient({
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         type="email"
-                        className="w-full px-3 py-2 rounded-lg border text-sm"
-                        style={{
-                          background: "var(--bg-primary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="input"
                       />
-                      <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                      <p className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>
                         Siswa: @{STUDENT_DOMAIN} · Guru/Admin: @{STAFF_DOMAIN}
                       </p>
                     </div>
                     <div>
                       <label
-                        className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                        style={{ color: "var(--text-secondary)" }}
+                        className="label"
                       >
                         Password {modal !== "add" && "(kosongkan jika tidak diubah)"}
                       </label>
@@ -1354,18 +1292,12 @@ export default function UsersClient({
                         onChange={(e) => setForm({ ...form, password: e.target.value })}
                         type="password"
                         placeholder="••••••••"
-                        className="w-full px-3 py-2 rounded-lg border text-sm"
-                        style={{
-                          background: "var(--bg-primary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="input"
                       />
                     </div>
                     <div>
                       <label
-                        className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                        style={{ color: "var(--text-secondary)" }}
+                        className="label"
                       >
                         Role
                       </label>
@@ -1402,20 +1334,14 @@ export default function UsersClient({
                       <>
                         <div>
                           <label
-                            className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                            style={{ color: "var(--text-secondary)" }}
+                            className="label"
                           >
                             NISN <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opsional)</span>
                           </label>
                           <input
                             value={form.nisn}
                             onChange={(e) => setForm({ ...form, nisn: e.target.value })}
-                            className="w-full px-3 py-2 rounded-lg border text-sm"
-                            style={{
-                              background: "var(--bg-primary)",
-                              borderColor: "var(--border)",
-                              color: "var(--text-primary)",
-                            }}
+                            className="input"
                           />
                         </div>
                         <div
@@ -1443,15 +1369,14 @@ export default function UsersClient({
                                 disabled={loading || !modal?.id}
                                 onClick={() => void copyOrtuLink(modal.id)}
                                 className="mt-3 w-full rounded-lg border px-3 py-2 text-left text-xs font-semibold"
-                                style={{
-                                  borderColor: "var(--accent)",
+                                style={{ borderColor: "var(--accent)",
                                   color: "var(--accent)",
                                   background: "var(--bg-secondary)",
                                 }}
                               >
                                 Salin tautan Telegram ortu
                               </button>
-                              <p className="mt-2 text-[10px]">
+                              <p className="mt-2 text-[11px]">
                                 Perlu tautan baru setelah ortu salah akun? Tombol ini membuat token baru (tautan lama
                                 tidak dipakai lagi).
                               </p>
@@ -1463,20 +1388,14 @@ export default function UsersClient({
                     {form.role === "STUDENT" && (
                       <div>
                         <label
-                          className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                          style={{ color: "var(--text-secondary)" }}
+                          className="label"
                         >
                           Kelas
                         </label>
                         <select
                           value={form.classId}
                           onChange={(e) => setForm({ ...form, classId: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg border text-sm"
-                          style={{
-                            background: "var(--bg-primary)",
-                            borderColor: "var(--border)",
-                            color: "var(--text-primary)",
-                          }}
+                          className="select"
                         >
                           <option value="">— Pilih kelas —</option>
                           {classes.map((c: any) => (
@@ -1491,20 +1410,14 @@ export default function UsersClient({
                       <>
                         <div>
                           <label
-                            className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                            style={{ color: "var(--text-secondary)" }}
+                            className="label"
                           >
                             NIP
                           </label>
                           <input
                             value={form.nip}
                             onChange={(e) => setForm({ ...form, nip: e.target.value })}
-                            className="w-full px-3 py-2 rounded-lg border text-sm"
-                            style={{
-                              background: "var(--bg-primary)",
-                              borderColor: "var(--border)",
-                              color: "var(--text-primary)",
-                            }}
+                            className="input"
                           />
                         </div>
                         <div>
@@ -1520,14 +1433,9 @@ export default function UsersClient({
                             value={form.jabatan}
                             onChange={(e) => setForm({ ...form, jabatan: e.target.value })}
                             placeholder="Contoh: Piket, Wali Kelas X IPA 1"
-                            className="w-full px-3 py-2 rounded-lg border text-sm"
-                            style={{
-                              background: "var(--bg-primary)",
-                              borderColor: "var(--border)",
-                              color: "var(--text-primary)",
-                            }}
+                            className="input"
                           />
-                          <p className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                          <p className="mt-1 text-[11px]" style={{ color: "var(--text-muted)" }}>
                             Label tampilan saja — tidak mengubah hak akses.
                           </p>
                         </div>
@@ -1554,7 +1462,7 @@ export default function UsersClient({
                         form.role === "SUPER_ADMIN" &&
                         modal?.active &&
                         activeSuperAdminCount <= 1 ? (
-                          <span className="block text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                          <span className="block text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
                             Nonaktifkan hanya jika sudah ada Super Admin aktif lain.
                           </span>
                         ) : null}
@@ -1582,8 +1490,7 @@ export default function UsersClient({
                   <button
                     onClick={handleSave}
                     disabled={loading}
-                    className="px-4 py-2 rounded-lg text-sm text-white disabled:opacity-60"
-                    style={{ background: "var(--accent)" }}
+                    className="btn btn-primary text-sm"
                   >
                     {passwordResetOnlyModal ? "Reset password" : "Simpan"}
                   </button>

@@ -61,14 +61,13 @@ export function QrisStyleSuccessSheet({
     >
       <button
         type="button"
-        className="fixed inset-0 bg-black/55 backdrop-blur-[3px] motion-safe:transition-opacity"
+        className="modal-overlay motion-safe:transition-opacity"
         onClick={onClose}
         aria-label="Tutup"
       />
 
       <div
-        className="relative z-10 my-auto w-full max-h-[min(90dvh,100%)] overflow-y-auto overscroll-contain sm:max-w-[360px] rounded-t-[1.35rem] border shadow-[0_-8px_40px_rgba(0,0,0,0.18)] sm:rounded-2xl sm:shadow-2xl max-sm:animate-qris-sheet sm:animate-qris-modal"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="modal-surface relative z-10 my-auto max-h-[min(90dvh,100%)] w-full overflow-y-auto overscroll-contain rounded-b-none rounded-t-[1.35rem] max-sm:animate-qris-sheet sm:max-w-[360px] sm:rounded-[1.25rem] sm:animate-qris-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 pt-9 pb-2 text-center">
@@ -99,7 +98,7 @@ export function QrisStyleSuccessSheet({
 
           <h2
             id="qris-success-title"
-            className="mt-5 text-[1.35rem] font-bold tracking-tight"
+            className="mt-5 font-serif text-[1.4rem] font-semibold tracking-tight"
             style={{ color: "var(--text-primary)" }}
           >
             {title}
@@ -110,9 +109,12 @@ export function QrisStyleSuccessSheet({
         </div>
 
         {details.length > 0 && (
-          <div className="mx-5 mt-5 rounded-xl px-4 py-3 text-left" style={{ background: "var(--bg-primary)" }}>
+          <div
+            className="mx-5 mt-5 rounded-xl border px-4 py-3 text-left"
+            style={{ background: "var(--bg-primary)", borderColor: "var(--border)" }}
+          >
             <div
-              className="mb-2 text-[10px] font-semibold uppercase tracking-wider"
+              className="mb-2 text-[11px] font-semibold uppercase tracking-wider"
               style={{ color: "var(--text-muted)" }}
             >
               Rincian
@@ -136,10 +138,9 @@ export function QrisStyleSuccessSheet({
           {receiptRecordId ? (
             <a
               href={`/api/records/${encodeURIComponent(receiptRecordId)}/evidence-pdf`}
-              className="block min-h-11 w-full rounded-xl border-2 py-3 text-center text-[15px] font-semibold transition active:scale-[0.99] motion-reduce:transition-none"
+              className="btn btn-secondary h-12 w-full text-[15px] font-semibold active:scale-[0.99] motion-reduce:transition-none"
               style={{
-                borderColor: "var(--success)",
-                background: "var(--bg-secondary)",
+                borderColor: "color-mix(in srgb, var(--success) 40%, transparent)",
                 color: "var(--success)",
               }}
             >
@@ -149,7 +150,7 @@ export function QrisStyleSuccessSheet({
           <button
             type="button"
             onClick={onClose}
-            className="min-h-11 w-full touch-manipulation rounded-xl py-3.5 text-[15px] font-semibold text-white shadow-md transition active:scale-[0.99] motion-reduce:transition-none"
+            className="btn h-12 w-full touch-manipulation text-[15px] font-semibold text-white active:scale-[0.99] motion-reduce:transition-none"
             style={{
               background: "var(--success)",
               boxShadow: "0 8px 20px color-mix(in srgb, var(--success) 25%, transparent)",

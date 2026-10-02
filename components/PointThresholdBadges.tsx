@@ -11,24 +11,9 @@ export function PointBadge({
   alertPoints?: number;
   criticalPoints?: number;
 }) {
-  const colors =
-    points >= criticalPoints
-      ? (["var(--danger-bg)", "var(--danger)"] as const)
-      : points >= alertPoints
-        ? (["var(--warning-bg)", "var(--warning)"] as const)
-        : (["var(--success-bg)", "var(--success)"] as const);
-  return (
-    <span
-      className="badge-soft"
-      style={{
-        background: colors[0],
-        color: colors[1],
-        borderColor: "color-mix(in srgb, currentColor 18%, transparent)",
-      }}
-    >
-      {points}
-    </span>
-  );
+  const variant =
+    points >= criticalPoints ? "badge-danger" : points >= alertPoints ? "badge-warning" : "badge-success";
+  return <span className={`badge-soft tabular-nums ${variant}`}>{points}</span>;
 }
 
 export function StatusBadge({
@@ -42,22 +27,11 @@ export function StatusBadge({
 }) {
   const status =
     points >= criticalPoints
-      ? (["var(--danger-bg)", "var(--danger)", "Kritis"] as const)
+      ? (["badge-danger", "Kritis"] as const)
       : points >= alertPoints
-        ? (["var(--warning-bg)", "var(--warning)", "Perhatian"] as const)
-        : (["var(--success-bg)", "var(--success)", "Normal"] as const);
-  return (
-    <span
-      className="badge-soft px-2.5"
-      style={{
-        background: status[0],
-        color: status[1],
-        borderColor: "color-mix(in srgb, currentColor 18%, transparent)",
-      }}
-    >
-      {status[2]}
-    </span>
-  );
+        ? (["badge-warning", "Perhatian"] as const)
+        : (["badge-success", "Normal"] as const);
+  return <span className={`badge-soft px-2.5 ${status[0]}`}>{status[1]}</span>;
 }
 
 export function statusRank(points: number, alertPoints = WARNING_POINTS, criticalPoints = CRITICAL_POINTS) {

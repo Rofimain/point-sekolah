@@ -74,15 +74,14 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
 
   return createPortal(
     <div
-      className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4`}
+      className={`modal-overlay ${Z_MODAL_CLASS} flex items-end justify-center p-0 sm:items-center sm:p-4`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="evidence-preview-title"
     >
       <button type="button" className="absolute inset-0 cursor-default" aria-label="Tutup" onClick={onClose} />
       <div
-        className="relative z-10 max-h-[90dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border p-4 pb-sheet-bottom shadow-2xl sm:rounded-2xl sm:p-5 sm:pb-5"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="modal-surface relative z-10 max-h-[90dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-[1.25rem] rounded-b-none p-4 pb-sheet-bottom sm:rounded-[1.25rem] sm:p-5 sm:pb-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -137,31 +136,31 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
             style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
           >
             <div>
-              <dt className="text-[10px] uppercase" style={{ color: "var(--text-muted)" }}>
+              <dt className="text-[11px] uppercase" style={{ color: "var(--text-muted)" }}>
                 Tanggal
               </dt>
               <dd>{new Date(data.date).toLocaleDateString("id-ID")}</dd>
             </div>
             <div>
-              <dt className="text-[10px] uppercase" style={{ color: "var(--text-muted)" }}>
+              <dt className="text-[11px] uppercase" style={{ color: "var(--text-muted)" }}>
                 Poin
               </dt>
               <dd>{data.points} poin</dd>
             </div>
             <div>
-              <dt className="text-[10px] uppercase" style={{ color: "var(--text-muted)" }}>
+              <dt className="text-[11px] uppercase" style={{ color: "var(--text-muted)" }}>
                 Sesi
               </dt>
               <dd>{data.session || "—"}</dd>
             </div>
             <div>
-              <dt className="text-[10px] uppercase" style={{ color: "var(--text-muted)" }}>
+              <dt className="text-[11px] uppercase" style={{ color: "var(--text-muted)" }}>
                 Diinput oleh
               </dt>
               <dd className="break-words">{data.createdByName || "—"}</dd>
             </div>
             <div className="col-span-2">
-              <dt className="text-[10px] uppercase" style={{ color: "var(--text-muted)" }}>
+              <dt className="text-[11px] uppercase" style={{ color: "var(--text-muted)" }}>
                 Keterangan
               </dt>
               <dd className="break-words whitespace-pre-wrap">{data.notes || "—"}</dd>
@@ -172,7 +171,7 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
         {activeImg && (
           <div className="mb-4">
             <p
-              className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide"
+              className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide"
               style={{ color: "var(--text-muted)" }}
             >
               Foto bukti{images.length > 1 ? ` (${activeIdx + 1}/${images.length})` : ""}
@@ -205,7 +204,7 @@ export function EvidencePreviewModal({ recordId, onClose }: { recordId: string; 
         {sig && (
           <div>
             <p
-              className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide"
+              className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide"
               style={{ color: "var(--text-muted)" }}
             >
               Pengakuan / tanda tangan

@@ -140,8 +140,7 @@ export function StaffSubmissionBell() {
         <button
           ref={buttonRef}
           type="button"
-          className="relative flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg border text-sm transition-colors hover:opacity-80"
-          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+          className="btn btn-ghost relative h-9 w-9 touch-manipulation rounded-full p-0 text-sm"
           aria-expanded={open}
           aria-haspopup="dialog"
           aria-label="Notifikasi catatan pelanggaran"
@@ -160,7 +159,7 @@ export function StaffSubmissionBell() {
             <path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           {readReady && unreadCount > 0 ? (
-            <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-sm">
+            <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white shadow-sm">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           ) : null}
@@ -240,7 +239,7 @@ export function StaffSubmissionBell() {
                             </span>
                           </span>
                           {!isRead ? (
-                            <span className="shrink-0 self-center text-[10px] font-medium uppercase text-blue-500">
+                            <span className="shrink-0 self-center text-[11px] font-medium uppercase text-blue-500">
                               Baru
                             </span>
                           ) : null}
@@ -270,12 +269,7 @@ export function StaffSubmissionBell() {
         afterPrimaryActions={
           <button
             type="button"
-            className="min-h-11 w-full rounded-xl border py-2.5 text-[14px] font-semibold transition hover:opacity-90 active:scale-[0.99] motion-reduce:transition-none"
-            style={{
-              borderColor: "var(--border)",
-              background: "var(--bg-primary)",
-              color: "var(--text-secondary)",
-            }}
+            className="btn btn-secondary w-full text-[14px] active:scale-[0.99] motion-reduce:transition-none"
             onClick={() => {
               setSheetItem(null);
               router.push("/records");

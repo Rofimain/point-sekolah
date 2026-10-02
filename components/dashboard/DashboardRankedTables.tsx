@@ -54,19 +54,37 @@ function SortHeader({
   const active = sort.key === column.key;
   return (
     <th
-      className={`px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide sm:px-4 ${
-        column.hiddenOnMobile ? "hidden sm:table-cell" : ""
-      }`}
-      style={{ color: "var(--text-muted)" }}
+      className={`px-3 py-2 text-left sm:px-4 ${column.hiddenOnMobile ? "hidden sm:table-cell" : ""}`}
       aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
     >
       <button
         type="button"
         onClick={() => onSort(column.key)}
-        className="inline-flex min-h-11 touch-manipulation items-center gap-1 rounded text-left hover:opacity-80"
+        className={`inline-flex min-h-10 touch-manipulation items-center gap-1 rounded text-left transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)] ${
+          active ? "text-[var(--text-primary)]" : ""
+        }`}
       >
         {column.label}
-        <span aria-hidden>{active ? (sort.direction === "asc" ? "↑" : "↓") : "↕"}</span>
+        <svg
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`h-3 w-3 ${active ? "opacity-100" : "opacity-40"}`}
+          aria-hidden
+        >
+          {active ? (
+            sort.direction === "asc" ? (
+              <path d="M10 15V5M5 10l5-5 5 5" />
+            ) : (
+              <path d="M10 5v10M5 10l5 5 5-5" />
+            )
+          ) : (
+            <path d="M7 8l3-3 3 3M7 12l3 3 3-3" />
+          )}
+        </svg>
       </button>
     </th>
   );
@@ -102,7 +120,7 @@ export default function DashboardRankedTables({
   function renderCell(key: SortKey, row: DashStudentRow, showStatus: boolean) {
     if (key === "name") {
       return (
-        <td key={key} className="px-3 py-3 text-xs font-medium sm:px-4" style={{ color: "var(--text-primary)" }}>
+        <td key={key} className="px-3 text-sm font-medium sm:px-4" style={{ color: "var(--text-primary)" }}>
           {row.name}
         </td>
       );
@@ -111,7 +129,7 @@ export default function DashboardRankedTables({
       return (
         <td
           key={key}
-          className="hidden px-3 py-3 text-xs sm:table-cell sm:px-4"
+          className="hidden px-3 text-sm sm:table-cell sm:px-4"
           style={{ color: "var(--text-secondary)" }}
         >
           {row.className || "—"}
@@ -120,13 +138,13 @@ export default function DashboardRankedTables({
     }
     if (key === "status" && showStatus) {
       return (
-        <td key={key} className="px-3 py-3 sm:px-4">
+        <td key={key} className="px-3 sm:px-4">
           <StatusBadge points={row.total} alertPoints={alertPoints} criticalPoints={criticalPoints} />
         </td>
       );
     }
     return (
-      <td key={key} className="px-3 py-3 sm:px-4">
+      <td key={key} className="px-3 sm:px-4">
         <PointBadge points={row.total} alertPoints={alertPoints} criticalPoints={criticalPoints} />
       </td>
     );
@@ -134,27 +152,24 @@ export default function DashboardRankedTables({
 
   return (
     <>
-      <div
-        className="mb-5 overflow-hidden rounded-xl border"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
-      >
-        <div className="border-b px-3 py-3 sm:px-4" style={{ borderColor: "var(--border)" }}>
-          <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
+      <div className="card mb-5 overflow-hidden">
+        <div className="border-b px-4 py-3.5 sm:px-5" style={{ borderColor: "var(--border)" }}>
+          <h2 className="text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
             Siswa dengan poin efektif di atas {alertPoints}
           </h2>
-          <p className="mt-0.5 text-[10px]" style={{ color: "var(--text-muted)" }}>
+          <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
             Berdasarkan poin setelah remisi periode tenang. Klik judul kolom untuk mengurutkan baris.
           </p>
         </div>
         {sortedOver25.length === 0 ? (
-          <div className="px-4 py-6 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+          <div className="px-4 py-8 text-center text-xs" style={{ color: "var(--text-muted)" }}>
             Tidak ada siswa di atas {alertPoints} poin.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[280px]">
+            <table className="table-elegant w-full min-w-[280px]">
               <thead>
-                <tr style={{ background: "var(--bg-primary)" }}>
+                <tr>
                   {OVER25_COLUMNS.map((column) => (
                     <SortHeader
                       key={column.key}
@@ -167,7 +182,7 @@ export default function DashboardRankedTables({
               </thead>
               <tbody>
                 {sortedOver25.map((row) => (
-                  <tr key={row.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                  <tr key={row.id}>
                     {OVER25_COLUMNS.map(({ key }) => renderCell(key, row, false))}
                   </tr>
                 ))}
@@ -177,27 +192,24 @@ export default function DashboardRankedTables({
         )}
       </div>
 
-      <div
-        className="overflow-hidden rounded-xl border"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
-      >
-        <div className="border-b px-3 py-3 sm:px-4" style={{ borderColor: "var(--border)" }}>
-          <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
+      <div className="card overflow-hidden">
+        <div className="border-b px-4 py-3.5 sm:px-5" style={{ borderColor: "var(--border)" }}>
+          <h2 className="text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
             Siswa poin tertinggi (top 5)
           </h2>
-          <p className="mt-0.5 text-[10px]" style={{ color: "var(--text-muted)" }}>
+          <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
             Klik judul kolom untuk mengurutkan baris.
           </p>
         </div>
         {sortedTop5.length === 0 ? (
-          <div className="px-4 py-6 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+          <div className="px-4 py-8 text-center text-xs" style={{ color: "var(--text-muted)" }}>
             Belum ada data poin siswa untuk ditampilkan.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[300px]">
+            <table className="table-elegant w-full min-w-[300px]">
               <thead>
-                <tr style={{ background: "var(--bg-primary)" }}>
+                <tr>
                   {TOP5_COLUMNS.map((column) => (
                     <SortHeader
                       key={column.key}
@@ -210,7 +222,7 @@ export default function DashboardRankedTables({
               </thead>
               <tbody>
                 {sortedTop5.map((row) => (
-                  <tr key={row.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                  <tr key={row.id}>
                     {TOP5_COLUMNS.map(({ key }) => renderCell(key, row, true))}
                   </tr>
                 ))}

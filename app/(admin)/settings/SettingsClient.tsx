@@ -134,10 +134,10 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
   return (
     <div>
       <div className="mb-5">
-        <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>
+        <h1 className="page-title">
           Pengaturan sekolah
         </h1>
-        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+        <p className="page-subtitle">
           Batasan poin SP/skorsing. Nama pejabat cetak diisi saat mencetak surat.
         </p>
         <p className="text-xs mt-2 flex flex-wrap gap-x-3 gap-y-1">
@@ -152,8 +152,7 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
 
       <form
         onSubmit={handleSave}
-        className="w-full max-w-2xl space-y-6 rounded-xl border p-4 sm:p-5"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="card w-full max-w-2xl space-y-6 p-5 sm:p-5"
       >
         <section className="space-y-4">
           <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
@@ -176,12 +175,7 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
                   onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                   placeholder="kosong = belum diatur"
                   inputMode="numeric"
-                  className="w-full px-3 py-2.5 rounded-lg border text-sm"
-                  style={{
-                    background: "var(--bg-primary)",
-                    borderColor: "var(--border)",
-                    color: "var(--text-primary)",
-                  }}
+                  className="input"
                 />
               </div>
             ))}
@@ -207,31 +201,28 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
         <button
           type="submit"
           disabled={loading}
-          className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
-          style={{ background: "var(--accent)" }}
+          className="btn btn-primary text-sm"
         >
           {loading ? "Menyimpan…" : "Simpan pengaturan"}
         </button>
       </form>
 
       <div
-        className="mt-8 w-full max-w-2xl space-y-3 rounded-xl border p-4 sm:p-5"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="card mt-8 w-full max-w-2xl space-y-3 p-5 sm:p-5"
       >
         <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
           Telegram — tautan orang tua &amp; webhook
         </h2>
         <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
           Kolom <strong style={{ color: "var(--text-secondary)" }}>Telegram ortu</strong> baru terisi setelah Telegram
-          berhasil memanggil server saat ortu memakai tautan <code className="text-[10px]">t.me/…?start=ortu_…</code>.
+          berhasil memanggil server saat ortu memakai tautan <code className="text-[11px]">t.me/…?start=ortu_…</code>.
         </p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             disabled={tgLoading}
             onClick={() => void loadTelegramWebhookInfo()}
-            className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-50"
-            style={{ borderColor: "var(--border)", color: "var(--text-primary)", background: "var(--bg-primary)" }}
+            className="btn btn-secondary text-xs disabled:opacity-50 btn-sm"
           >
             {tgLoading ? "Memuat…" : "Cek status webhook"}
           </button>
@@ -239,8 +230,7 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
             type="button"
             disabled={tgLoading}
             onClick={() => void registerTelegramWebhook()}
-            className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-            style={{ background: "var(--accent)" }}
+            className="btn btn-primary text-xs btn-sm"
           >
             Daftarkan / perbarui webhook
           </button>
@@ -252,7 +242,7 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
         )}
         {tgInfo && (
           <pre
-            className="max-h-48 overflow-auto rounded-lg border p-3 text-[10px] leading-relaxed"
+            className="max-h-48 overflow-auto rounded-lg border p-3 text-[11px] leading-relaxed"
             style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-secondary)" }}
           >
             {JSON.stringify(tgInfo, null, 2)}

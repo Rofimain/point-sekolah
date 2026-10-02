@@ -19,12 +19,15 @@ export function PaginationBar({ page, totalPages, onPageChange, label }: Props) 
 
   function btnStyle(active: boolean, disabled?: boolean): CSSProperties {
     return {
-      background: active ? "var(--accent)" : "var(--bg-primary)",
+      background: active ? "var(--accent)" : "var(--bg-secondary)",
       color: active ? "white" : "var(--text-secondary)",
       border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+      boxShadow: active ? "none" : "var(--shadow-sm)",
       opacity: disabled ? 0.4 : 1,
     };
   }
+  const btnBase =
+    "inline-flex h-9 min-w-9 touch-manipulation items-center justify-center rounded-[var(--radius-control)] text-xs tabular-nums transition-colors hover:bg-tertiary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[color-mix(in_srgb,var(--accent)_30%,transparent)]";
 
   return (
     <div
@@ -40,7 +43,7 @@ export function PaginationBar({ page, totalPages, onPageChange, label }: Props) 
           disabled={page <= 1}
           aria-label="Halaman sebelumnya"
           onClick={() => onPageChange(page - 1)}
-          className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded px-2 text-xs font-semibold disabled:cursor-not-allowed"
+          className={`${btnBase} px-2 font-semibold disabled:cursor-not-allowed`}
           style={btnStyle(false, page <= 1)}
         >
           ‹
@@ -51,7 +54,7 @@ export function PaginationBar({ page, totalPages, onPageChange, label }: Props) 
               type="button"
               aria-label="Halaman 1"
               onClick={() => onPageChange(1)}
-              className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs"
+              className={btnBase}
               style={btnStyle(false)}
             >
               1
@@ -70,7 +73,7 @@ export function PaginationBar({ page, totalPages, onPageChange, label }: Props) 
             aria-label={`Halaman ${p}`}
             aria-current={p === page ? "page" : undefined}
             onClick={() => onPageChange(p)}
-            className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs"
+            className={`${btnBase} ${p === page ? "font-semibold hover:bg-[var(--accent)]" : ""}`}
             style={btnStyle(p === page)}
           >
             {p}
@@ -87,7 +90,7 @@ export function PaginationBar({ page, totalPages, onPageChange, label }: Props) 
               type="button"
               aria-label={`Halaman ${totalPages}`}
               onClick={() => onPageChange(totalPages)}
-              className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded text-xs"
+              className={btnBase}
               style={btnStyle(false)}
             >
               {totalPages}
@@ -99,7 +102,7 @@ export function PaginationBar({ page, totalPages, onPageChange, label }: Props) 
           disabled={page >= totalPages}
           aria-label="Halaman berikutnya"
           onClick={() => onPageChange(page + 1)}
-          className="inline-flex h-11 min-w-11 touch-manipulation items-center justify-center rounded px-2 text-xs font-semibold disabled:cursor-not-allowed"
+          className={`${btnBase} px-2 font-semibold disabled:cursor-not-allowed`}
           style={btnStyle(false, page >= totalPages)}
         >
           ›

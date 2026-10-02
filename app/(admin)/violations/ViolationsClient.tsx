@@ -28,7 +28,7 @@ function CatBadge({ cat }: { cat: string }) {
   };
   const [bg, color] = c[cat] || ["var(--bg-tertiary)", "var(--text-muted)"];
   return (
-    <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: bg, color }}>
+    <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={{ background: bg, color }}>
       {CAT_LABELS[cat] || cat}
     </span>
   );
@@ -230,13 +230,12 @@ export default function ViolationsClient({
     canManage && modal && portalReady
       ? createPortal(
           <div
-            className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+            className={`modal-overlay ${Z_MODAL_CLASS} flex items-end justify-center p-0 sm:items-center sm:p-4`}
             style={{ top: 0, left: 0, right: 0, bottom: 0 }}
             onClick={() => setModal(null)}
           >
             <div
-              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-2xl sm:mx-4 sm:rounded-xl sm:p-6"
-              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+              className="modal-surface max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[1.25rem] rounded-b-none px-4 pt-4 pb-sheet-bottom sm:mx-4 sm:rounded-[1.25rem] sm:p-6"
               onClick={(e) => e.stopPropagation()}
             >
               <h3
@@ -251,8 +250,7 @@ export default function ViolationsClient({
                 <div className="grid grid-cols-[5.5rem_1fr] gap-3">
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       No
                     </label>
@@ -260,18 +258,12 @@ export default function ViolationsClient({
                       value={form.code}
                       onChange={(e) => setForm({ ...form, code: e.target.value })}
                       placeholder="89A"
-                      className="w-full px-3 py-2 rounded-lg border text-sm tabular-nums"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input tabular-nums"
                     />
                   </div>
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Nama Pelanggaran *
                     </label>
@@ -279,31 +271,20 @@ export default function ViolationsClient({
                       value={form.title}
                       onChange={(e) => setForm({ ...form, title: e.target.value })}
                       placeholder="Terlambat masuk sekolah"
-                      className="w-full px-3 py-2 rounded-lg border text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input"
                     />
                   </div>
                 </div>
                 <div>
                   <label
-                    className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                    style={{ color: "var(--text-secondary)" }}
+                    className="label"
                   >
                     Bagian
                   </label>
                   <select
                     value={form.section}
                     onChange={(e) => setForm({ ...form, section: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border text-sm"
-                    style={{
-                      background: "var(--bg-primary)",
-                      borderColor: "var(--border)",
-                      color: "var(--text-primary)",
-                    }}
+                    className="select"
                   >
                     <option value="">— Tidak ditentukan —</option>
                     {bagian.map((b) => (
@@ -316,20 +297,14 @@ export default function ViolationsClient({
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Kategori
                     </label>
                     <select
                       value={form.category}
                       onChange={(e) => setForm({ ...form, category: e.target.value as any })}
-                      className="w-full px-3 py-2 rounded-lg border text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="select"
                     >
                       {CATS.map((c) => (
                         <option key={c} value={c}>
@@ -340,8 +315,7 @@ export default function ViolationsClient({
                   </div>
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Poin
                     </label>
@@ -351,19 +325,13 @@ export default function ViolationsClient({
                       onChange={(e) => setForm({ ...form, points: parseInt(e.target.value) || 0 })}
                       min={0}
                       max={200}
-                      className="w-full px-3 py-2 rounded-lg border text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input"
                     />
                   </div>
                 </div>
                 <div>
                   <label
-                    className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                    style={{ color: "var(--text-secondary)" }}
+                    className="label"
                   >
                     Keterangan (opsional)
                   </label>
@@ -372,12 +340,7 @@ export default function ViolationsClient({
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     rows={2}
                     placeholder="Sanksi tambahan, remisi, dll."
-                    className="w-full px-3 py-2 rounded-lg border text-sm resize-none"
-                    style={{
-                      background: "var(--bg-primary)",
-                      borderColor: "var(--border)",
-                      color: "var(--text-primary)",
-                    }}
+                    className="textarea resize-none"
                   />
                 </div>
               </div>
@@ -392,8 +355,7 @@ export default function ViolationsClient({
                 <button
                   onClick={handleSave}
                   disabled={loading || !form.title.trim()}
-                  className="px-4 py-2 rounded-lg text-sm text-white disabled:opacity-60"
-                  style={{ background: "var(--accent)" }}
+                  className="btn btn-primary text-sm"
                 >
                   Simpan
                 </button>
@@ -408,13 +370,12 @@ export default function ViolationsClient({
     canManage && bagianModal && portalReady
       ? createPortal(
           <div
-            className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+            className={`modal-overlay ${Z_MODAL_CLASS} flex items-end justify-center p-0 sm:items-center sm:p-4`}
             style={{ top: 0, left: 0, right: 0, bottom: 0 }}
             onClick={() => setBagianModal(false)}
           >
             <div
-              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-2xl sm:mx-4 sm:rounded-xl sm:p-6"
-              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+              className="modal-surface max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[1.25rem] rounded-b-none px-4 pt-4 pb-sheet-bottom sm:mx-4 sm:rounded-[1.25rem] sm:p-6"
               onClick={(e) => e.stopPropagation()}
             >
               <h3
@@ -426,8 +387,7 @@ export default function ViolationsClient({
               <div className="space-y-3">
                 <div>
                   <label
-                    className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                    style={{ color: "var(--text-secondary)" }}
+                    className="label"
                   >
                     Nama bagian baru
                   </label>
@@ -435,12 +395,7 @@ export default function ViolationsClient({
                     value={bagianLabel}
                     onChange={(e) => setBagianLabel(e.target.value)}
                     placeholder="Contoh: Kebersihan"
-                    className="w-full px-3 py-2 rounded-lg border text-sm"
-                    style={{
-                      background: "var(--bg-primary)",
-                      borderColor: "var(--border)",
-                      color: "var(--text-primary)",
-                    }}
+                    className="input"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -453,8 +408,7 @@ export default function ViolationsClient({
                   type="button"
                   onClick={handleAddBagian}
                   disabled={loading || bagianLabel.trim().length < 2}
-                  className="w-full rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                  style={{ background: "var(--accent)" }}
+                  className="btn btn-primary btn-sm w-full"
                 >
                   Tambah bagian
                 </button>
@@ -473,7 +427,7 @@ export default function ViolationsClient({
                           <div className="font-medium" style={{ color: "var(--text-primary)" }}>
                             {b.label}
                           </div>
-                          <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                          <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                             {usage} jenis pelanggaran
                           </div>
                         </div>
@@ -481,17 +435,12 @@ export default function ViolationsClient({
                           <button
                             type="button"
                             onClick={() => handleDeleteBagian(b.id, b.label)}
-                            className="shrink-0 rounded border px-2 py-1 text-[10px]"
-                            style={{
-                              background: "var(--danger-bg)",
-                              color: "var(--danger)",
-                              borderColor: "var(--danger)",
-                            }}
+                            className="btn btn-danger shrink-0 text-[11px] btn-sm"
                           >
                             Hapus
                           </button>
                         ) : (
-                          <span className="shrink-0 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                          <span className="shrink-0 text-[11px]" style={{ color: "var(--text-muted)" }}>
                             Dipakai
                           </span>
                         )}
@@ -523,7 +472,7 @@ export default function ViolationsClient({
     <div>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>
+          <h1 className="page-title">
             Manajemen Jenis Pelanggaran
           </h1>
         </div>
@@ -535,20 +484,14 @@ export default function ViolationsClient({
                 setBagianLabel("");
                 setBagianModal(true);
               }}
-              className="w-full touch-manipulation rounded-lg border px-3 py-2.5 text-xs font-semibold sm:w-auto sm:py-1.5"
-              style={{
-                borderColor: "var(--border)",
-                color: "var(--text-secondary)",
-                background: "var(--bg-secondary)",
-              }}
+              className="btn btn-secondary w-full touch-manipulation text-xs sm:w-auto sm:py-1.5 btn-sm"
             >
               + Tambah bagian
             </button>
             <button
               type="button"
               onClick={openAdd}
-              className="w-full shrink-0 touch-manipulation rounded-lg px-3 py-2.5 text-xs font-semibold text-white sm:w-auto sm:py-1.5"
-              style={{ background: "var(--accent)" }}
+              className="btn btn-primary w-full shrink-0 touch-manipulation text-xs sm:w-auto sm:py-1.5 btn-sm"
             >
               + Tambah Pelanggaran
             </button>
@@ -565,13 +508,11 @@ export default function ViolationsClient({
             if (!e.target.value.trim()) setSearchQuery("");
           }}
           placeholder="Cari no, nama, poin, keterangan…"
-          className="min-w-0 flex-1 rounded-lg border px-3 py-2.5 text-sm"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+          className="input min-w-0 flex-1"
         />
         <button
           type="submit"
-          className="shrink-0 rounded-lg px-4 py-2.5 text-xs font-semibold text-white"
-          style={{ background: "var(--accent)" }}
+          className="btn btn-primary shrink-0 text-xs btn-sm"
         >
           Cari
         </button>
@@ -652,23 +593,13 @@ export default function ViolationsClient({
                         <div className="flex flex-wrap gap-1.5">
                           <button
                             onClick={() => openEdit(v)}
-                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                            style={{
-                              borderColor: "var(--border)",
-                              color: "var(--text-secondary)",
-                              background: "var(--bg-primary)",
-                            }}
+                            className="btn btn-secondary touch-manipulation text-[11px] btn-sm"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleDelete(v.id)}
-                            className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                            style={{
-                              background: "var(--danger-bg)",
-                              color: "var(--danger)",
-                              borderColor: "var(--danger)",
-                            }}
+                            className="btn btn-danger touch-manipulation text-[11px] btn-sm"
                           >
                             Hapus
                           </button>
@@ -679,16 +610,15 @@ export default function ViolationsClient({
                 })}
               </ul>
               <div className="hidden overflow-x-auto md:block">
-                <table className="w-full table-fixed min-w-[920px]">
+                <table className="table-elegant w-full table-fixed min-w-[920px]">
                   {colgroup}
                   <thead>
-                    <tr style={{ background: "var(--bg-primary)" }}>
+                    <tr>
                       {["No", "Nama Pelanggaran", "Kategori", "Poin", "Keterangan", ...(canManage ? ["Aksi"] : [])].map(
                         (h) => (
                           <th
                             key={h}
-                            className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide"
-                            style={{ color: "var(--text-muted)" }}
+                            className="px-3 py-2.5 text-left"
                           >
                             {h}
                           </th>
@@ -700,7 +630,7 @@ export default function ViolationsClient({
                     {items.map((v) => {
                       const { code, title } = splitViolationName(v.name || "");
                       return (
-                        <tr key={v.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                        <tr key={v.id}>
                           <td
                             className="px-3 py-3 text-xs font-semibold tabular-nums whitespace-nowrap align-top"
                             style={{ color: "var(--text-secondary)" }}
@@ -748,23 +678,13 @@ export default function ViolationsClient({
                               <div className="flex flex-wrap gap-1.5">
                                 <button
                                   onClick={() => openEdit(v)}
-                                  className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                                  style={{
-                                    borderColor: "var(--border)",
-                                    color: "var(--text-secondary)",
-                                    background: "var(--bg-primary)",
-                                  }}
+                                  className="btn btn-secondary touch-manipulation text-[11px] btn-sm"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   onClick={() => handleDelete(v.id)}
-                                  className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                                  style={{
-                                    background: "var(--danger-bg)",
-                                    color: "var(--danger)",
-                                    borderColor: "var(--danger)",
-                                  }}
+                                  className="btn btn-danger touch-manipulation text-[11px] btn-sm"
                                 >
                                   Hapus
                                 </button>

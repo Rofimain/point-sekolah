@@ -14,8 +14,8 @@ type UserAvatarProps = {
 };
 
 const SIZE = {
-  sm: "h-6 w-6 text-[9px]",
-  md: "h-8 w-8 text-[10px]",
+  sm: "h-6 w-6 text-[11px]",
+  md: "h-8 w-8 text-[11px]",
   lg: "h-14 w-14 text-xs sm:h-16 sm:w-16 sm:text-sm",
   xl: "h-16 w-16 text-sm sm:h-20 sm:w-20 sm:text-base",
   "2xl": "h-20 w-20 text-base sm:h-24 sm:w-24 sm:text-lg",
@@ -49,7 +49,7 @@ export default function UserAvatar({
       <img
         src={src}
         alt={name}
-        className={`${SIZE[size]} ${round} object-cover object-center flex-shrink-0 ${className}`}
+        className={`${SIZE[size]} ${round} flex-shrink-0 object-cover object-center shadow-sm ring-1 ring-[var(--border)] ${className}`}
         style={{ background: "var(--bg-tertiary)", aspectRatio: "1 / 1" }}
       />
     );
@@ -57,7 +57,7 @@ export default function UserAvatar({
 
   return (
     <div
-      className={`${SIZE[size]} ${round} flex items-center justify-center font-bold flex-shrink-0 ${className}`}
+      className={`${SIZE[size]} ${round} flex flex-shrink-0 items-center justify-center font-semibold tracking-wide ring-1 ring-[var(--accent-border)] ${className}`}
       style={{ background: "var(--accent-light)", color: "var(--accent)", aspectRatio: "1 / 1" }}
       aria-hidden
     >

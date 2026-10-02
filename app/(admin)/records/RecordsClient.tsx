@@ -40,8 +40,7 @@ function RecordsSortHeader({
   const active = sort.key === column;
   return (
     <th
-      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
-      style={{ color: "var(--text-muted)" }}
+      className="px-4 py-3 text-left whitespace-nowrap"
       aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
     >
       <button
@@ -377,7 +376,7 @@ export default function RecordsClient({
       )}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--gold)" }}>
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--gold)" }}>
             Administrasi
           </p>
           {selectedClass ? (
@@ -390,12 +389,11 @@ export default function RecordsClient({
                 <span style={{ color: "var(--text-secondary)" }}>{selectedClass.name}</span>
               </nav>
               <h1
-                className="font-serif text-xl font-semibold tracking-tight sm:text-2xl"
-                style={{ color: "var(--text-primary)" }}
+                className="page-title"
               >
                 Catatan · {selectedClass.name}
               </h1>
-              <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              <p className="page-subtitle">
                 {rosterMode
                   ? `${total} siswa di kelas ini — tiap halaman ${perPage} siswa · ${recordsSortLabel(listSort)}`
                   : `${total} catatan di kelas ini · ${recordsSortLabel(listSort)}`}
@@ -404,12 +402,11 @@ export default function RecordsClient({
           ) : (
             <>
               <h1
-                className="font-serif text-xl font-semibold tracking-tight sm:text-2xl"
-                style={{ color: "var(--text-primary)" }}
+                className="page-title"
               >
                 Catatan Pelanggaran Siswa
               </h1>
-              <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              <p className="page-subtitle">
                 {rosterMode
                   ? `${total} siswa sesuai kategori — tiap halaman ${perPage} siswa · ${recordsSortLabel(listSort)} (maks. 40 catatan per siswa)`
                   : `${total} catatan ditemukan — ${recordsSortLabel(listSort)}. Pilih kelas di menu samping untuk fokus satu kelas.`}
@@ -430,7 +427,7 @@ export default function RecordsClient({
               setAddIncidentDate(calendarTodayYmd());
               setAddModal(true);
             }}
-            className="btn-primary w-full touch-manipulation px-4 py-2.5 text-xs sm:w-auto sm:py-2"
+            className="btn btn-primary w-full touch-manipulation text-xs sm:w-auto sm:py-2"
           >
             + Tambah Catatan
           </button>
@@ -461,8 +458,7 @@ export default function RecordsClient({
           placeholder="Cari nama siswa..."
           list="record-student-suggestions"
           autoComplete="off"
-          className="min-h-11 min-w-40 flex-1 rounded-lg border px-3 py-2 text-xs"
-          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+          className="input min-w-40 flex-1 text-xs"
         />
         <datalist id="record-student-suggestions">
           {studentsForPicker.map((student) => (
@@ -474,7 +470,7 @@ export default function RecordsClient({
         <button
           type="button"
           onClick={() => navigate({ search: search.trim() })}
-          className="btn-primary min-h-11 touch-manipulation px-4 py-2 text-xs"
+          className="btn btn-primary touch-manipulation text-xs"
         >
           Cari
         </button>
@@ -485,8 +481,7 @@ export default function RecordsClient({
           id="records-grade"
           value={searchParams.grade || ""}
           onChange={(e) => navigate({ grade: e.target.value, classId: "" })}
-          className="min-h-11 rounded-lg border px-3 py-2 text-xs"
-          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+          className="select text-xs"
         >
           <option value="">Semua Angkatan</option>
           {grades.map((g) => (
@@ -502,8 +497,7 @@ export default function RecordsClient({
           id="records-class"
           value={searchParams.classId || ""}
           onChange={(e) => navigate({ classId: e.target.value })}
-          className="min-h-11 rounded-lg border px-3 py-2 text-xs"
-          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+          className="select text-xs"
         >
           <option value="">{searchParams.grade ? "Semua kelas di angkatan ini" : "Semua Kelas"}</option>
           {classesFiltered.map((c) => (
@@ -544,7 +538,7 @@ export default function RecordsClient({
               className="flex flex-wrap items-center gap-2 border-b px-3 py-2 md:hidden"
               style={{ borderColor: "var(--border)" }}
             >
-              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
                 Urutkan
               </span>
               {(
@@ -610,8 +604,7 @@ export default function RecordsClient({
                             setAddModal(true);
                           }}
                           className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                          style={{
-                            borderColor: "var(--accent)",
+                          style={{ borderColor: "var(--accent)",
                             color: "var(--accent)",
                             background: "var(--bg-primary)",
                           }}
@@ -643,13 +636,13 @@ export default function RecordsClient({
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                             Catatan
                           </span>
                           <PointBadge points={r.points} />
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                             Total
                           </span>
                           <PointBadge points={totalPts} />
@@ -672,8 +665,7 @@ export default function RecordsClient({
                         type="button"
                         onClick={() => openReceiptSheetForRecord(r)}
                         className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium"
-                        style={{
-                          borderColor: "var(--border)",
+                        style={{ borderColor: "var(--border)",
                           color: "var(--accent)",
                           background: "var(--bg-primary)",
                         }}
@@ -691,12 +683,7 @@ export default function RecordsClient({
                             setEditIncidentDate(dateToYmdInput(r.date));
                             setEditEvidenceImages([]);
                           }}
-                          className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                          style={{
-                            borderColor: "var(--border)",
-                            color: "var(--text-secondary)",
-                            background: "var(--bg-primary)",
-                          }}
+                          className="btn btn-secondary touch-manipulation text-[11px] btn-sm"
                         >
                           Edit
                         </button>
@@ -705,12 +692,7 @@ export default function RecordsClient({
                         <button
                           type="button"
                           onClick={() => handleDelete(r.id)}
-                          className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                          style={{
-                            background: "var(--danger-bg)",
-                            color: "var(--danger)",
-                            borderColor: "var(--danger)",
-                          }}
+                          className="btn btn-danger touch-manipulation text-[11px] btn-sm"
                         >
                           Hapus
                         </button>
@@ -723,40 +705,35 @@ export default function RecordsClient({
 
             {/* md+: table */}
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[960px]">
+              <table className="table-elegant w-full min-w-[960px]">
                 <thead>
                   <tr style={{ background: "color-mix(in srgb, var(--bg-primary) 75%, var(--accent-light))" }}>
                     <RecordsSortHeader label="Nama Siswa" column="name" sort={listSort} onSort={toggleSort} />
                     <th
-                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
-                      style={{ color: "var(--text-muted)" }}
+                      className="px-4 py-3 text-left whitespace-nowrap"
                     >
                       Kelas
                     </th>
                     <RecordsSortHeader label="Pelanggaran" column="violation" sort={listSort} onSort={toggleSort} />
                     <RecordsSortHeader label="Tanggal" column="date" sort={listSort} onSort={toggleSort} />
                     <th
-                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
-                      style={{ color: "var(--text-muted)" }}
+                      className="px-4 py-3 text-left whitespace-nowrap"
                     >
                       Poin
                     </th>
                     <RecordsSortHeader label="Total Poin" column="points" sort={listSort} onSort={toggleSort} />
                     <th
-                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
-                      style={{ color: "var(--text-muted)" }}
+                      className="px-4 py-3 text-left whitespace-nowrap"
                     >
                       Status
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
-                      style={{ color: "var(--text-muted)" }}
+                      className="px-4 py-3 text-left whitespace-nowrap"
                     >
                       Bukti
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
-                      style={{ color: "var(--text-muted)" }}
+                      className="px-4 py-3 text-left whitespace-nowrap"
                     >
                       Aksi
                     </th>
@@ -807,8 +784,7 @@ export default function RecordsClient({
                                 type="button"
                                 disabled
                                 className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium opacity-60 cursor-not-allowed"
-                                style={{
-                                  borderColor: "var(--border)",
+                                style={{ borderColor: "var(--border)",
                                   color: "var(--text-muted)",
                                   background: "var(--bg-primary)",
                                 }}
@@ -828,8 +804,7 @@ export default function RecordsClient({
                                   setAddModal(true);
                                 }}
                                 className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                                style={{
-                                  borderColor: "var(--accent)",
+                                style={{ borderColor: "var(--accent)",
                                   color: "var(--accent)",
                                   background: "var(--bg-primary)",
                                 }}
@@ -844,7 +819,7 @@ export default function RecordsClient({
                     const r = row.record;
                     const totalPts = totalPointsMap[r.studentId] || 0;
                     return (
-                      <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                      <tr key={r.id}>
                         <td
                           className="px-4 py-3 text-xs font-medium whitespace-nowrap"
                           style={{ color: "var(--text-primary)" }}
@@ -893,8 +868,7 @@ export default function RecordsClient({
                               type="button"
                               onClick={() => openReceiptSheetForRecord(r)}
                               className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px] font-medium"
-                              style={{
-                                borderColor: "var(--border)",
+                              style={{ borderColor: "var(--border)",
                                 color: "var(--accent)",
                                 background: "var(--bg-primary)",
                               }}
@@ -912,12 +886,7 @@ export default function RecordsClient({
                                   setEditIncidentDate(dateToYmdInput(r.date));
                                   setEditEvidenceImages([]);
                                 }}
-                                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                                style={{
-                                  borderColor: "var(--border)",
-                                  color: "var(--text-secondary)",
-                                  background: "var(--bg-primary)",
-                                }}
+                                className="btn btn-secondary touch-manipulation text-[11px] btn-sm"
                               >
                                 Edit
                               </button>
@@ -926,12 +895,7 @@ export default function RecordsClient({
                               <button
                                 type="button"
                                 onClick={() => handleDelete(r.id)}
-                                className="inline-flex min-h-11 touch-manipulation items-center px-3 py-2 rounded border text-[11px]"
-                                style={{
-                                  background: "var(--danger-bg)",
-                                  color: "var(--danger)",
-                                  borderColor: "var(--danger)",
-                                }}
+                                className="btn btn-danger touch-manipulation text-[11px] btn-sm"
                               >
                                 Hapus
                               </button>
@@ -962,12 +926,11 @@ export default function RecordsClient({
       {canManage && editModal && mounted
         ? createPortal(
             <div
-              className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+              className={`modal-overlay ${Z_MODAL_CLASS} flex items-end justify-center p-0 sm:items-center sm:p-4`}
               onClick={() => setEditModal(null)}
             >
               <div
-                className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom sm:mx-0 sm:rounded-xl sm:p-6"
-                style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+                className="modal-surface max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[1.25rem] rounded-b-none px-4 pt-4 pb-sheet-bottom sm:mx-0 sm:rounded-[1.25rem] sm:p-6"
                 onClick={(e) => e.stopPropagation()}
               >
                 <h3
@@ -979,8 +942,7 @@ export default function RecordsClient({
                 <div className="space-y-3">
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Jenis Pelanggaran
                     </label>
@@ -997,8 +959,7 @@ export default function RecordsClient({
                   </div>
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Poin
                     </label>
@@ -1008,18 +969,12 @@ export default function RecordsClient({
                       onChange={(e) => setEditPoints(parseInt(e.target.value))}
                       min={0}
                       max={200}
-                      className="w-full px-3 py-2 rounded-lg border text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input"
                     />
                   </div>
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Tanggal kejadian
                     </label>
@@ -1030,21 +985,15 @@ export default function RecordsClient({
                       onChange={(e) => setEditIncidentDate(e.target.value)}
                       min="2015-01-01"
                       max={calendarTodayYmd()}
-                      className="w-full px-3 py-2 rounded-lg border text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input"
                     />
-                    <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                    <p className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>
                       Tanggal kejadian (bukan tanggal input); dipakai hitung remisi.
                     </p>
                   </div>
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Keterangan
                     </label>
@@ -1052,12 +1001,7 @@ export default function RecordsClient({
                       value={editNotes}
                       onChange={(e) => setEditNotes(e.target.value)}
                       rows={2}
-                      className="w-full px-3 py-2 rounded-lg border text-sm resize-none"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="textarea resize-none"
                     />
                   </div>
                   <div
@@ -1068,7 +1012,7 @@ export default function RecordsClient({
                     }}
                   >
                     {editNeedEvidence ? (
-                      <p className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>
+                      <p className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
                         Bukti (poin di atas {heavyTh}): foto dan/atau pengakuan teks
                       </p>
                     ) : null}
@@ -1079,8 +1023,7 @@ export default function RecordsClient({
                     />
                     <div>
                       <label
-                        className="block text-[10px] font-semibold mb-1 uppercase tracking-wide"
-                        style={{ color: "var(--text-secondary)" }}
+                        className="label"
                       >
                         Pengakuan / tanda tangan (teks)
                       </label>
@@ -1089,12 +1032,7 @@ export default function RecordsClient({
                         onChange={(e) => setEditSignatureText(e.target.value)}
                         rows={2}
                         placeholder="Pengakuan / nama lengkap murid (min. 12 karakter)"
-                        className="w-full px-3 py-2 rounded-lg border text-xs resize-none"
-                        style={{
-                          background: "var(--bg-secondary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="textarea text-xs resize-none"
                       />
                     </div>
                   </div>
@@ -1110,8 +1048,7 @@ export default function RecordsClient({
                   <button
                     onClick={handleEdit}
                     disabled={loading}
-                    className="min-h-11 touch-manipulation px-4 py-2.5 rounded-lg text-sm text-white disabled:opacity-60"
-                    style={{ background: "var(--accent)" }}
+                    className="btn btn-primary touch-manipulation text-sm"
                   >
                     Simpan
                   </button>
@@ -1126,18 +1063,13 @@ export default function RecordsClient({
       {addModal && mounted
         ? createPortal(
             <div
-              className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center overflow-y-auto bg-black/55 p-0 sm:items-center sm:p-4`}
+              className={`modal-overlay ${Z_MODAL_CLASS} flex items-end justify-center overflow-y-auto p-0 sm:items-center sm:p-4`}
               onClick={() => {
                 setAddModal(false);
               }}
             >
               <div
-                className="my-0 max-h-[95dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-2xl sm:my-6 sm:rounded-2xl sm:p-6"
-                style={{
-                  background: "var(--bg-secondary)",
-                  borderColor: "var(--border)",
-                  boxShadow: "0 24px 64px rgba(0,0,0,0.2)",
-                }}
+                className="modal-surface my-0 max-h-[95dvh] w-full max-w-lg overflow-y-auto rounded-t-[1.25rem] rounded-b-none px-4 pt-4 pb-sheet-bottom sm:my-6 sm:rounded-[1.25rem] sm:p-6"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-start gap-3 mb-4 pb-4 border-b" style={{ borderColor: "var(--border)" }}>
@@ -1177,8 +1109,7 @@ export default function RecordsClient({
 
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Tanggal kejadian
                     </label>
@@ -1188,14 +1119,9 @@ export default function RecordsClient({
                       onChange={(e) => setAddIncidentDate(e.target.value)}
                       min="2015-01-01"
                       max={calendarTodayYmd()}
-                      className="w-full px-3 py-2.5 rounded-xl border text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input"
                     />
-                    <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                    <p className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>
                       Sesuai hari kejadian asli (bukan hari input). Remisi dihitung dari tanggal ini; maks. hari ini
                       (WIB).
                     </p>
@@ -1203,20 +1129,14 @@ export default function RecordsClient({
 
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Sesi / waktu <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(opsional)</span>
                     </label>
                     <select
                       value={addSession}
                       onChange={(e) => setAddSession(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="select"
                     >
                       <option value="">— Tidak spesifik —</option>
                       {SESSION_SLOTS.map((s) => (
@@ -1229,8 +1149,7 @@ export default function RecordsClient({
 
                   <div>
                     <label
-                      className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                      style={{ color: "var(--text-secondary)" }}
+                      className="label"
                     >
                       Keterangan <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(opsional)</span>
                     </label>
@@ -1239,12 +1158,7 @@ export default function RecordsClient({
                       onChange={(e) => setAddNotes(e.target.value)}
                       rows={2}
                       placeholder="Detail kejadian, lokasi, dll."
-                      className="w-full px-3 py-2.5 rounded-xl border text-sm resize-none"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="textarea resize-none"
                     />
                   </div>
 
@@ -1272,8 +1186,7 @@ export default function RecordsClient({
                     {addNeedEvidence ? (
                       <div>
                         <label
-                          className="block text-[10px] font-semibold mb-1 uppercase tracking-wide"
-                          style={{ color: "var(--text-secondary)" }}
+                          className="label"
                         >
                           Pengakuan / tanda tangan (teks, min. 12 karakter)
                         </label>
@@ -1281,12 +1194,7 @@ export default function RecordsClient({
                           value={addSignatureText}
                           onChange={(e) => setAddSignatureText(e.target.value)}
                           rows={2}
-                          className="w-full px-3 py-2 rounded-lg border text-xs resize-none"
-                          style={{
-                            background: "var(--bg-secondary)",
-                            borderColor: "var(--border)",
-                            color: "var(--text-primary)",
-                          }}
+                          className="textarea text-xs resize-none"
                           placeholder="Nama lengkap & pengakuan"
                         />
                       </div>
@@ -1307,8 +1215,7 @@ export default function RecordsClient({
                     type="button"
                     onClick={handleAdd}
                     disabled={loading || !addStudentId || !addVtId}
-                    className="min-h-11 touch-manipulation rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                    style={{ background: "var(--accent)" }}
+                    className="btn btn-primary touch-manipulation text-sm disabled:cursor-not-allowed"
                   >
                     {loading ? "Menyimpan…" : "Simpan catatan"}
                   </button>

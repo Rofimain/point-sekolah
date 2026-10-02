@@ -51,21 +51,18 @@ export function TopBar({
     <>
       <header
         /* z-[60] = Z_INDEX.topBar — lihat lib/ui-layers.ts */
-        className="no-print print-hide sticky top-0 z-[60] flex h-14 shrink-0 items-center justify-between gap-2 border-b px-3 sm:px-5"
+        className="no-print print-hide sticky top-0 z-[60] flex h-14 shrink-0 items-center justify-between gap-2 border-b px-3 backdrop-blur-md sm:px-5"
         style={{
-          background: "color-mix(in srgb, var(--bg-secondary) 92%, transparent)",
+          background: "color-mix(in srgb, var(--bg-secondary) 85%, transparent)",
           borderColor: "var(--border)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          boxShadow: "0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent)",
         }}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           {adminNav ? (
             <button
               type="button"
-              className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border transition-opacity hover:opacity-90 lg:hidden"
-              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+              className="btn btn-ghost h-9 w-9 shrink-0 touch-manipulation rounded-full p-0 lg:hidden"
+              style={{ color: "var(--text-primary)" }}
               aria-label={adminNav.open ? "Tutup menu navigasi" : "Buka menu navigasi"}
               aria-expanded={adminNav.open}
               aria-controls="admin-sidebar-panel"
@@ -98,15 +95,10 @@ export function TopBar({
           ) : null}
           <Link
             href={session?.user.role === "STUDENT" ? "/form" : "/dashboard"}
-            className="relative shrink-0 rounded-full focus:outline-none focus:ring-2"
+            className="relative shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             aria-label={session?.user.role === "STUDENT" ? "Kembali ke portal siswa" : "Kembali ke dashboard"}
           >
-            <BrandLogo size={36} priority className="h-9 w-9" />
-            <span
-              className="pointer-events-none absolute -bottom-0.5 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-sm"
-              style={{ background: "var(--gold)" }}
-              aria-hidden
-            />
+            <BrandLogo size={34} priority className="h-[34px] w-[34px]" />
           </Link>
           <div className="min-w-0 flex-1">
             <div
@@ -116,20 +108,19 @@ export function TopBar({
               {SCHOOL_NAME}
             </div>
             <div
-              className="hidden text-[10px] font-medium uppercase tracking-[0.16em] sm:block"
+              className="hidden text-[11px] font-medium tracking-[0.08em] sm:block"
               style={{ color: "var(--text-muted)" }}
             >
               Sistem Poin Pelanggaran
             </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {staffNotifications}
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg border text-sm transition-colors hover:opacity-80"
-              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
+              className="btn btn-ghost h-9 w-9 touch-manipulation rounded-full p-0"
               title="Toggle tema"
               type="button"
               aria-label={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
@@ -168,9 +159,14 @@ export function TopBar({
             </button>
           )}
           {session && (
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-1.5">
               <span
-                className="hidden max-w-[8rem] truncate text-xs font-medium sm:inline md:max-w-[12rem]"
+                className="mx-1 hidden h-5 w-px sm:block"
+                style={{ background: "var(--border)" }}
+                aria-hidden
+              />
+              <span
+                className="hidden max-w-[8rem] truncate pr-1 text-xs font-medium sm:inline md:max-w-[12rem]"
                 style={{ color: "var(--text-secondary)" }}
               >
                 {session.user.name}
@@ -178,12 +174,7 @@ export function TopBar({
               <button
                 type="button"
                 onClick={() => setPasswordOpen(true)}
-                className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg border px-2.5 py-2 text-[11px] font-semibold transition-colors hover:opacity-80 sm:px-3 sm:text-xs"
-                style={{
-                  background: "var(--bg-primary)",
-                  borderColor: "var(--border)",
-                  color: "var(--text-secondary)",
-                }}
+                className="btn btn-ghost btn-sm h-9 w-9 touch-manipulation rounded-full p-0 sm:w-auto sm:rounded-[var(--radius-control)] sm:px-3"
                 title="Ubah password akun"
                 aria-label="Ubah password"
               >
@@ -204,12 +195,7 @@ export function TopBar({
                 type="button"
                 onClick={() => void revokeAllSessions()}
                 disabled={revokingSessions}
-                className="hidden min-h-11 touch-manipulation items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold transition-colors hover:opacity-80 disabled:opacity-60 sm:inline-flex"
-                style={{
-                  background: "var(--bg-primary)",
-                  borderColor: "var(--border)",
-                  color: "var(--text-secondary)",
-                }}
+                className="btn btn-ghost btn-sm hidden h-9 touch-manipulation sm:inline-flex"
                 title="Keluar dari semua perangkat"
                 aria-label="Keluar semua perangkat"
               >
@@ -218,12 +204,7 @@ export function TopBar({
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: session.user.role === "STUDENT" ? "/login" : "/admin/login" })}
-                className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg border px-2.5 py-2 text-[11px] font-semibold transition-colors hover:opacity-80 sm:px-3 sm:text-xs"
-                style={{
-                  background: "var(--bg-primary)",
-                  borderColor: "var(--border)",
-                  color: "var(--text-secondary)",
-                }}
+                className="btn btn-secondary btn-sm h-9 w-9 touch-manipulation rounded-full p-0 sm:w-auto sm:rounded-[var(--radius-control)] sm:px-3"
                 title="Keluar"
                 aria-label="Keluar"
               >

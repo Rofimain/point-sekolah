@@ -78,7 +78,7 @@ function CategoryBadge({ category }: { category?: string }) {
   const key = category || "";
   const [bg, color] = map[key] || ["var(--bg-tertiary)", "var(--text-muted)"];
   return (
-    <span className="px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: bg, color }}>
+    <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={{ background: bg, color }}>
       {getCategoryLabel(key)}
     </span>
   );
@@ -301,9 +301,14 @@ export default function StudentFormClient({
       <TopBar />
       <main className="mx-auto max-w-2xl px-3 pt-4 pb-safe-bottom sm:px-5 sm:pt-5">
         <div
-          className="mb-4 flex items-center gap-3 rounded-xl p-3 sm:gap-4 sm:p-4"
-          style={{ background: "var(--bg-sidebar)" }}
+          className="relative mb-4 flex items-center gap-3 overflow-hidden rounded-panel p-4 shadow-md sm:gap-4 sm:p-5"
+          style={{ background: "linear-gradient(135deg, #0f1d33 0%, var(--bg-sidebar) 60%, #091120 100%)" }}
         >
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-px"
+            style={{ background: "linear-gradient(90deg, transparent, var(--gold), transparent)", opacity: 0.5 }}
+            aria-hidden
+          />
           <UserAvatar
             name={session.user.name || "Siswa"}
             userId={session.user.id}
@@ -314,20 +319,20 @@ export default function StudentFormClient({
             className="ring-2 ring-white/20"
           />
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-serif text-white truncate sm:text-base">{session.user.name}</div>
-            <div className="mt-0.5 break-words text-xs leading-snug" style={{ color: "rgba(255,255,255,0.72)" }}>
+            <div className="truncate font-serif text-base font-semibold text-white sm:text-lg">{session.user.name}</div>
+            <div className="mt-0.5 break-words text-xs leading-snug" style={{ color: "rgba(255,255,255,0.65)" }}>
               {studentClass || "Kelas tidak ditetapkan"}
               {studentNisn ? ` · NISN: ${studentNisn}` : ""}
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.7)" }}>
+            <div className="text-[11px]" style={{ color: "rgba(255,255,255,0.6)" }}>
               Poin efektif
             </div>
-            <div className="text-2xl font-serif font-bold" style={{ color: pointColor }}>
+            <div className="font-serif text-[32px] font-semibold leading-none tabular-nums" style={{ color: pointColor }}>
               {totalPoints}
             </div>
-            <div className="text-[9px] capitalize" style={{ color: pointColor }}>
+            <div className="mt-1 text-[11px] font-medium capitalize" style={{ color: pointColor }}>
               {pointStatus}
             </div>
           </div>
@@ -337,24 +342,14 @@ export default function StudentFormClient({
           <button
             type="button"
             onClick={() => setTab("lapor")}
-            className="w-full touch-manipulation rounded-lg border py-2.5 text-center text-xs font-semibold"
-            style={{
-              background: tab === "lapor" ? "var(--accent)" : "var(--bg-secondary)",
-              color: tab === "lapor" ? "white" : "var(--text-secondary)",
-              borderColor: tab === "lapor" ? "var(--accent)" : "var(--border)",
-            }}
+            className={`btn w-full touch-manipulation text-xs font-semibold ${tab === "lapor" ? "btn-primary" : "btn-secondary"}`}
           >
             Lapor / Riwayat
           </button>
           <button
             type="button"
             onClick={() => setTab("tata")}
-            className="w-full touch-manipulation rounded-lg border py-2.5 text-center text-xs font-semibold"
-            style={{
-              background: tab === "tata" ? "var(--accent)" : "var(--bg-secondary)",
-              color: tab === "tata" ? "white" : "var(--text-secondary)",
-              borderColor: tab === "tata" ? "var(--accent)" : "var(--border)",
-            }}
+            className={`btn w-full touch-manipulation text-xs font-semibold ${tab === "tata" ? "btn-primary" : "btn-secondary"}`}
           >
             Tata tertib
           </button>
@@ -362,7 +357,7 @@ export default function StudentFormClient({
 
         {remisiCountdown && (
           <div
-            className="p-3 rounded-lg text-[11px] mb-4 leading-relaxed"
+            className="mb-4 rounded-control p-3 text-xs leading-relaxed"
             style={{
               background: "var(--accent-light)",
               color: "var(--accent)",
@@ -385,10 +380,26 @@ export default function StudentFormClient({
 
         {totalPoints >= CRITICAL && (
           <div
-            className="p-3 rounded-lg text-xs mb-4 flex items-start gap-2"
-            style={{ background: "var(--danger-bg)", color: "var(--danger)" }}
+            className="mb-4 flex items-start gap-2 rounded-control border p-3 text-xs"
+            style={{
+              background: "var(--danger-bg)",
+              color: "var(--danger)",
+              borderColor: "color-mix(in srgb, var(--danger) 20%, transparent)",
+            }}
           >
-            <span>!</span>
+            <svg
+              className="mt-px h-4 w-4 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
             <span>
               Poin Anda mencapai batas kritis (≥{CRITICAL}). Segera koordinasikan dengan wali kelas atau BP/BK.
             </span>
@@ -397,10 +408,25 @@ export default function StudentFormClient({
 
         {totalPoints >= WARNING && totalPoints < CRITICAL && (
           <div
-            className="p-3 rounded-lg text-xs mb-4 flex items-start gap-2"
-            style={{ background: "var(--warning-bg)", color: "var(--warning)" }}
+            className="mb-4 flex items-start gap-2 rounded-control border p-3 text-xs"
+            style={{
+              background: "var(--warning-bg)",
+              color: "var(--warning)",
+              borderColor: "color-mix(in srgb, var(--warning) 20%, transparent)",
+            }}
           >
-            <span>⚠</span>
+            <svg
+              className="mt-px h-4 w-4 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
             <span>
               Poin Anda <strong>{totalPoints}</strong>. Perhatikan tata tertib agar tidak menumpuk.
             </span>
@@ -409,15 +435,14 @@ export default function StudentFormClient({
 
         {tab === "tata" && (
           <div
-            className="rounded-xl border overflow-hidden mb-6"
-            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+            className="card mb-6 overflow-hidden"
           >
-            <div className="px-4 py-3 border-b space-y-3" style={{ borderColor: "var(--border)" }}>
+            <div className="space-y-3 border-b px-4 py-3.5" style={{ borderColor: "var(--border)" }}>
               <div>
-                <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
+                <h2 className="text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
                   Daftar jenis pelanggaran & poin
                 </h2>
-                <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                <p className="mt-1 text-[11px]" style={{ color: "var(--text-muted)" }}>
                   Hanya informasi — Anda tetap dapat melihat riwayat pelanggaran sendiri di tab &quot;Lapor&quot;.
                 </p>
               </div>
@@ -440,18 +465,9 @@ export default function StudentFormClient({
                     if (!e.target.value.trim()) setTataQuery("");
                   }}
                   placeholder="Cari no / nama pelanggaran…"
-                  className="min-h-11 min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"
-                  style={{
-                    background: "var(--bg-primary)",
-                    borderColor: "var(--border)",
-                    color: "var(--text-primary)",
-                  }}
+                  className="input min-w-0 flex-1"
                 />
-                <button
-                  type="submit"
-                  className="min-h-11 shrink-0 touch-manipulation rounded-lg px-4 py-2 text-xs font-semibold text-white"
-                  style={{ background: "var(--accent)" }}
-                >
+                <button type="submit" className="btn btn-primary shrink-0 touch-manipulation">
                   Cari
                 </button>
               </form>
@@ -488,7 +504,7 @@ export default function StudentFormClient({
                                 </div>
                                 {v.description && (
                                   <div
-                                    className="text-[10px] mt-0.5 break-words"
+                                    className="mt-0.5 break-words text-[11px]"
                                     style={{ color: "var(--text-muted)" }}
                                   >
                                     {v.description}
@@ -524,7 +540,7 @@ export default function StudentFormClient({
         {tab === "lapor" && (
           <>
             <div
-              className="p-3 rounded-lg text-xs mb-5"
+              className="mb-5 rounded-control p-3 text-xs leading-relaxed"
               style={{
                 background: "var(--warning-bg)",
                 color: "var(--warning)",
@@ -536,11 +552,10 @@ export default function StudentFormClient({
             </div>
 
             <div
-              className="mb-5 rounded-xl border p-4 sm:p-5"
-              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+              className="card mb-5 p-5"
             >
               <h2
-                className="text-sm font-serif mb-4 pb-3 border-b"
+                className="mb-4 border-b pb-3 text-[13px] font-semibold"
                 style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
               >
                 Formulir pelaporan —{" "}
@@ -565,7 +580,7 @@ export default function StudentFormClient({
                   {selectedVt && (
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       <CategoryBadge category={selectedVt.category} />
-                      <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                         {selectedVt.points} poin {selectedVt.description ? `· ${selectedVt.description}` : ""}
                       </span>
                     </div>
@@ -573,12 +588,7 @@ export default function StudentFormClient({
                 </div>
 
                 <div>
-                  <label
-                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Tanggal kejadian *
-                  </label>
+                  <label className="label">Tanggal kejadian *</label>
                   <input
                     type="date"
                     required
@@ -586,35 +596,20 @@ export default function StudentFormClient({
                     onChange={(e) => setIncidentDate(e.target.value)}
                     min="2015-01-01"
                     max={calendarTodayYmd()}
-                    className="w-full px-3 py-2.5 rounded-lg border text-sm"
-                    style={{
-                      background: "var(--bg-primary)",
-                      borderColor: "var(--border)",
-                      color: "var(--text-primary)",
-                    }}
+                    className="input"
                   />
-                  <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                  <p className="mt-1.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
                     Sesuai hari kejadian asli (bukan hari input). Remisi periode tenang dihitung dari tanggal ini. Jika
                     kejadian hari ini dan langsung dilapor, biarkan tanggal hari ini.
                   </p>
                 </div>
 
                 <div>
-                  <label
-                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Sesi / jam pelajaran
-                  </label>
+                  <label className="label">Sesi / jam pelajaran</label>
                   <select
                     value={sessionSlot}
                     onChange={(e) => setSessionSlot(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg border text-sm"
-                    style={{
-                      background: "var(--bg-primary)",
-                      borderColor: "var(--border)",
-                      color: "var(--text-primary)",
-                    }}
+                    className="select"
                   >
                     <option value="">— Pilih sesi —</option>
                     {SESSION_SLOTS.map((s) => (
@@ -626,53 +621,33 @@ export default function StudentFormClient({
                 </div>
 
                 <div>
-                  <label
-                    className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Keterangan tambahan
-                  </label>
+                  <label className="label">Keterangan tambahan</label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Tuliskan keterangan atau alasan jika ada..."
                     rows={3}
-                    className="w-full px-3 py-2.5 rounded-lg border text-sm resize-none"
-                    style={{
-                      background: "var(--bg-primary)",
-                      borderColor: "var(--border)",
-                      color: "var(--text-primary)",
-                    }}
+                    className="textarea resize-none"
                   />
                 </div>
 
                 {needEvidence && (
                   <div
-                    className="space-y-3 p-3 rounded-lg border"
-                    style={{ background: "var(--bg-primary)", borderColor: "var(--accent-border)" }}
+                    className="space-y-3 rounded-control border p-3.5"
+                    style={{ background: "var(--accent-light)", borderColor: "var(--accent-border)" }}
                   >
-                    <div className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
+                    <div className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
                       Bukti tambahan (wajib salah satu atau keduanya)
                     </div>
                     <EvidenceMultiUploader images={evidenceImages} onChange={setEvidenceImages} disabled={loading} />
                     <div>
-                      <label
-                        className="block text-[10px] font-semibold mb-1 uppercase tracking-wide"
-                        style={{ color: "var(--text-secondary)" }}
-                      >
-                        Pengakuan / tanda tangan digital (teks)
-                      </label>
+                      <label className="label">Pengakuan / tanda tangan digital (teks)</label>
                       <textarea
                         value={signatureText}
                         onChange={(e) => setSignatureText(e.target.value)}
                         placeholder={`Contoh: Saya menyatakan telah melanggar tata tertib. (nama lengkap, min. 12 karakter)`}
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg border text-xs resize-none"
-                        style={{
-                          background: "var(--bg-secondary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="textarea resize-none text-xs"
                       />
                     </div>
                   </div>
@@ -680,8 +655,12 @@ export default function StudentFormClient({
 
                 {error && (
                   <div
-                    className="p-3 rounded-lg text-xs"
-                    style={{ background: "var(--danger-bg)", color: "var(--danger)" }}
+                    className="rounded-control border p-3 text-xs"
+                    style={{
+                      background: "var(--danger-bg)",
+                      color: "var(--danger)",
+                      borderColor: "color-mix(in srgb, var(--danger) 20%, transparent)",
+                    }}
                   >
                     {error}
                   </div>
@@ -698,21 +677,11 @@ export default function StudentFormClient({
                       setSignatureText("");
                       setIncidentDate(calendarTodayYmd());
                     }}
-                    className="min-h-11 touch-manipulation px-4 py-2.5 rounded-lg border text-sm"
-                    style={{
-                      background: "var(--bg-primary)",
-                      borderColor: "var(--border)",
-                      color: "var(--text-secondary)",
-                    }}
+                    className="btn btn-secondary touch-manipulation"
                   >
                     Batal
                   </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="min-h-11 touch-manipulation px-5 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
-                    style={{ background: "var(--accent)" }}
-                  >
+                  <button type="submit" disabled={loading} className="btn btn-primary touch-manipulation px-5">
                     {loading ? "Mengirim..." : "Kirim laporan"}
                   </button>
                 </div>
@@ -720,11 +689,10 @@ export default function StudentFormClient({
             </div>
 
             <div
-              className="rounded-xl border overflow-hidden"
-              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+              className="card overflow-hidden"
             >
-              <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
-                <h3 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
+              <div className="border-b px-4 py-3.5" style={{ borderColor: "var(--border)" }}>
+                <h3 className="text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
                   Riwayat pelanggaran saya
                 </h3>
               </div>
@@ -783,36 +751,31 @@ export default function StudentFormClient({
 
                   {/* sm+: scrollable table */}
                   <div className="hidden overflow-x-auto md:block">
-                    <table className="w-full min-w-[520px]">
+                    <table className="table-elegant w-full min-w-[520px]">
                       <thead>
-                        <tr style={{ background: "var(--bg-primary)" }}>
+                        <tr>
                           <th
-                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
-                            style={{ color: "var(--text-muted)" }}
+                            className="px-4 py-2.5 text-left whitespace-nowrap"
                           >
                             Tanggal
                           </th>
                           <th
-                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase"
-                            style={{ color: "var(--text-muted)" }}
+                            className="px-4 py-2.5 text-left"
                           >
                             Pelanggaran
                           </th>
                           <th
-                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
-                            style={{ color: "var(--text-muted)" }}
+                            className="px-4 py-2.5 text-left whitespace-nowrap"
                           >
                             Poin
                           </th>
                           <th
-                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
-                            style={{ color: "var(--text-muted)" }}
+                            className="px-4 py-2.5 text-left whitespace-nowrap"
                           >
                             Ket.
                           </th>
                           <th
-                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
-                            style={{ color: "var(--text-muted)" }}
+                            className="px-4 py-2.5 text-left whitespace-nowrap"
                           >
                             Laporan
                           </th>
@@ -820,7 +783,7 @@ export default function StudentFormClient({
                       </thead>
                       <tbody>
                         {records.map((r) => (
-                          <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                          <tr key={r.id}>
                             <td
                               className="px-4 py-3 text-xs whitespace-nowrap"
                               style={{ color: "var(--text-secondary)" }}
@@ -871,14 +834,13 @@ export default function StudentFormClient({
             </div>
 
             <div
-              className="mt-5 rounded-xl border overflow-hidden"
-              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+              className="card mt-5 overflow-hidden"
             >
-              <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
-                <h3 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
+              <div className="border-b px-4 py-3.5" style={{ borderColor: "var(--border)" }}>
+                <h3 className="text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
                   Riwayat remisi & penyesuaian poin
                 </h3>
-                <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                <p className="text-[11px] mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
                   Daftar pengurangan atau penyesuaian (remisi periode tenang, juara, hafalan, dll.). Ini terpisah dari
                   tabel pelanggaran di atas.
                 </p>
@@ -904,37 +866,33 @@ export default function StudentFormClient({
                         <div className="text-xs leading-snug break-words" style={{ color: "var(--text-primary)" }}>
                           {formatPointAdjustmentReason(a.reason)}
                         </div>
-                        <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                        <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                           Total bruto saat itu: {a.grossTotalBefore}
                         </div>
                       </li>
                     ))}
                   </ul>
                   <div className="hidden overflow-x-auto md:block">
-                    <table className="w-full min-w-[420px]">
+                    <table className="table-elegant w-full min-w-[420px]">
                       <thead>
-                        <tr style={{ background: "var(--bg-primary)" }}>
+                        <tr>
                           <th
-                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
-                            style={{ color: "var(--text-muted)" }}
+                            className="px-4 py-2.5 text-left whitespace-nowrap"
                           >
                             Tanggal
                           </th>
                           <th
-                            className="px-4 py-2.5 text-right text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
-                            style={{ color: "var(--text-muted)" }}
+                            className="px-4 py-2.5 text-right whitespace-nowrap"
                           >
                             Δ Poin
                           </th>
                           <th
-                            className="px-4 py-2.5 text-right text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
-                            style={{ color: "var(--text-muted)" }}
+                            className="px-4 py-2.5 text-right whitespace-nowrap"
                           >
                             Total bruto saat itu
                           </th>
                           <th
-                            className="px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide uppercase min-w-[8rem]"
-                            style={{ color: "var(--text-muted)" }}
+                            className="px-4 py-2.5 text-left min-w-[8rem]"
                           >
                             Keterangan
                           </th>
@@ -942,7 +900,7 @@ export default function StudentFormClient({
                       </thead>
                       <tbody>
                         {pointAdjustments.map((a) => (
-                          <tr key={a.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                          <tr key={a.id}>
                             <td
                               className="px-4 py-3 text-xs whitespace-nowrap"
                               style={{ color: "var(--text-secondary)" }}

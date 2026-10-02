@@ -167,17 +167,16 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
         <Link href="/settings" className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
           ← Pengaturan sekolah
         </Link>
-        <h1 className="text-lg font-serif mt-2" style={{ color: "var(--text-primary)" }}>
+        <h1 className="page-title mt-2">
           Poin Remisi &amp; Reward
         </h1>
-        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+        <p className="page-subtitle">
           Remisi otomatis berjalan sendiri; di halaman ini Admin/Super Admin memberi remisi/reward manual ke siswa.
         </p>
       </div>
 
       <div
-        className="mb-6 w-full max-w-3xl space-y-2 rounded-xl border p-4 sm:p-5"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="card mb-6 w-full max-w-3xl space-y-2 p-5 sm:p-5"
       >
         <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
           1. Remisi otomatis (periode tenang)
@@ -190,8 +189,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
       </div>
 
       <div
-        className="w-full max-w-3xl space-y-4 rounded-xl border p-4 sm:p-5"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="card w-full max-w-3xl space-y-4 p-5 sm:p-5"
       >
         <div>
           <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
@@ -215,8 +213,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Nama / NISN / kelas"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
-            style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+            className="input"
           />
           <ul
             className="mt-2 max-h-44 space-y-1 overflow-y-auto rounded-lg border p-1"
@@ -270,8 +267,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             value={customLabel}
             onChange={(e) => setCustomLabel(e.target.value)}
             placeholder="Mis. Juara lomba robotik / Remisi khusus OSIS / Hafalan Yasin"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
-            style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+            className="input"
           />
         </div>
 
@@ -288,8 +284,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             inputMode="numeric"
             min={1}
             max={100}
-            className="w-full max-w-[8rem] rounded-lg border px-3 py-2 text-sm"
-            style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+            className="input max-w-[8rem]"
           />
         </div>
 
@@ -306,8 +301,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             onChange={(e) => setAchievementYmd(e.target.value)}
             min="2015-01-01"
             max={calendarTodayYmd()}
-            className="w-full max-w-xs rounded-lg border px-3 py-2 text-sm"
-            style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+            className="input max-w-xs"
           />
           <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
             Contoh: prestasi 10 Jul 2026 → yang diremisi hanya poin kejadian ≤ 10 Jul 2026. Poin 11 Jul 2026 s.d. hari
@@ -326,8 +320,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Mis. juara 1 lomba pidato / surat keterangan terlampir"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
-            style={{ borderColor: "var(--border)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+            className="input"
           />
         </div>
 
@@ -369,8 +362,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
           type="button"
           disabled={saving || !selectedId || !achievementYmd}
           onClick={() => void applyManual()}
-          className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-          style={{ background: "var(--accent)" }}
+          className="btn btn-primary text-sm"
         >
           {saving ? "Menerapkan…" : "Terapkan ke siswa"}
         </button>

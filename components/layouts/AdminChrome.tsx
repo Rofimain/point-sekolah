@@ -59,22 +59,21 @@ export default function AdminChrome({
           <div
             id="admin-sidebar-panel"
             className={cn(
-              "no-print print-hide fixed bottom-0 left-0 top-14 z-50 flex w-[min(18.5rem,92vw)] flex-col border-r transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:static lg:top-auto lg:z-auto lg:h-auto lg:w-60 lg:shrink-0 lg:translate-x-0",
+              "no-print print-hide fixed bottom-0 left-0 top-14 z-50 flex w-[min(18.5rem,92vw)] flex-col border-r transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:static lg:top-auto lg:z-auto lg:h-auto lg:w-64 lg:shrink-0 lg:translate-x-0",
               "lg:transition-none",
               navOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
             )}
             style={{
-              background:
-                "linear-gradient(180deg, color-mix(in srgb, var(--bg-sidebar) 100%, #1a3a4a 8%) 0%, var(--bg-sidebar) 42%, #080f1a 100%)",
+              background: "linear-gradient(180deg, var(--bg-sidebar) 0%, var(--bg-sidebar) 60%, #091120 100%)",
               borderColor: "rgba(255,255,255,0.06)",
-              boxShadow: "4px 0 32px rgba(0,0,0,0.18)",
+              boxShadow: "2px 0 24px rgba(0,0,0,0.12)",
             }}
           >
             <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden">
               <div
-                className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-80"
+                className="pointer-events-none absolute inset-x-0 top-0 h-20 opacity-60"
                 style={{
-                  background: "linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent)",
+                  background: "linear-gradient(180deg, color-mix(in srgb, var(--gold) 7%, transparent), transparent)",
                 }}
                 aria-hidden
               />
@@ -85,9 +84,9 @@ export default function AdminChrome({
           </div>
           <main
             id="admin-main-scroll"
-            className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-pb-safe-bottom px-3 pt-5 pb-safe-bottom motion-safe:animate-fade-up sm:px-6 sm:pt-6 lg:px-8 print:overflow-visible print:p-0 print:pb-0"
+            className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-pb-safe-bottom px-3 pt-5 pb-safe-bottom motion-safe:animate-fade-up sm:px-6 sm:pt-6 lg:px-10 lg:pt-8 print:overflow-visible print:p-0 print:pb-0"
           >
-            {children}
+            <div className="mx-auto w-full max-w-[1400px] print:max-w-none">{children}</div>
           </main>
         </div>
       </div>

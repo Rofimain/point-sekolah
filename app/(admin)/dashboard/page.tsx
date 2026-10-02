@@ -128,27 +128,86 @@ async function getDashboardData() {
   };
 }
 
+function StatIcon({ kind }: { kind: "students" | "month" | "alert" | "critical" }) {
+  const common = {
+    className: "h-4 w-4",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.75,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  if (kind === "students")
+    return (
+      <svg {...common}>
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+      </svg>
+    );
+  if (kind === "month")
+    return (
+      <svg {...common}>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+      </svg>
+    );
+  if (kind === "alert")
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v4M12 16h.01" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+    </svg>
+  );
+}
+
 function StatCard({
   label,
   value,
   sub,
   color,
+  icon,
 }: {
   label: string;
   value: string | number;
   sub?: string;
   color?: string;
+  icon: "students" | "month" | "alert" | "critical";
 }) {
+  const tone = color || "var(--accent)";
   return (
-    <div className="panel p-3 sm:p-4">
-      <div className="text-[11px] sm:text-xs mb-1.5 tracking-wide leading-snug" style={{ color: "var(--text-muted)" }}>
-        {label}
+    <div className="card relative overflow-hidden p-5">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{ background: `linear-gradient(90deg, ${tone}, transparent 70%)`, opacity: 0.7 }}
+        aria-hidden
+      />
+      <div className="flex items-start justify-between gap-3">
+        <div className="text-xs font-medium leading-snug" style={{ color: "var(--text-muted)" }}>
+          {label}
+        </div>
+        <span
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+          style={{ color: tone, background: `color-mix(in srgb, ${tone} 10%, transparent)` }}
+        >
+          <StatIcon kind={icon} />
+        </span>
       </div>
-      <div className="text-2xl font-serif font-semibold sm:text-3xl" style={{ color: color || "var(--text-primary)" }}>
+      <div
+        className="mt-2 font-serif text-[32px] font-semibold leading-none tabular-nums"
+        style={{ color: color || "var(--text-primary)" }}
+      >
         {value}
       </div>
       {sub && (
-        <div className="text-[9px] sm:text-[10px] mt-1 leading-snug" style={{ color: "var(--text-muted)" }}>
+        <div className="mt-2 text-xs leading-snug" style={{ color: "var(--text-muted)" }}>
           {sub}
         </div>
       )}
@@ -186,71 +245,67 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1
-          className="font-serif text-xl font-semibold tracking-tight sm:text-2xl"
-          style={{ color: "var(--text-primary)" }}
-        >
-          Dashboard Pelanggaran
-        </h1>
-        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-          Ringkasan data seluruh siswa · Tahun Ajaran {indonesianAcademicYearLabel()}
-        </p>
+      <div className="mb-6">
+        <h1 className="page-title">Dashboard Pelanggaran</h1>
+        <p className="page-subtitle">Ringkasan data seluruh siswa · Tahun Ajaran {indonesianAcademicYearLabel()}</p>
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total Siswa Aktif"
           value={totalStudents}
           sub={`${totalTeachers} staf (guru / admin / super admin)`}
+          icon="students"
         />
         <StatCard
           label="Pelanggaran Bulan Ini"
           value={thisMonthCount}
           sub={trend ? `${parseInt(trend) > 0 ? "+" : ""}${trend}% dari bulan lalu` : undefined}
           color="var(--warning)"
+          icon="month"
         />
         <StatCard
           label={`Siswa poin ≥${ALERT_POINTS}`}
           value={over25Students.length}
           sub="Perhatian wali kelas / BK"
           color="var(--warning)"
+          icon="alert"
         />
         <StatCard
           label={`Siswa poin kritis (≥${CRITICAL_POINTS})`}
           value={criticalStudents.length}
           sub="Tindak lanjut segera"
           color="var(--danger)"
+          icon="critical"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
-        <div
-          className="rounded-xl border p-4"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
-        >
-          <div className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
+      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="card p-5">
+          <div className="mb-5 text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
             Pelanggaran per Bulan (6 Bulan Terakhir)
           </div>
-          <div className="flex h-24 min-w-0 items-end gap-1 px-0.5 sm:gap-2 sm:px-1">
+          <div className="flex h-28 min-w-0 items-end gap-1.5 px-0.5 sm:gap-3 sm:px-1">
             {monthlyData.map((m, i) => {
               const h = maxCount > 0 ? Math.max((m.count / maxCount) * 100, 4) : 4;
               const isLast = i === monthlyData.length - 1;
               return (
-                <div key={m.label} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                  <span className="text-[11px] tabular-nums" style={{ color: "var(--text-secondary)" }}>
+                <div key={m.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
+                  <span
+                    className="text-[11px] font-medium tabular-nums"
+                    style={{ color: isLast ? "var(--accent)" : "var(--text-secondary)" }}
+                  >
                     {m.count}
                   </span>
                   <div
-                    className="w-full rounded-t"
+                    className="w-full rounded-t-md transition-[height]"
                     style={{
                       height: `${h}%`,
-                      background: isLast ? "var(--accent)" : "var(--accent-light)",
-                      border: `1px solid var(--accent-border)`,
+                      background: isLast ? "var(--accent)" : "color-mix(in srgb, var(--accent) 22%, transparent)",
                       minHeight: 4,
                     }}
                   />
-                  <span className="text-[11px]" style={{ color: "var(--text-secondary)" }}>
+                  <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                     {m.label}
                   </span>
                 </div>
@@ -259,34 +314,26 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div
-          className="rounded-xl border p-4"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
-        >
-          <div className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+        <div className="card p-5">
+          <div className="mb-3 text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
             Top Jenis Pelanggaran Bulan Ini
           </div>
           {topViolations.length === 0 ? (
-            <div className="text-xs text-center py-4" style={{ color: "var(--text-muted)" }}>
+            <div className="py-6 text-center text-xs" style={{ color: "var(--text-muted)" }}>
               Tidak ada data bulan ini
             </div>
           ) : (
-            <div className="space-y-2">
-              {topViolations.map((v) => (
+            <div>
+              {topViolations.map((v, i) => (
                 <div
                   key={v.name}
-                  className="flex min-w-0 items-center justify-between gap-2 py-1.5 border-b"
-                  style={{ borderColor: "var(--border)" }}
+                  className="flex min-w-0 items-center justify-between gap-3 py-2.5"
+                  style={{ borderBottom: i < topViolations.length - 1 ? "1px solid var(--border)" : "none" }}
                 >
-                  <span className="min-w-0 flex-1 truncate text-xs" style={{ color: "var(--text-secondary)" }}>
+                  <span className="min-w-0 flex-1 truncate text-sm" style={{ color: "var(--text-secondary)" }}>
                     {v.name}
                   </span>
-                  <span
-                    className="shrink-0 px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap"
-                    style={{ background: "var(--warning-bg)", color: "var(--warning)" }}
-                  >
-                    {v.count} kasus
-                  </span>
+                  <span className="badge-soft badge-warning whitespace-nowrap">{v.count} kasus</span>
                 </div>
               ))}
             </div>

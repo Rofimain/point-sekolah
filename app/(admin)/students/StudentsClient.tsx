@@ -42,8 +42,7 @@ function StudentsSortHeader({
   const active = sort.key === column;
   return (
     <th
-      className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
-      style={{ color: "var(--text-muted)" }}
+      className="px-4 py-2.5 text-left whitespace-nowrap"
       aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
     >
       <button
@@ -530,12 +529,11 @@ export default function StudentsClient({
                 <span style={{ color: "var(--text-secondary)" }}>{selectedClass.name}</span>
               </nav>
               <h1
-                className="font-serif text-xl font-semibold tracking-tight sm:text-2xl"
-                style={{ color: "var(--text-primary)" }}
+                className="page-title"
               >
                 {selectedClass.name}
               </h1>
-              <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              <p className="page-subtitle">
                 Daftar siswa di kelas ini
                 {selectedClass.grade ? ` · Tingkat ${selectedClass.grade}` : ""}
                 {selectedClass.year ? ` · ${selectedClass.year}` : ""}.
@@ -544,12 +542,11 @@ export default function StudentsClient({
           ) : (
             <>
               <h1
-                className="font-serif text-xl font-semibold tracking-tight sm:text-2xl"
-                style={{ color: "var(--text-primary)" }}
+                className="page-title"
               >
                 Data siswa
               </h1>
-              <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              <p className="page-subtitle">
                 {tab === null
                   ? "Semua siswa terdaftar. Pilih kelas di menu samping untuk membuka kategori kelas."
                   : tab === "single"
@@ -562,7 +559,7 @@ export default function StudentsClient({
           )}
           {tab === null && !selectedClass && (
             <p
-              className="mt-1 hidden max-w-2xl text-[10px] leading-relaxed text-balance sm:block"
+              className="mt-1 hidden max-w-2xl text-[11px] leading-relaxed text-balance sm:block"
               style={{ color: "var(--text-muted)" }}
             >
               Nama kelas di impor harus <strong style={{ color: "var(--text-secondary)" }}>sama persis</strong> dengan
@@ -629,8 +626,7 @@ export default function StudentsClient({
 
       <div id="daftar-siswa" className="mb-6 scroll-mt-4">
         <div
-          className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border p-3"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+          className="card mb-4 flex flex-wrap items-center gap-2 p-3"
         >
           <label className="sr-only" htmlFor="students-search">
             Cari siswa
@@ -643,13 +639,12 @@ export default function StudentsClient({
             placeholder={
               selectedClass ? `Cari di ${selectedClass.name} — nama, NISN, email…` : "Cari nama, NISN, email…"
             }
-            className="min-h-11 min-w-0 flex-1 basis-full rounded-lg border px-3 py-2 text-xs sm:basis-auto sm:min-w-[12rem]"
-            style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+            className="input min-w-0 flex-1 basis-full text-xs sm:basis-auto sm:min-w-[12rem]"
           />
           <button
             type="button"
             onClick={() => navigate({ search: search.trim() })}
-            className="btn-primary min-h-11 touch-manipulation px-4 py-2 text-xs"
+            className="btn btn-primary touch-manipulation text-xs"
           >
             Cari
           </button>
@@ -669,8 +664,7 @@ export default function StudentsClient({
         </div>
 
         <div
-          className="rounded-xl border overflow-hidden"
-          style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+          className="card overflow-hidden"
         >
           <div
             className="flex flex-col gap-2 border-b px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-4"
@@ -700,7 +694,7 @@ export default function StudentsClient({
                   className="flex flex-wrap items-center gap-2 border-b px-3 py-2 md:hidden"
                   style={{ borderColor: "var(--border)" }}
                 >
-                  <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                  <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
                     Urutkan
                   </span>
                   <button
@@ -743,7 +737,7 @@ export default function StudentsClient({
                             {u.name}
                           </span>
                           <span
-                            className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                            className="px-2 py-0.5 rounded text-[11px] font-semibold"
                             style={{
                               background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)",
                               color: u.active ? "var(--success)" : "var(--text-muted)",
@@ -786,40 +780,35 @@ export default function StudentsClient({
                     </li>
                   ))}
                 </ul>
-                <table className="hidden w-full min-w-[520px] md:table">
+                <table className="table-elegant hidden w-full min-w-[520px] md:table">
                   <thead>
-                    <tr style={{ background: "var(--bg-primary)" }}>
+                    <tr>
                       <StudentsSortHeader label="Siswa" column="name" sort={listSort} onSort={toggleSort} />
                       <th
-                        className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
-                        style={{ color: "var(--text-muted)" }}
+                        className="px-4 py-2.5 text-left whitespace-nowrap"
                       >
                         NISN
                       </th>
                       <th
-                        className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
-                        style={{ color: "var(--text-muted)" }}
+                        className="px-4 py-2.5 text-left whitespace-nowrap"
                       >
                         Email
                       </th>
                       {!selectedClass && (
                         <th
-                          className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
-                          style={{ color: "var(--text-muted)" }}
+                          className="px-4 py-2.5 text-left whitespace-nowrap"
                         >
                           Kelas
                         </th>
                       )}
                       <StudentsSortHeader label="Total poin" column="points" sort={listSort} onSort={toggleSort} />
                       <th
-                        className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
-                        style={{ color: "var(--text-muted)" }}
+                        className="px-4 py-2.5 text-left whitespace-nowrap"
                       >
                         Status
                       </th>
                       <th
-                        className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap"
-                        style={{ color: "var(--text-muted)" }}
+                        className="px-4 py-2.5 text-left whitespace-nowrap"
                       >
                         Aksi
                       </th>
@@ -868,7 +857,7 @@ export default function StudentsClient({
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                            className="px-2 py-0.5 rounded text-[11px] font-semibold"
                             style={{
                               background: u.active ? "var(--success-bg)" : "var(--bg-tertiary)",
                               color: u.active ? "var(--success)" : "var(--text-muted)",
@@ -917,12 +906,11 @@ export default function StudentsClient({
       {classModalOpen && mounted
         ? createPortal(
             <div
-              className={`fixed inset-0 ${Z_MODAL_ELEVATED_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+              className={`modal-overlay ${Z_MODAL_ELEVATED_CLASS} flex items-end justify-center p-0 sm:items-center sm:p-4`}
               onClick={() => setClassModalOpen(false)}
             >
               <form
-                className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-xl sm:rounded-2xl sm:p-6"
-                style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+                className="modal-surface max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[1.25rem] rounded-b-none px-4 pt-4 pb-sheet-bottom sm:rounded-[1.25rem] sm:p-6"
                 onClick={(e) => e.stopPropagation()}
                 onSubmit={submitClass}
               >
@@ -946,12 +934,7 @@ export default function StudentsClient({
                       onChange={(e) => setClassName(e.target.value)}
                       placeholder="Mis. XI IPA 2"
                       required
-                      className="w-full rounded-xl border px-3 py-2.5 text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input"
                     />
                   </div>
                   <div>
@@ -964,12 +947,7 @@ export default function StudentsClient({
                     <select
                       value={classGrade}
                       onChange={(e) => setClassGrade(e.target.value)}
-                      className="w-full rounded-xl border px-3 py-2.5 text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="select"
                     >
                       {GRADES.map((g) => (
                         <option key={g} value={g}>
@@ -989,12 +967,7 @@ export default function StudentsClient({
                       value={classMajor}
                       onChange={(e) => setClassMajor(e.target.value)}
                       placeholder="MIPA, IPS, …"
-                      className="w-full rounded-xl border px-3 py-2.5 text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input"
                     />
                   </div>
                   <div>
@@ -1008,12 +981,7 @@ export default function StudentsClient({
                       value={classYear}
                       onChange={(e) => setClassYear(e.target.value)}
                       required
-                      className="w-full rounded-xl border px-3 py-2.5 font-mono text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input font-mono"
                     />
                   </div>
                 </div>
@@ -1029,8 +997,7 @@ export default function StudentsClient({
                   <button
                     type="submit"
                     disabled={loading}
-                    className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                    style={{ background: "var(--accent)" }}
+                    className="btn btn-primary text-sm"
                   >
                     {loading ? "Menyimpan…" : "Simpan"}
                   </button>
@@ -1044,15 +1011,14 @@ export default function StudentsClient({
       {tab === "single" && mounted
         ? createPortal(
             <div
-              className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+              className={`modal-overlay ${Z_MODAL_CLASS} flex items-end justify-center p-0 sm:items-center sm:p-4`}
               role="dialog"
               aria-modal="true"
               aria-labelledby="student-add-title"
               onClick={() => setTabQuery(null)}
             >
               <div
-                className="max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-xl sm:mx-4 sm:max-h-[min(92dvh,42rem)] sm:rounded-2xl sm:p-6"
-                style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+                className="modal-surface max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-[1.25rem] rounded-b-none px-4 pt-4 pb-sheet-bottom sm:mx-4 sm:max-h-[min(92dvh,42rem)] sm:rounded-[1.25rem] sm:p-6"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div
@@ -1069,12 +1035,7 @@ export default function StudentsClient({
                   <button
                     type="button"
                     onClick={() => setTabQuery(null)}
-                    className="touch-manipulation shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold"
-                    style={{
-                      borderColor: "var(--border)",
-                      color: "var(--text-secondary)",
-                      background: "var(--bg-primary)",
-                    }}
+                    className="btn btn-secondary touch-manipulation shrink-0 text-xs btn-sm"
                   >
                     Tutup
                   </button>
@@ -1093,12 +1054,7 @@ export default function StudentsClient({
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
-                        className="w-full rounded-xl border px-3 py-2.5 text-sm"
-                        style={{
-                          background: "var(--bg-primary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="input"
                       />
                     </div>
                     <div>
@@ -1113,18 +1069,13 @@ export default function StudentsClient({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder={`contoh@${studentDomain}`}
-                        className="w-full rounded-xl border px-3 py-2.5 text-sm"
-                        style={{
-                          background: "var(--bg-primary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="input"
                       />
-                      <p className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      <p className="mt-1 text-[11px]" style={{ color: "var(--text-muted)" }}>
                         Dipakai untuk login. Boleh dikosongkan hanya jika NISN diisi (email otomatis).
                       </p>
                       {autoEmailPreview && (
-                        <p className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                        <p className="mt-1 text-[11px]" style={{ color: "var(--text-muted)" }}>
                           Akan dipakai: <span style={{ color: "var(--accent)" }}>{autoEmailPreview}</span>
                         </p>
                       )}
@@ -1140,12 +1091,7 @@ export default function StudentsClient({
                         value={nisn}
                         onChange={(e) => setNisn(e.target.value)}
                         placeholder="Boleh dikosongkan"
-                        className="w-full rounded-xl border px-3 py-2.5 text-sm"
-                        style={{
-                          background: "var(--bg-primary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="input"
                       />
                     </div>
                     <div>
@@ -1159,12 +1105,7 @@ export default function StudentsClient({
                         value={classId}
                         onChange={(e) => setClassId(e.target.value)}
                         required
-                        className="w-full rounded-xl border px-3 py-2.5 text-sm"
-                        style={{
-                          background: "var(--bg-primary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="select"
                       >
                         <option value="">— Pilih kelas —</option>
                         {classes.map((c) => (
@@ -1187,12 +1128,7 @@ export default function StudentsClient({
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Kosong = password default sekolah"
                         autoComplete="off"
-                        className="w-full rounded-xl border px-3 py-2.5 text-sm"
-                        style={{
-                          background: "var(--bg-primary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="input"
                       />
                     </div>
                     <div>
@@ -1214,12 +1150,7 @@ export default function StudentsClient({
                           type="button"
                           disabled={photoBusy || loading}
                           onClick={() => photoInputRef.current?.click()}
-                          className="rounded-xl border px-3 py-2 text-xs font-semibold disabled:opacity-50"
-                          style={{
-                            borderColor: "var(--border)",
-                            color: "var(--text-secondary)",
-                            background: "var(--bg-primary)",
-                          }}
+                          className="btn btn-secondary text-xs disabled:opacity-50 btn-sm"
                         >
                           {photoBusy ? "Memproses…" : photoDraft ? "Ganti foto" : "Pilih foto"}
                         </button>
@@ -1256,8 +1187,7 @@ export default function StudentsClient({
                   <button
                     type="submit"
                     disabled={loading}
-                    className="mt-5 w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50 sm:w-auto"
-                    style={{ background: "var(--accent)" }}
+                    className="btn btn-primary mt-5 w-full text-sm sm:w-auto"
                   >
                     {loading ? "Menyimpan…" : "Simpan siswa"}
                   </button>
@@ -1271,15 +1201,14 @@ export default function StudentsClient({
       {tab === "bulk" && mounted
         ? createPortal(
             <div
-              className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+              className={`modal-overlay ${Z_MODAL_CLASS} flex items-end justify-center p-0 sm:items-center sm:p-4`}
               role="dialog"
               aria-modal="true"
               aria-labelledby="bulk-import-title"
               onClick={() => setTabQuery(null)}
             >
               <div
-                className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-t-2xl border px-4 pt-4 pb-sheet-bottom shadow-xl sm:mx-4 sm:max-h-[min(92dvh,48rem)] sm:rounded-2xl sm:p-6"
-                style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+                className="modal-surface max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-t-[1.25rem] rounded-b-none px-4 pt-4 pb-sheet-bottom sm:mx-4 sm:max-h-[min(92dvh,48rem)] sm:rounded-[1.25rem] sm:p-6"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div
@@ -1297,7 +1226,7 @@ export default function StudentsClient({
                     <p className="mt-1 max-w-xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
                       Unggah <strong style={{ color: "var(--text-secondary)" }}>.xlsx</strong> atau paket{" "}
                       <strong style={{ color: "var(--text-secondary)" }}>.zip</strong> (Excel + folder{" "}
-                      <code className="text-[10px]">foto/</code>). Kunci:{" "}
+                      <code className="text-[11px]">foto/</code>). Kunci:{" "}
                       <strong style={{ color: "var(--text-secondary)" }}>email domain sekolah</strong> — baris baru
                       dibuat, email yang sudah ada di-<strong style={{ color: "var(--text-secondary)" }}>update</strong>{" "}
                       (kelas/nama/NISN/foto). Nama & kelas opsional saat create (nama bisa dari email). Telegram ortu
@@ -1316,12 +1245,7 @@ export default function StudentsClient({
                     <button
                       type="button"
                       onClick={() => setTabQuery(null)}
-                      className="touch-manipulation rounded-lg border px-3 py-2 text-xs font-semibold"
-                      style={{
-                        borderColor: "var(--border)",
-                        color: "var(--text-secondary)",
-                        background: "var(--bg-primary)",
-                      }}
+                      className="btn btn-secondary touch-manipulation text-xs btn-sm"
                     >
                       Tutup
                     </button>
@@ -1348,15 +1272,14 @@ export default function StudentsClient({
                     type="button"
                     disabled={loading}
                     onClick={() => fileInputRef.current?.click()}
-                    className="rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                    style={{ background: "var(--accent)" }}
+                    className="btn btn-primary text-xs btn-sm"
                   >
                     {loading ? "Memproses…" : "Unggah .xlsx / .zip"}
                   </button>
-                  <p className="max-w-md text-[10px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  <p className="max-w-md text-[11px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
                     .xlsx maks. 8 MB; ZIP + foto maks. 40 MB. Struktur ZIP:{" "}
-                    <code className="text-[10px]">data.xlsx</code> +{" "}
-                    <code className="text-[10px]">foto/ahmad fauzi m.jpg</code> (nama boleh disingkat). Password default
+                    <code className="text-[11px]">data.xlsx</code> +{" "}
+                    <code className="text-[11px]">foto/ahmad fauzi m.jpg</code> (nama boleh disingkat). Password default
                     di bawah untuk baris tanpa kolom password. Siswa wajib ganti password saat login credentials pertama
                     kali.
                   </p>
@@ -1369,9 +1292,9 @@ export default function StudentsClient({
                   <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                     Update foto massal (siswa sudah ada)
                   </h3>
-                  <p className="mt-1 text-[10px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  <p className="mt-1 text-[11px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
                     ZIP berisi foto saja (tanpa Excel). Nama file = nama siswa (boleh disingkat/inisial) atau NISN.
-                    Ekstensi <code className="text-[10px]">.jpg / .JPG / .jpeg / .png</code> aman. Opsional filter kelas
+                    Ekstensi <code className="text-[11px]">.jpg / .JPG / .jpeg / .png</code> aman. Opsional filter kelas
                     agar matching lebih akurat.
                   </p>
                   <div className="mt-3 flex flex-wrap items-end gap-3">
@@ -1382,12 +1305,7 @@ export default function StudentsClient({
                       <select
                         value={photoUpdateClassId}
                         onChange={(e) => setPhotoUpdateClassId(e.target.value)}
-                        className="w-full rounded-xl border px-3 py-2 text-sm"
-                        style={{
-                          background: "var(--bg-secondary)",
-                          borderColor: "var(--border)",
-                          color: "var(--text-primary)",
-                        }}
+                        className="select"
                       >
                         <option value="">Semua kelas</option>
                         {classes.map((c) => (
@@ -1411,8 +1329,8 @@ export default function StudentsClient({
                       type="button"
                       disabled={loading}
                       onClick={() => photoZipInputRef.current?.click()}
-                      className="rounded-xl border px-4 py-2 text-xs font-semibold disabled:opacity-50"
-                      style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-secondary)" }}
+                      className="btn btn-secondary btn-sm"
+                      style={{ borderColor: "var(--accent-border)", color: "var(--accent)" }}
                     >
                       {loading ? "Memproses…" : "Unggah ZIP foto"}
                     </button>
@@ -1424,7 +1342,7 @@ export default function StudentsClient({
                         {photoUpdateResult.truncatedErrors ? " (daftar error dipotong)" : ""}
                       </p>
                       {(photoUpdateResult.photoErrors.length > 0 || photoUpdateResult.unmatchedPhotos.length > 0) && (
-                        <ul className="max-h-28 list-disc overflow-y-auto pl-4 text-[10px]" style={{ color: "var(--danger)" }}>
+                        <ul className="max-h-28 list-disc overflow-y-auto pl-4 text-[11px]" style={{ color: "var(--danger)" }}>
                           {photoUpdateResult.photoErrors.map((e) => (
                             <li key={`${e.file}-${e.message}`}>
                               {e.file}: {e.message}
@@ -1449,16 +1367,11 @@ export default function StudentsClient({
                       value={bulkDefaultPwd}
                       onChange={(e) => setBulkDefaultPwd(e.target.value)}
                       placeholder="Kosong = pakai DEFAULT_STUDENT_PASSWORD dari server"
-                      className="w-full rounded-xl border px-3 py-2 text-sm"
-                      style={{
-                        background: "var(--bg-primary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="input"
                     />
                   </div>
                   <div className="flex items-end">
-                    <p className="text-[10px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                    <p className="text-[11px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
                       Maks. 500 baris per sekali kirim. Baris gagal tidak menghentikan yang lain. Login Google (domain
                       sekolah) tidak memakai password ini.
                     </p>
@@ -1478,12 +1391,7 @@ export default function StudentsClient({
                   onChange={(e) => setBulkText(e.target.value)}
                   rows={8}
                   placeholder={`Contoh (tab):\nnama\temail\tnama_kelas\tnisn\nBudi\tbudi@siswa.sekolah.sch.id\tX MIPA 1\t`}
-                  className="w-full rounded-xl border px-3 py-2 font-mono text-sm"
-                  style={{
-                    background: "var(--bg-primary)",
-                    borderColor: "var(--border)",
-                    color: "var(--text-primary)",
-                  }}
+                  className="textarea font-mono"
                 />
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -1495,8 +1403,7 @@ export default function StudentsClient({
                     type="button"
                     onClick={submitBulk}
                     disabled={loading || previewRows.length === 0}
-                    className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                    style={{ background: "var(--accent)" }}
+                    className="btn btn-primary text-sm"
                   >
                     {loading ? "Mengimpor…" : "Impor sekarang"}
                   </button>
@@ -1518,7 +1425,7 @@ export default function StudentsClient({
                       ))}
                     </ul>
                     {bulkResult.truncatedErrors && (
-                      <p className="mt-2 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      <p className="mt-2 text-[11px]" style={{ color: "var(--text-muted)" }}>
                         Hanya 50 error pertama ditampilkan.
                       </p>
                     )}
@@ -1569,15 +1476,14 @@ export default function StudentsClient({
       {tab === "kelas" && mounted
         ? createPortal(
             <div
-              className={`fixed inset-0 ${Z_MODAL_CLASS} flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4`}
+              className={`modal-overlay ${Z_MODAL_CLASS} flex items-end justify-center p-0 sm:items-center sm:p-4`}
               role="dialog"
               aria-modal="true"
               aria-labelledby="class-list-title"
               onClick={() => setTabQuery(null)}
             >
               <div
-                className="flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl border shadow-xl sm:mx-4 sm:max-h-[min(92dvh,50rem)] sm:rounded-2xl"
-                style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+                className="modal-surface flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-[1.25rem] rounded-b-none sm:mx-4 sm:max-h-[min(92dvh,50rem)] sm:rounded-[1.25rem]"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div
@@ -1593,7 +1499,7 @@ export default function StudentsClient({
                       Daftar kelas
                     </h2>
                     <p className="mt-1 max-w-xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                      Kelas dipakai di form siswa dan kolom <code className="text-[10px]">nama_kelas</code> pada impor
+                      Kelas dipakai di form siswa dan kolom <code className="text-[11px]">nama_kelas</code> pada impor
                       Excel. Contoh nama: <strong>X MIPA 1</strong>. Untuk menghapus kelas, gunakan tombol{" "}
                       <strong>Hapus</strong> pada baris — siswa di kelas itu otomatis tidak memiliki kelas sampai Anda
                       pilih kelas lagi.
@@ -1615,12 +1521,7 @@ export default function StudentsClient({
                     <button
                       type="button"
                       onClick={() => setTabQuery(null)}
-                      className="touch-manipulation rounded-lg border px-3 py-2 text-xs font-semibold"
-                      style={{
-                        borderColor: "var(--border)",
-                        color: "var(--text-secondary)",
-                        background: "var(--bg-primary)",
-                      }}
+                      className="btn btn-secondary touch-manipulation text-xs btn-sm"
                     >
                       Tutup
                     </button>
@@ -1637,14 +1538,13 @@ export default function StudentsClient({
                     style={{ borderColor: "var(--border)", background: "var(--bg-primary)" }}
                   >
                     <div className="max-h-[min(55dvh,24rem)] overflow-x-auto overflow-y-auto">
-                      <table className="w-full min-w-[560px]">
+                      <table className="table-elegant w-full min-w-[560px]">
                         <thead>
                           <tr style={{ background: "var(--bg-secondary)" }}>
                             {["Nama kelas", "Angkatan", "Jurusan", "Tahun ajaran", "Jumlah siswa", "Aksi"].map((h) => (
                               <th
                                 key={h}
-                                className="whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide"
-                                style={{ color: "var(--text-muted)" }}
+                                className="whitespace-nowrap px-4 py-2.5 text-left"
                               >
                                 {h}
                               </th>
@@ -1664,7 +1564,7 @@ export default function StudentsClient({
                             </tr>
                           ) : (
                             classes.map((c) => (
-                              <tr key={c.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                              <tr key={c.id}>
                                 <td className="px-4 py-3 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                                   {c.name}
                                 </td>
@@ -1691,8 +1591,7 @@ export default function StudentsClient({
                                     disabled={deletingClassId === c.id}
                                     onClick={() => deleteClassRow(c.id, c.name, c._count.students)}
                                     className="touch-manipulation rounded-lg border px-3 py-2.5 text-[11px] font-semibold min-h-11 disabled:opacity-50"
-                                    style={{
-                                      borderColor: "var(--danger)",
+                                    style={{ borderColor: "var(--danger)",
                                       color: "var(--danger)",
                                       background: "var(--bg-secondary)",
                                     }}

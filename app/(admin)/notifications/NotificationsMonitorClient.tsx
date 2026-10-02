@@ -42,10 +42,10 @@ export default function NotificationsMonitorClient() {
     <div>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>
+          <h1 className="page-title">
             Monitoring Notifikasi
           </h1>
-          <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
+          <p className="page-subtitle">
             Semua catatan pelanggaran hari ini (siswa & staf) · diperbarui otomatis · hilang setelah berganti hari
           </p>
         </div>
@@ -122,8 +122,7 @@ export default function NotificationsMonitorClient() {
       </div>
 
       <div
-        className="overflow-hidden rounded-xl border"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="card overflow-hidden"
       >
         {visible.length === 0 ? (
           <div className="px-4 py-16 text-center text-sm" style={{ color: "var(--text-muted)" }}>
@@ -160,25 +159,25 @@ export default function NotificationsMonitorClient() {
                         </span>
                         {it.classLabel ? (
                           <span
-                            className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                            className="rounded px-1.5 py-0.5 text-[11px] font-medium"
                             style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}
                           >
                             {it.classLabel}
                           </span>
                         ) : null}
                         <span
-                          className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                          className="rounded px-1.5 py-0.5 text-[11px] font-medium"
                           style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}
                         >
                           {notificationSourceLabel(it)}
                         </span>
                         {!isRead ? (
-                          <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-600">
+                          <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-600">
                             Baru
                           </span>
                         ) : (
                           <span
-                            className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                            className="rounded px-1.5 py-0.5 text-[11px] font-medium"
                             style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}
                           >
                             Dibaca
@@ -243,12 +242,7 @@ export default function NotificationsMonitorClient() {
         afterPrimaryActions={
           <button
             type="button"
-            className="w-full rounded-xl border py-2.5 text-[14px] font-semibold transition hover:opacity-90 active:scale-[0.99] motion-reduce:transition-none"
-            style={{
-              borderColor: "var(--border)",
-              background: "var(--bg-primary)",
-              color: "var(--text-secondary)",
-            }}
+            className="btn btn-secondary w-full text-[14px] active:scale-[0.99] motion-reduce:transition-none"
             onClick={() => {
               setSheetItem(null);
               router.push("/records");

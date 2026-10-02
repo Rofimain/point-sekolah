@@ -158,12 +158,11 @@ export default function AccessLogClient() {
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1
-            className="font-serif text-xl font-semibold tracking-tight sm:text-2xl"
-            style={{ color: "var(--text-primary)" }}
+            className="page-title"
           >
             Log akses
           </h1>
-          <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          <p className="page-subtitle">
             Riwayat login (email/NISN/NIP + password atau Google), ganti/reset password, dan perubahan data (termasuk
             foto &amp; kolom yang diubah). Hanya Super Admin. Disimpan 12 bulan.
           </p>
@@ -172,18 +171,17 @@ export default function AccessLogClient() {
           type="button"
           disabled={exporting || loading}
           onClick={() => void exportExcel()}
-          className="rounded-xl border px-4 py-2 text-xs font-semibold disabled:opacity-50"
-          style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--bg-secondary)" }}
+          className="btn btn-secondary btn-sm"
+          style={{ borderColor: "var(--accent-border)", color: "var(--accent)" }}
         >
           {exporting ? "Mengunduh…" : "Unduh Excel"}
         </button>
       </div>
 
       <div
-        className="mb-4 grid gap-3 rounded-2xl border p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
-        style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}
+        className="card mb-4 grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
       >
-        <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+        <label className="label">
           Dari
           <input
             type="date"
@@ -192,11 +190,10 @@ export default function AccessLogClient() {
               setPage(1);
               setFilters((f) => ({ ...f, from: e.target.value }));
             }}
-            className="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-            style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+            className="input mt-1"
           />
         </label>
-        <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+        <label className="label">
           Sampai
           <input
             type="date"
@@ -205,11 +202,10 @@ export default function AccessLogClient() {
               setPage(1);
               setFilters((f) => ({ ...f, to: e.target.value }));
             }}
-            className="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-            style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+            className="input mt-1"
           />
         </label>
-        <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+        <label className="label">
           Kategori
           <select
             value={filters.category}
@@ -217,15 +213,14 @@ export default function AccessLogClient() {
               setPage(1);
               setFilters((f) => ({ ...f, category: e.target.value }));
             }}
-            className="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-            style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+            className="select mt-1"
           >
             <option value="">Semua</option>
             <option value="LOGIN">Login</option>
             <option value="DATA">Data</option>
           </select>
         </label>
-        <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+        <label className="label">
           Portal
           <select
             value={filters.portal}
@@ -233,8 +228,7 @@ export default function AccessLogClient() {
               setPage(1);
               setFilters((f) => ({ ...f, portal: e.target.value }));
             }}
-            className="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-            style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+            className="select mt-1"
           >
             <option value="">Semua</option>
             <option value="STUDENT">Siswa</option>
@@ -243,7 +237,7 @@ export default function AccessLogClient() {
           </select>
         </label>
         <label
-          className="text-[10px] font-semibold uppercase tracking-wide sm:col-span-2"
+          className="text-[11px] font-semibold uppercase tracking-wide sm:col-span-2"
           style={{ color: "var(--text-secondary)" }}
         >
           Cari
@@ -254,8 +248,7 @@ export default function AccessLogClient() {
               setFilters((f) => ({ ...f, q: e.target.value }));
             }}
             placeholder="Nama, aksi, ringkasan…"
-            className="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-            style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+            className="input mt-1"
           />
         </label>
       </div>
@@ -265,17 +258,15 @@ export default function AccessLogClient() {
       </div>
 
       <div
-        className="overflow-x-auto rounded-2xl border"
-        style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}
+        className="card overflow-x-auto"
       >
-        <table className="w-full min-w-[880px] text-left text-sm">
+        <table className="table-elegant w-full min-w-[880px] text-left text-sm">
           <thead>
-            <tr style={{ background: "var(--bg-primary)" }}>
+            <tr>
               {["Waktu", "Portal", "Kategori", "Aksi", "Pelaku", "Ringkasan", "IP"].map((h) => (
                 <th
                   key={h}
-                  className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide"
-                  style={{ color: "var(--text-secondary)" }}
+                  className="px-3 py-2.5"
                 >
                   {h}
                 </th>
@@ -300,7 +291,7 @@ export default function AccessLogClient() {
                     <td className="px-3 py-2.5 text-xs">{row.portal}</td>
                     <td className="px-3 py-2.5 text-xs">
                       <span
-                        className="rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                        className="rounded px-1.5 py-0.5 text-[11px] font-semibold"
                         style={{
                           background: row.category === "LOGIN" ? "var(--accent-light)" : "var(--bg-primary)",
                           color: row.category === "LOGIN" ? "var(--accent)" : "var(--text-secondary)",
@@ -309,7 +300,7 @@ export default function AccessLogClient() {
                         {row.category}
                       </span>
                       {!row.success && (
-                        <span className="ml-1 text-[10px] font-semibold" style={{ color: "var(--danger)" }}>
+                        <span className="ml-1 text-[11px] font-semibold" style={{ color: "var(--danger)" }}>
                           gagal
                         </span>
                       )}
@@ -319,7 +310,7 @@ export default function AccessLogClient() {
                     </td>
                     <td className="px-3 py-2.5 text-xs">
                       <div style={{ color: "var(--text-primary)" }}>{row.actorName || "—"}</div>
-                      <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                         {row.actorRole || ""}
                       </div>
                     </td>
@@ -327,18 +318,18 @@ export default function AccessLogClient() {
                       {row.summary}
                     </td>
                     <td
-                      className="whitespace-nowrap px-3 py-2.5 font-mono text-[10px]"
+                      className="whitespace-nowrap px-3 py-2.5 font-mono text-[11px]"
                       style={{ color: "var(--text-muted)" }}
                     >
                       {row.ip || "—"}
                     </td>
                   </tr>
                   {open ? (
-                    <tr style={{ background: "var(--bg-primary)" }}>
+                    <tr>
                       <td colSpan={7} className="px-4 py-3 text-xs" style={{ color: "var(--text-secondary)" }}>
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div>
-                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide">Detail</div>
+                            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide">Detail</div>
                             {detail.lines.length === 0 && detail.changes.length === 0 ? (
                               <p style={{ color: "var(--text-muted)" }}>Tidak ada meta tambahan.</p>
                             ) : (
@@ -379,7 +370,7 @@ export default function AccessLogClient() {
                             ) : null}
                           </div>
                           <div>
-                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide">
+                            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide">
                               Target / perangkat
                             </div>
                             <p>Target: {[row.targetType, row.targetId].filter(Boolean).join(" / ") || "—"}</p>

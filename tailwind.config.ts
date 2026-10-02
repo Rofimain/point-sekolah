@@ -52,6 +52,15 @@ const config: Config = {
           gold: "#B8956C",
         },
       },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+      },
+      borderRadius: {
+        control: "var(--radius-control)",
+        panel: "var(--radius-panel)",
+      },
       fontFamily: {
         serif: ["var(--font-display)", "Georgia", "serif"],
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],

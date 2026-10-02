@@ -53,10 +53,10 @@ export default function CetakSuratClient() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-5">
-        <h1 className="text-lg font-serif" style={{ color: "var(--text-primary)" }}>
+        <h1 className="page-title">
           Cetak surat
         </h1>
-        <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+        <p className="page-subtitle">
           Pilih siswa dulu. Setelah itu pilih jenis surat — placeholder terisi otomatis dari data siswa.
         </p>
         <ol className="mt-3 list-decimal space-y-1 pl-5 text-xs" style={{ color: "var(--text-secondary)" }}>
@@ -67,12 +67,10 @@ export default function CetakSuratClient() {
       </div>
 
       <div
-        className="rounded-xl border p-4 space-y-3"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="card p-5 space-y-3"
       >
         <label
-          className="block text-[11px] font-semibold uppercase tracking-wide"
-          style={{ color: "var(--text-secondary)" }}
+          className="label"
         >
           Cari siswa (nama / NISN / kelas)
         </label>
@@ -81,8 +79,7 @@ export default function CetakSuratClient() {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Ketik minimal 2 huruf…"
           autoFocus
-          className="w-full rounded-lg border px-3 py-2.5 text-sm"
-          style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+          className="input"
         />
         {loading && (
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
@@ -105,12 +102,7 @@ export default function CetakSuratClient() {
               <button
                 type="button"
                 onClick={() => pickStudent(s.id)}
-                className="w-full rounded-lg border px-3 py-2.5 text-left transition hover:opacity-90"
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--bg-primary)",
-                  color: "var(--text-primary)",
-                }}
+                className="btn btn-secondary h-auto w-full flex-col items-start px-3 py-2.5 text-left"
               >
                 <span className="block text-sm font-semibold">{s.name}</span>
                 <span className="mt-0.5 block text-[11px]" style={{ color: "var(--text-muted)" }}>

@@ -51,7 +51,7 @@ export function ChangePasswordDialog({ role, forced = false, onClose }: Props) {
 
   return createPortal(
     <div
-      className={`fixed inset-0 ${Z_MODAL_ELEVATED_CLASS} flex items-end justify-center overflow-y-auto overscroll-contain bg-black/55 p-0 sm:items-center sm:p-4`}
+      className={`modal-overlay ${Z_MODAL_ELEVATED_CLASS} flex items-end justify-center overflow-y-auto overscroll-contain p-0 sm:items-center sm:p-4`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="change-password-title"
@@ -61,8 +61,7 @@ export function ChangePasswordDialog({ role, forced = false, onClose }: Props) {
       )}
       <form
         onSubmit={submit}
-        className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-t-2xl border p-5 pb-sheet-bottom shadow-2xl sm:rounded-2xl sm:pb-5"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="modal-surface relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-t-[1.25rem] rounded-b-none p-5 pb-sheet-bottom sm:rounded-[1.25rem] sm:pb-5"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -100,8 +99,7 @@ export function ChangePasswordDialog({ role, forced = false, onClose }: Props) {
               onChange={(event) => setCurrentPassword(event.target.value)}
               autoComplete="current-password"
               required
-              className="mt-1.5 w-full rounded-lg border px-3 py-2.5 text-sm font-normal"
-              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+              className="input mt-1.5 font-normal"
             />
           </label>
           <label className="block text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
@@ -113,8 +111,7 @@ export function ChangePasswordDialog({ role, forced = false, onClose }: Props) {
               autoComplete="new-password"
               minLength={12}
               required
-              className="mt-1.5 w-full rounded-lg border px-3 py-2.5 text-sm font-normal"
-              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+              className="input mt-1.5 font-normal"
             />
           </label>
           <label className="block text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
@@ -126,8 +123,7 @@ export function ChangePasswordDialog({ role, forced = false, onClose }: Props) {
               autoComplete="new-password"
               minLength={12}
               required
-              className="mt-1.5 w-full rounded-lg border px-3 py-2.5 text-sm font-normal"
-              style={{ background: "var(--bg-primary)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+              className="input mt-1.5 font-normal"
             />
           </label>
         </div>
@@ -142,7 +138,7 @@ export function ChangePasswordDialog({ role, forced = false, onClose }: Props) {
         <button
           type="submit"
           disabled={loading}
-          className="btn-primary mt-5 min-h-11 w-full touch-manipulation px-4 py-3 text-sm disabled:opacity-60"
+          className="btn btn-primary mt-5 w-full touch-manipulation text-sm disabled:opacity-60"
         >
           {loading ? "Menyimpan..." : forced ? "Simpan & lanjut login" : "Simpan password baru"}
         </button>
