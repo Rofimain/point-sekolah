@@ -31,33 +31,6 @@ export async function getAppSettingsMap(keys: readonly string[]): Promise<Record
   return out;
 }
 
-function parseOptionalInt(raw: string): number | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  const n = parseInt(trimmed, 10);
-  return Number.isFinite(n) ? n : null;
-}
-
-export async function getPointThresholds(): Promise<{
-  sp1: number | null;
-  sp2: number | null;
-  sp3: number | null;
-  skorsing: number | null;
-}> {
-  const map = await getAppSettingsMap([
-    APP_KEYS.SP1_POINTS,
-    APP_KEYS.SP2_POINTS,
-    APP_KEYS.SP3_POINTS,
-    APP_KEYS.SKORSING_POINTS,
-  ]);
-  return {
-    sp1: parseOptionalInt(map[APP_KEYS.SP1_POINTS]),
-    sp2: parseOptionalInt(map[APP_KEYS.SP2_POINTS]),
-    sp3: parseOptionalInt(map[APP_KEYS.SP3_POINTS]),
-    skorsing: parseOptionalInt(map[APP_KEYS.SKORSING_POINTS]),
-  };
-}
-
 export async function getPrintBlock(): Promise<{ redaksi: string }> {
   const redaksi = await getAppSetting(APP_KEYS.REDAKSI_PRINT);
   return { redaksi: redaksi || DEFAULTS[APP_KEYS.REDAKSI_PRINT] };

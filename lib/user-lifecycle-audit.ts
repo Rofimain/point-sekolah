@@ -34,7 +34,3 @@ export async function recordUserLifecycleEvent(input: RecordLifecycleInput): Pro
     console.error("[user-lifecycle] gagal menulis event", err);
   }
 }
-
-export async function recordUserLifecycleEvents(inputs: RecordLifecycleInput[]): Promise<void> {
-  await Promise.all(inputs.map((input) => recordUserLifecycleEvent(input)));
-}

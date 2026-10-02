@@ -38,14 +38,6 @@ export function getInitials(name: string) {
     .slice(0, 2);
 }
 
-export function getPointStatus(points: number) {
-  const critical = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75");
-  const warning = parseInt(process.env.NEXT_PUBLIC_WARNING_POINTS || "50");
-  if (points >= critical) return "kritis";
-  if (points >= warning) return "perhatian";
-  return "normal";
-}
-
 export function getCategoryLabel(category: string) {
   const map: Record<string, string> = {
     RINGAN: "Ringan",

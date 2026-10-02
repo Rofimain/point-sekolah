@@ -1,4 +1,4 @@
-/** Ambang poin dari env publik (default sama dengan lib/utils getPointStatus). */
+/** Ambang poin dari env publik. */
 export const WARNING_POINTS = parseInt(process.env.NEXT_PUBLIC_WARNING_POINTS || "50", 10);
 export const CRITICAL_POINTS = parseInt(process.env.NEXT_PUBLIC_CRITICAL_POINTS || "75", 10);
 
