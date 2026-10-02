@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AUTO_REMISI_PERCENT, AUTO_REMISI_QUIET_DAYS, resolveManualRemisiPercent } from "@/lib/remisi-rules";
+import { resolveManualRemisiPercent } from "@/lib/remisi-rules";
 import { calendarTodayYmd } from "@/lib/incident-date";
 
 export type RemisiStudentRow = {
@@ -164,8 +164,8 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
   return (
     <div>
       <div className="mb-5">
-        <Link href="/settings" className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
-          ← Pengaturan sekolah
+        <Link href="/remisi/manual" className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
+          ← Riwayat remisi manual
         </Link>
         <h1 className="page-title mt-2">
           Poin Remisi &amp; Reward
@@ -179,12 +179,11 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
         className="card mb-6 w-full max-w-3xl space-y-2 p-5 sm:p-5"
       >
         <h2 className="text-sm font-serif" style={{ color: "var(--text-primary)" }}>
-          1. Remisi otomatis (periode tenang)
+          1. Remisi otomatis
         </h2>
         <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Jika murid tidak melanggar selama {AUTO_REMISI_QUIET_DAYS} hari sejak tanggal kejadian terakhir, sistem
-          otomatis mengurangi {AUTO_REMISI_PERCENT}% dari total skor pelanggaran (cron harian). Tidak perlu diatur atau
-          ditekan tombol apa pun.
+          Setiap 1 bulan kalender tanpa pelanggaran sejak tanggal kejadian terakhir, poin dikurangi 25% dari sisa poin
+          (dibulatkan ke atas) dan berulang tiap bulan sampai poin 0. Pelanggaran baru mengulang hitungan.
         </p>
       </div>
 

@@ -44,6 +44,7 @@ export async function applyManualRemisiForStudent(input: {
   customPercent: number;
   customLabel: string;
   note?: string;
+  actorName?: string;
 }): Promise<{ ok: true; result: ManualRemisiApplyResult } | { ok: false; error: string }> {
   const customLabel = input.customLabel.trim();
   if (customLabel.length < 2) {
@@ -95,6 +96,9 @@ export async function applyManualRemisiForStudent(input: {
         reason,
         /** Basis yang dipakai untuk %: skor sampai tanggal prestasi. */
         grossTotalBefore: eligibleGross,
+        effectiveBefore: effective,
+        effectiveDate: new Date(),
+        createdByName: input.actorName?.trim() || null,
       },
     });
   } catch (e) {

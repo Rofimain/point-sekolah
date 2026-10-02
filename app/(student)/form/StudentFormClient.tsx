@@ -110,7 +110,12 @@ export default function StudentFormClient({
     grossTotalBefore: number;
     createdAt: string | Date;
   }[];
-  remisiCountdown?: { daysRemaining: number; quietDays: number; remisiPercent: number } | null;
+  remisiCountdown?: {
+    nextDueYmd: string;
+    step: number;
+    daysRemaining: number;
+    estimatedDelta: number;
+  } | null;
   studentClass: string | null;
   studentNisn: string | null;
   studentPhotoPresent?: boolean;
@@ -355,7 +360,7 @@ export default function StudentFormClient({
           </button>
         </div>
 
-        {remisiCountdown && (
+        {totalPoints <= 0 && (records.length > 0 || pointAdjustments.length > 0) ? (
           <div
             className="mb-4 rounded-control p-3 text-xs leading-relaxed"
             style={{
@@ -364,19 +369,28 @@ export default function StudentFormClient({
               border: "1px solid var(--accent-border)",
             }}
           >
-            {remisiCountdown.daysRemaining > 0 ? (
-              <>
-                <strong>{remisiCountdown.daysRemaining} hari lagi</strong> menuju remisi otomatis{" "}
-                {remisiCountdown.remisiPercent}% (setelah {remisiCountdown.quietDays} hari tanpa pelanggaran baru).
-              </>
+            Poin kamu sudah bersih.
+          </div>
+        ) : remisiCountdown ? (
+          <div
+            className="mb-4 rounded-control p-3 text-xs leading-relaxed"
+            style={{
+              background: "var(--accent-light)",
+              color: "var(--accent)",
+              border: "1px solid var(--accent-border)",
+            }}
+          >
+            {remisiCountdown.daysRemaining === 0 ? (
+              <>Remisi tahap {remisiCountdown.step} jatuh tempo hari ini.</>
             ) : (
               <>
-                Periode tenang {remisiCountdown.quietDays} hari sudah terpenuhi. Remisi otomatis{" "}
-                {remisiCountdown.remisiPercent}% akan diterapkan segera.
+                Remisi tahap {remisiCountdown.step} pada {formatIncidentDateOnly(`${remisiCountdown.nextDueYmd}T12:00:00.000Z`)} (
+                {remisiCountdown.daysRemaining} hari lagi), perkiraan −{remisiCountdown.estimatedDelta} poin, jika tidak
+                ada pelanggaran baru.
               </>
             )}
           </div>
-        )}
+        ) : null}
 
         {totalPoints >= CRITICAL && (
           <div

@@ -285,7 +285,13 @@ model PointAdjustment {
   reason            String
   grossTotalBefore  Int
   createdAt         DateTime @default(now())
+  effectiveDate     DateTime?
+  effectiveBefore   Int?
+  reversalOfId      String?  @unique
+  createdByName     String?
+  isBackfill        Boolean  @default(false)
 
   @@index([studentId])
   @@index([studentId, reason])
+  @@index([studentId, effectiveDate])
 }

@@ -150,7 +150,7 @@ async function main() {
 
   await context.clearCookies();
   await staffLogin(page, SA_EMAIL, SA_PASSWORD);
-  await page.goto(`${BASE}/settings/remisi`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE}/remisi/input`, { waitUntil: "domcontentloaded" });
   const remisiText = await page.locator("body").innerText();
   check(/remisi|quiet|hari|poin/i.test(remisiText), "settings remisi (cron-related) loads", "remisi page empty");
 

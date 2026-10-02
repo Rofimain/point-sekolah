@@ -1,7 +1,6 @@
 /** Aturan remisi & reward sekolah. */
 
-/** Remisi otomatis: 1 bulan tenang → 25% dari skor pelanggaran bruto. */
-export const AUTO_REMISI_QUIET_DAYS = 30;
+/** Remisi otomatis: 25% dari sisa poin, dibulatkan ke atas. */
 export const AUTO_REMISI_PERCENT = 25;
 
 /** Kode reason di DB untuk remisi/reward yang diisi admin (nama + %). */

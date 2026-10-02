@@ -141,7 +141,7 @@ export default function SettingsClient({ initial }: { initial: Record<string, st
           Batasan poin SP/skorsing. Nama pejabat cetak diisi saat mencetak surat.
         </p>
         <p className="text-xs mt-2 flex flex-wrap gap-x-3 gap-y-1">
-          <Link href="/settings/remisi" className="font-semibold" style={{ color: "var(--accent)" }}>
+          <Link href="/remisi/input" className="font-semibold" style={{ color: "var(--accent)" }}>
             Poin Remisi &amp; Reward →
           </Link>
           <Link href="/settings/redaksi" className="font-semibold" style={{ color: "var(--accent)" }}>

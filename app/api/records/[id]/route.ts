@@ -10,6 +10,7 @@ import { normalizeEvidenceImagesFromBody } from "@/lib/evidence-data-url";
 import { listRecordEvidenceImageData, replaceRecordEvidenceImages } from "@/lib/record-evidence-images";
 import { softDeleteViolationRecord } from "@/lib/user-soft-delete";
 import { recordDataAccessLog } from "@/lib/access-log";
+import { reconcileAutoRemisiForStudent } from "@/lib/quiet-month-reduction";
 import { isSameOriginRequest } from "@/lib/same-origin";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -162,6 +163,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
   });
 
+  try {
+    await reconcileAutoRemisiForStudent(existing.studentId, { actorName: session.user.name ?? undefined });
+  } catch (e) {
+    console.error("[records PATCH] remisi otomatis gagal:", e);
+  }
+
   return NextResponse.json(updated);
 }
 
@@ -215,8 +222,19 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     return NextResponse.json({ error: "Permintaan tidak valid." }, { status: 403 });
   }
   const { session } = auth;
+  const existing = await prisma.violationRecord.findFirst({
+    where: { id, deletedAt: null },
+    select: { studentId: true },
+  });
   const ok = await softDeleteViolationRecord(id);
   if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    if (existing) {
+      await reconcileAutoRemisiForStudent(existing.studentId, { actorName: session.user.name ?? undefined });
+    }
+  } catch (e) {
+    console.error("[records DELETE] remisi otomatis gagal:", e);
+  }
   await recordDataAccessLog({
     session,
     action: "RECORD_DELETE",

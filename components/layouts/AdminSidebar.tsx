@@ -186,13 +186,14 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
   const canUsers = canManageUsers(session?.user?.role);
   const superAdmin = isSuperAdmin(session?.user?.role);
 
-  const [openMenu, setOpenMenu] = useState<null | "records" | "students" | "users" | "settings">(null);
+  const [openMenu, setOpenMenu] = useState<null | "records" | "students" | "users" | "settings" | "remisi">(null);
 
   const classId = searchParams.get("classId") || "";
   const roleFilter = searchParams.get("role") || "";
 
   useEffect(() => {
     if (pathname.startsWith("/records")) setOpenMenu("records");
+    else if (pathname.startsWith("/remisi")) setOpenMenu("remisi");
     else if (pathname.startsWith("/students") && !pathname.includes("/cetak")) setOpenMenu("students");
     else if (pathname.startsWith("/users")) setOpenMenu("users");
     else if (pathname.startsWith("/settings")) setOpenMenu("settings");
@@ -253,6 +254,33 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
                 {c.name.trim() || c.grade || "—"}
               </SubmenuLink>
             ))}
+          </SplitNavRow>
+
+          <SplitNavRow
+            href="/remisi/otomatis"
+            active={pathname.startsWith("/remisi")}
+            open={openMenu === "remisi"}
+            onToggle={() => setOpenMenu((m) => (m === "remisi" ? null : "remisi"))}
+            ariaToggle="Buka submenu — Remisi"
+            icon={
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M4 19V5M4 19h16" strokeLinecap="round" />
+                <path d="M7 15l4-4 3 2 5-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
+            label="Remisi"
+          >
+            <SubmenuLink href="/remisi/otomatis" active={pathname.startsWith("/remisi/otomatis")}>
+              Riwayat Otomatis
+            </SubmenuLink>
+            <SubmenuLink href="/remisi/manual" active={pathname.startsWith("/remisi/manual")}>
+              Riwayat Manual
+            </SubmenuLink>
+            {canManage ? (
+              <SubmenuLink href="/remisi/input" active={pathname.startsWith("/remisi/input")}>
+                Input Remisi Manual
+              </SubmenuLink>
+            ) : null}
           </SplitNavRow>
 
           <SplitNavRow
@@ -328,9 +356,6 @@ export function AdminSidebar({ classes }: { classes: SidebarClass[] }) {
             >
               <SubmenuLink href="/settings" active={pathname === "/settings"}>
                 Umum
-              </SubmenuLink>
-              <SubmenuLink href="/settings/remisi" active={pathname.startsWith("/settings/remisi")}>
-                Poin Remisi &amp; Reward
               </SubmenuLink>
               <SubmenuLink href="/settings/redaksi" active={pathname.startsWith("/settings/redaksi")}>
                 Redaksi cetak

@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 export { APP_KEYS } from "@/lib/app-setting-keys";
 import { APP_KEYS } from "@/lib/app-setting-keys";
-import { AUTO_REMISI_QUIET_DAYS } from "@/lib/remisi-rules";
 
 const DEFAULTS: Record<string, string> = {
   [APP_KEYS.REDAKSI_PRINT]:
@@ -57,17 +56,6 @@ export async function getPointThresholds(): Promise<{
     sp3: parseOptionalInt(map[APP_KEYS.SP3_POINTS]),
     skorsing: parseOptionalInt(map[APP_KEYS.SKORSING_POINTS]),
   };
-}
-
-/** Aturan no.1 tetap: 30 hari (boleh override ops via env saja). */
-export function quietPeriodDaysFromEnv(): number {
-  const n = parseInt(process.env.POINT_REDUCTION_QUIET_DAYS || String(AUTO_REMISI_QUIET_DAYS), 10);
-  return Number.isFinite(n) && n > 0 ? n : AUTO_REMISI_QUIET_DAYS;
-}
-
-/** @deprecated Prefer AUTO_REMISI_QUIET_DAYS — remisi otomatis tidak lagi dari AppSetting. */
-export async function getQuietPeriodDays(): Promise<number> {
-  return quietPeriodDaysFromEnv();
 }
 
 export async function getPrintBlock(): Promise<{ redaksi: string }> {

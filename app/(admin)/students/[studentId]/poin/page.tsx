@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSafeServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getQuietPeriodDays } from "@/lib/app-settings";
 import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 import { isStaffRole } from "@/lib/staff-roles";
 import { StudentPointsDetailView } from "@/components/StudentPointsDetailView";
@@ -12,7 +11,7 @@ export default async function StaffStudentPointsDetailPage({ params }: { params:
 
   const { studentId } = await params;
 
-  const [student, breakdown, records, adjustments, quietDays] = await Promise.all([
+  const [student, breakdown, records, adjustments] = await Promise.all([
     prisma.user.findFirst({
       where: { id: studentId, role: "STUDENT" },
       include: { class: true },
@@ -43,7 +42,6 @@ export default async function StaffStudentPointsDetailPage({ params }: { params:
         throw e;
       }
     })(),
-    getQuietPeriodDays(),
   ]);
 
   if (!student) notFound();
@@ -53,7 +51,6 @@ export default async function StaffStudentPointsDetailPage({ params }: { params:
       studentName={student.name}
       nisn={student.nisn}
       classNameLabel={student.class?.name ?? null}
-      quietDays={quietDays}
       breakdown={breakdown}
       cetakHref={`/students/${student.id}/cetak`}
       history={{

@@ -1,9 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getQuietPeriodDays } from "@/lib/app-settings";
-
 export { QUIET_MONTH_REASON } from "@/lib/point-adjustment-reason";
-export { getQuietPeriodDays };
 
 /** DB belum di-migrate (mis. image jalan sebelum `prisma migrate deploy`) */
 export function isPointAdjustmentTableMissing(e: unknown): boolean {

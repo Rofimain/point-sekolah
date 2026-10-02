@@ -38,6 +38,10 @@ jobs:
           --health-retries 20
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Cek migrasi additive
+        run: bash scripts/check-migrations-safe.sh "${{ github.event.before }}" "${{ github.sha }}"
       - uses: actions/setup-node@v5
         with:
           node-version: 24.18.0
@@ -98,6 +102,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:3000/api/health/ready
           curl --fail --silent --show-error http://127.0.0.1:3000/login >/dev/null
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/dashboard)" = "307"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/remisi/otomatis)" = "307"
           docker compose --env-file /dev/null -f docker-compose.smoke.yml exec -T app npx prisma migrate status
           docker compose --env-file /dev/null -f docker-compose.smoke.yml exec -T app npm run db:seed
           docker compose --env-file /dev/null -f docker-compose.smoke.yml exec -T app npm run db:seed
@@ -240,14 +245,50 @@ jobs:
             export APP_IMAGE
             sudo --preserve-env=APP_IMAGE docker compose pull app
             sudo --preserve-env=APP_IMAGE docker compose up -d db --wait --wait-timeout 120
+            PREV_IMAGE="$(sudo docker compose ps -q app | xargs -r sudo docker inspect --format '{{.Config.Image}}' 2>/dev/null || true)"
+            mkdir -p backups/pre-deploy
+            TS="$(date +%Y%m%d-%H%M%S)"
+            SHA7="$(printf '%s' "$DEPLOY_SHA" | cut -c1-7)"
+            DUMP="backups/pre-deploy/pre-deploy-${TS}-${SHA7}.sql.gz"
+            if ! sudo docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --no-acl' | gzip > "$DUMP"; then
+              echo "Backup gagal sebelum migrasi: $DUMP"
+              exit 1
+            fi
+            DUMP_BYTES="$(wc -c < "$DUMP" | tr -d '[:space:]')"
+            if [ ! -f "$DUMP" ] || [ "$DUMP_BYTES" -le 1024 ] || ! gunzip -t "$DUMP"; then
+              echo "Backup gagal (file hilang, <= 1 KB, atau gzip rusak): $DUMP"
+              exit 1
+            fi
+            echo "Backup pre-deploy: $DUMP"
+            ls -1t backups/pre-deploy/*.sql.gz | tail -n +11 | xargs -r rm -f
             sudo --preserve-env=APP_IMAGE docker compose run --rm app npx prisma migrate deploy
             sudo --preserve-env=APP_IMAGE docker compose run --rm app npm run db:sync-pasal-15
-            sudo --preserve-env=APP_IMAGE docker compose up -d --wait --wait-timeout 180
+            if ! sudo --preserve-env=APP_IMAGE docker compose up -d --wait --wait-timeout 180; then
+              APP_UP_OK=0
+            else
+              APP_UP_OK=1
+            fi
             # Caddyfile + origin cert ditulis ulang tiap deploy; force recreate agar TLS host baru ter-load
-            sudo --preserve-env=APP_IMAGE docker compose up -d --force-recreate --no-deps caddy --wait --wait-timeout 60
-            sudo --preserve-env=APP_IMAGE docker compose exec -T app node -e \
-              "fetch('http://127.0.0.1:3000/api/health/ready').then(async r=>{console.log(await r.text());process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"
-            sudo docker image prune -af
+            if [ "$APP_UP_OK" -eq 1 ]; then
+              if ! sudo --preserve-env=APP_IMAGE docker compose up -d --force-recreate --no-deps caddy --wait --wait-timeout 60; then
+                APP_UP_OK=0
+              fi
+            fi
+            if [ "$APP_UP_OK" -eq 1 ]; then
+              if ! sudo --preserve-env=APP_IMAGE docker compose exec -T app node -e \
+                "fetch('http://127.0.0.1:3000/api/health/ready').then(async r=>{console.log(await r.text());process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"; then
+                APP_UP_OK=0
+              fi
+            fi
+            if [ "$APP_UP_OK" -ne 1 ]; then
+              echo "Backup pre-deploy (restore manual): $DUMP"
+              if [ -n "$PREV_IMAGE" ]; then
+                echo "ROLLBACK ke $PREV_IMAGE"
+                APP_IMAGE="$PREV_IMAGE" sudo --preserve-env=APP_IMAGE docker compose up -d app --wait --wait-timeout 180
+              fi
+              exit 1
+            fi
+            sudo docker image prune -f --filter "until=168h"
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_ACTOR: ${{ github.actor }}

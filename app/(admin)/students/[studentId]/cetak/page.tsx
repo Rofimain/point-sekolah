@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getSafeServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPrintBlock, getQuietPeriodDays } from "@/lib/app-settings";
+import { getPrintBlock } from "@/lib/app-settings";
 import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
 import { isStaffRole } from "@/lib/staff-roles";
 import { StudentPointsPrintClient } from "@/components/StudentPointsPrintClient";
@@ -30,7 +30,7 @@ export default async function StaffStudentPrintPointsPage({
   const sp = await searchParams;
   const fromCetakSurat = sp.from === "cetak-surat";
 
-  const [print, student, breakdown, records, adjustments, quietDays] = await Promise.all([
+  const [print, student, breakdown, records, adjustments] = await Promise.all([
     getPrintBlock(),
     prisma.user.findFirst({
       where: { id: studentId, role: "STUDENT" },
@@ -62,7 +62,6 @@ export default async function StaffStudentPrintPointsPage({
         throw e;
       }
     })(),
-    getQuietPeriodDays(),
   ]);
 
   if (!student) notFound();
@@ -92,7 +91,6 @@ export default async function StaffStudentPrintPointsPage({
       backHref={fromCetakSurat ? "/cetak-surat" : "/students"}
       backLabel={fromCetakSurat ? "← Kembali ke Cetak surat" : "← Kembali ke daftar siswa"}
       breakdown={breakdown}
-      quietDays={quietDays}
       history={{
         records: records.map((r) => ({
           id: r.id,

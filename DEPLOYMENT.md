@@ -104,10 +104,10 @@ NEXTAUTH_URL=https://tanse.smai-alazhar1.com
 
 Push ke branch `main` memicu workflow `.github/workflows/deploy.yml`:
 
-1. Lint, test, typecheck, validasi/migration test, build, dan audit dependency.
-2. Build image SHA dan smoke test dengan PostgreSQL sementara.
+1. Job `quality`: cek migrasi additive, lint, test, typecheck, validasi/migration test, build, dan audit dependency.
+2. Job smoke: build image SHA dan smoke test dengan PostgreSQL sementara.
 3. Push image yang sudah lulus ke GHCR.
-4. SSH ke server, jalankan migration eksplisit, deploy image SHA yang sama, lalu tunggu readiness.
+4. SSH ke server: backup basis data, `prisma migrate deploy`, naikkan aplikasi, rollback image jika health gagal.
 
 Production tidak menjalankan seed demo otomatis. `npm run db:seed` hanya untuk development/smoke test.
 
@@ -119,11 +119,28 @@ Edit `Caddyfile` agar host sesuai domain sekolah, pastikan origin cert ada di `c
 
 ---
 
+## Keamanan deploy
+
+Urutan pipeline: **quality → smoke → backup → migrate → up → rollback**.
+
+- Job `quality` menolak `migration.sql` yang sudah pernah ada lalu diedit, dan menolak SQL destruktif (`DROP TABLE`/`COLUMN`, `TRUNCATE`, `DELETE FROM`, `ALTER COLUMN ... TYPE`, `SET NOT NULL`, `RENAME`) kecuali file itu memuat komentar `-- allow-destructive: alasan`.
+- Migrasi production harus additive. Jangan mengandalkan restore otomatis.
+- Sebelum `prisma migrate deploy`, server menulis dump ke `backups/pre-deploy/pre-deploy-<waktu>-<sha>.sql.gz` (10 file terbaru disimpan). Path file dicetak di log deploy.
+- Jika `docker compose up` aplikasi atau `/api/health/ready` gagal, container app dikembalikan ke image sebelumnya. Basis data tidak di-restore otomatis.
+
+Pulihkan manual bila migrasi merusak data:
+
+```bash
+./scripts/restore-db.sh backups/pre-deploy/<file>
+```
+
 ## Cron quiet-month (remisi poin)
 
-Hitung dari **tanggal kejadian** pelanggaran terakhir (`ViolationRecord.date`), bukan tanggal input (`createdAt`).
+Aturan remisi berantai bulanan: setiap 1 bulan kalender tanpa pelanggaran sejak tanggal kejadian terakhir, poin dikurangi 25% dari sisa poin (dibulatkan ke atas), berulang sampai 0. Pelanggaran baru mengulang hitungan dari tanggal kejadian (`ViolationRecord.date`), bukan tanggal input.
 
 Endpoint API: `POST /api/cron/quiet-month-points` + header `x-cron-secret`.
+
+Cron tidak memotong apa pun sampai Super Admin klik **Terapkan sekali** di menu **Remisi → Riwayat Otomatis**.
 
 Service Compose **`cron`** memanggil endpoint itu setiap hari pukul 02:00 (zona waktu mengikuti `TZ` di `.env`, contoh `Asia/Jakarta`).
 
@@ -131,7 +148,6 @@ Pastikan di `ENV_FILE_CONTENT` / `.env` server ada:
 
 ```env
 CRON_SECRET=isi_random_panjang
-POINT_REDUCTION_QUIET_DAYS=30
 TZ=Asia/Jakarta
 ```
 

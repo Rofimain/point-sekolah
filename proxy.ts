@@ -46,7 +46,8 @@ export const proxy = withAuth(
       pathname.startsWith("/access-log") ||
       pathname.startsWith("/notifications") ||
       pathname.startsWith("/cetak-surat") ||
-      pathname.startsWith("/classes");
+      pathname.startsWith("/classes") ||
+      pathname.startsWith("/remisi");
 
     if (needsStaffRole && (!token || !isStaffRole(token.role as string))) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
@@ -79,7 +80,8 @@ export const proxy = withAuth(
           pathname.startsWith("/access-log") ||
           pathname.startsWith("/notifications") ||
           pathname.startsWith("/cetak-surat") ||
-          pathname.startsWith("/classes")
+          pathname.startsWith("/classes") ||
+          pathname.startsWith("/remisi")
         ) {
           return Boolean(token);
         }
@@ -105,5 +107,7 @@ export const config = {
     "/notifications/:path*",
     "/cetak-surat/:path*",
     "/classes/:path*",
+    "/remisi",
+    "/remisi/:path*",
   ],
 };

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { applyQuietMonthReductionForAllStudents } from "@/lib/quiet-month-reduction";
+import { reconcileAutoRemisiForAllStudents } from "@/lib/quiet-month-reduction";
 
 /**
- * Remisi 25% setelah periode tenang dihitung dari tanggal KEJADIAN pelanggaran terakhir
- * (ViolationRecord.date), bukan waktu input (createdAt). Compose service `cron` atau curl POST
- * + header x-cron-secret: CRON_SECRET.
+ * Remisi otomatis berantai: tiap bulan kalender sejak tanggal KEJADIAN, 25% dari poin efektif.
+ * Compose service `cron` atau curl POST + header x-cron-secret: CRON_SECRET.
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -12,10 +11,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const applied = await applyQuietMonthReductionForAllStudents();
+  const result = await reconcileAutoRemisiForAllStudents();
+  if (result.skipped) {
+    return NextResponse.json({ ok: true, skipped: "belum diaktifkan", count: 0 });
+  }
   return NextResponse.json({
     ok: true,
-    count: applied.length,
-    applied,
+    count: result.created,
+    created: result.created,
+    reversed: result.reversed,
+    students: result.count,
   });
 }

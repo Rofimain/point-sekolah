@@ -5,6 +5,7 @@ import { resolveManualRemisiPercent } from "@/lib/remisi-rules";
 import { getEffectivePointsBreakdown } from "@/lib/student-effective-points";
 import { calendarTodayYmd } from "@/lib/incident-date";
 import { recordDataAccessLog } from "@/lib/access-log";
+import { reconcileAutoRemisiForStudent } from "@/lib/quiet-month-reduction";
 
 /** Pratinjau: skor eligible sampai tanggal prestasi + potongan. */
 export async function GET(req: NextRequest) {
@@ -84,10 +85,17 @@ export async function POST(req: NextRequest) {
     customPercent,
     customLabel,
     note,
+    actorName: session.user.name ?? undefined,
   });
 
   if (!applied.ok) {
     return NextResponse.json({ error: applied.error }, { status: 400 });
+  }
+
+  try {
+    await reconcileAutoRemisiForStudent(studentId, { actorName: session.user.name ?? undefined });
+  } catch (e) {
+    console.error("[manual-remisi] remisi otomatis gagal:", e);
   }
 
   await recordDataAccessLog({

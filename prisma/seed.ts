@@ -1,7 +1,7 @@
 import { Role } from "../generated/prisma/client";
 import bcrypt from "bcryptjs";
 import { QUIET_MONTH_REASON } from "../lib/student-effective-points";
-import { applyQuietMonthReductionForStudent } from "../lib/quiet-month-reduction";
+import { reconcileAutoRemisiForStudent } from "../lib/quiet-month-reduction";
 import { createPrismaClient } from "../lib/prisma";
 import { DEFAULT_PRINT_TEMPLATES, PRINT_TEMPLATES_LAYOUT_VERSION } from "../lib/print-templates";
 import { plainTextToDocumentHtml } from "../lib/document-html";
@@ -312,12 +312,15 @@ async function main() {
       OR: [{ reason: QUIET_MONTH_REASON }, { reason: { startsWith: `${QUIET_MONTH_REASON}|` } }],
     },
   });
+  await prisma.appSetting.upsert({
+    where: { key: "remisi_berantai_aktif" },
+    create: { key: "remisi_berantai_aktif", value: "1" },
+    update: { value: "1" },
+  });
   if (adjTenang === 0) {
-    const applied = await applyQuietMonthReductionForStudent(demoTenang.id);
-    if (applied) {
-      console.log(
-        `   Demo periode tenang: ${demoTenang.name} bruto ${applied.grossTotalBefore} → potong ${applied.pointsDelta} → efektif ${applied.effectiveAfter}`
-      );
+    const applied = await reconcileAutoRemisiForStudent(demoTenang.id, { actorName: "Sistem (seed)" });
+    if (applied.created > 0) {
+      console.log(`   Demo remisi berantai: ${demoTenang.name} — ${applied.created} tahap`);
     }
   }
 

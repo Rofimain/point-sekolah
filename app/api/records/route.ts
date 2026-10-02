@@ -9,6 +9,7 @@ import { parseOptionalIncidentDate } from "@/lib/incident-date";
 import { normalizeEvidenceImagesFromBody } from "@/lib/evidence-data-url";
 import { replaceRecordEvidenceImages } from "@/lib/record-evidence-images";
 import { recordDataAccessLog } from "@/lib/access-log";
+import { reconcileAutoRemisiForStudent } from "@/lib/quiet-month-reduction";
 import { parseRecordsListPagination } from "@/lib/records-pagination";
 import { visibleViolationRecordWhere } from "@/lib/record-visibility";
 import { isSameOriginRequest } from "@/lib/same-origin";
@@ -232,6 +233,12 @@ export async function POST(req: NextRequest) {
     },
     portal: actor.role === "STUDENT" ? "STUDENT" : "STAFF",
   });
+
+  try {
+    await reconcileAutoRemisiForStudent(targetStudentId, { actorName: session?.user?.name ?? undefined });
+  } catch (e) {
+    console.error("[records POST] remisi otomatis gagal:", e);
+  }
 
   return NextResponse.json(
     {

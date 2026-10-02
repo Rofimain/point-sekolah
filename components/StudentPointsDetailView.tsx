@@ -6,7 +6,6 @@ export type StudentPointsDetailViewProps = {
   studentName: string;
   nisn: string | null;
   classNameLabel: string | null;
-  quietDays: number;
   breakdown: {
     gross: number;
     adjustmentSum: number;
@@ -24,7 +23,6 @@ export function StudentPointsDetailView({
   studentName,
   nisn,
   classNameLabel,
-  quietDays,
   breakdown,
   history,
   backHref = "/students",
@@ -102,8 +100,8 @@ export function StudentPointsDetailView({
           </div>
         </div>
         <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-          Remisi otomatis periode tenang dapat diterapkan setelah ≥{quietDays} hari sejak tanggal kejadian pelanggaran
-          terakhir (dari tanggal kejadian, bukan tanggal input).
+          Remisi otomatis: setiap 1 bulan kalender tanpa pelanggaran sejak tanggal kejadian terakhir, poin dikurangi 25%
+          dari sisa poin (dibulatkan ke atas), berulang tiap bulan sampai 0.
         </p>
       </section>
 
