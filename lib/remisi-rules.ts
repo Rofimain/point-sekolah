@@ -6,6 +6,17 @@ export const AUTO_REMISI_PERCENT = 25;
 /** Kode reason di DB untuk remisi/reward yang diisi admin (nama + %). */
 export const MANUAL_REMISI_REASON_CODE = "MANUAL_CUSTOM";
 
+/**
+ * Potongan remisi manual dari poin efektif saat ini (bukan skor pelanggaran yang sama berulang).
+ * Hasil dibulatkan, dan tidak melebihi poin yang tersisa.
+ */
+export function manualRemisiCutFromCurrentPoints(currentPoints: number, percent: number): number {
+  if (!Number.isFinite(currentPoints) || currentPoints < 1) return 0;
+  if (!Number.isFinite(percent) || percent <= 0) return 0;
+  const deduct = Math.round(currentPoints * (percent / 100));
+  return Math.min(Math.max(0, deduct), Math.floor(currentPoints));
+}
+
 export function resolveManualRemisiPercent(
   customPercent: unknown
 ): { ok: true; percent: number } | { ok: false; error: string } {
@@ -41,6 +52,26 @@ export function buildManualRemisiReason(opts: {
   if (label) parts.push(label);
   if (note) parts.push(note);
   return parts.join("|");
+}
+
+/** Hanya baris remisi/reward yang diinput staf. Remisi otomatis dan baris pembatalannya tidak lolos. */
+export function isDeletableManualRemisi(reason: string, reversalOfId?: string | null): boolean {
+  if (reversalOfId) return false;
+  return reason.startsWith("MANUAL_");
+}
+
+/**
+ * Poin yang kembali setelah satu penyesuaian dihapus.
+ * `removedDelta` negatif untuk remisi (mis. -5). Lantai poin tetap 0.
+ */
+export function effectivePointsAfterRemovingDelta(
+  gross: number,
+  adjustmentSum: number,
+  removedDelta: number
+): { before: number; after: number; restored: number } {
+  const before = Math.max(0, gross + adjustmentSum);
+  const after = Math.max(0, gross + adjustmentSum - removedDelta);
+  return { before, after, restored: after - before };
 }
 
 export function parseManualRemisiReason(reason: string): ManualRemisiReasonParts {

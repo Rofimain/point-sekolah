@@ -1,7 +1,14 @@
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePointsBreakdown, isPointAdjustmentTableMissing } from "@/lib/student-effective-points";
-import { buildManualRemisiReason, resolveManualRemisiPercent } from "@/lib/remisi-rules";
-import { parseIncidentDateYmd } from "@/lib/incident-date";
+import {
+  buildManualRemisiReason,
+  isDeletableManualRemisi,
+  manualRemisiCutFromCurrentPoints,
+  parseManualRemisiReason,
+  resolveManualRemisiPercent,
+} from "@/lib/remisi-rules";
+import { dateInTimeZoneYmd, parseIncidentDateYmd } from "@/lib/incident-date";
 
 export type ManualRemisiApplyResult = {
   studentId: string;
@@ -67,21 +74,21 @@ export async function applyManualRemisiForStudent(input: {
   if (eligibleGross < 1) {
     return {
       ok: false,
-      error: `Tidak ada poin pelanggaran pada/sebelum ${input.achievementYmd}. Poin setelah tanggal itu tidak ikut dihitung.`,
+      error: `Tidak ada poin pelanggaran pada/sebelum ${input.achievementYmd}.`,
     };
   }
 
-  const { gross, effective } = await getEffectivePointsBreakdown(student.id);
+  const { effective } = await getEffectivePointsBreakdown(student.id);
   if (effective < 1) {
     return { ok: false, error: "Poin efektif siswa sudah 0 — tidak ada yang bisa dikurangi" };
   }
 
-  const deduct = Math.round(eligibleGross * (resolved.percent / 100));
+  const deduct = manualRemisiCutFromCurrentPoints(effective, resolved.percent);
   if (deduct < 1) {
     return { ok: false, error: "Pengurangan terlalu kecil (minimal 1 poin). Coba persen lebih besar." };
   }
 
-  const pointsDelta = -Math.min(deduct, effective);
+  const pointsDelta = -deduct;
   const reason = buildManualRemisiReason({
     note: input.note,
     customLabel,
@@ -94,8 +101,8 @@ export async function applyManualRemisiForStudent(input: {
         studentId: student.id,
         pointsDelta,
         reason,
-        /** Basis yang dipakai untuk %: skor sampai tanggal prestasi. */
-        grossTotalBefore: eligibleGross,
+        /** Basis yang dipakai untuk %: poin efektif saat remisi diinput. */
+        grossTotalBefore: effective,
         effectiveBefore: effective,
         effectiveDate: new Date(),
         createdByName: input.actorName?.trim() || null,
@@ -116,12 +123,72 @@ export async function applyManualRemisiForStudent(input: {
       studentName: student.name,
       percent: resolved.percent,
       eligibleGross,
-      grossTotalBefore: gross,
+      grossTotalBefore: effective,
       pointsDelta,
       effectiveAfter: after.effective,
       achievementYmd: input.achievementYmd,
       customLabel,
       reason,
+    },
+  };
+}
+
+export type ManualRemisiDeleteResult = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  label: string;
+  /** Potongan yang dihapus (negatif, mis. -5). */
+  pointsDelta: number;
+  /** Poin yang benar-benar kembali ke saldo efektif, sebelum rekonsiliasi remisi otomatis. */
+  pointsRestored: number;
+  effectiveBefore: number;
+  effectiveAfter: number;
+  /** Tanggal kalender saat remisi manual ini berlaku. Remisi otomatis sesudah tanggal ini dihitung ulang. */
+  effectiveYmd: string;
+};
+
+/** Hapus satu baris remisi manual. Remisi otomatis sesudah tanggal ini dihitung ulang oleh pemanggil. */
+export async function deleteManualRemisiById(
+  id: string
+): Promise<{ ok: true; result: ManualRemisiDeleteResult } | { ok: false; error: string; status: number }> {
+  const row = await prisma.pointAdjustment.findUnique({
+    where: { id },
+    include: { student: { select: { id: true, name: true } } },
+  });
+  if (!row) return { ok: false, error: "Remisi tidak ditemukan", status: 404 };
+  if (!isDeletableManualRemisi(row.reason, row.reversalOfId)) {
+    return { ok: false, error: "Hanya remisi manual yang bisa dihapus", status: 400 };
+  }
+
+  const before = await getEffectivePointsBreakdown(row.studentId);
+
+  try {
+    await prisma.pointAdjustment.delete({ where: { id: row.id } });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") {
+      return { ok: false, error: "Remisi tidak ditemukan", status: 404 };
+    }
+    if (isPointAdjustmentTableMissing(e)) {
+      return { ok: false, error: "Tabel penyesuaian poin belum tersedia (jalankan migrasi DB)", status: 500 };
+    }
+    throw e;
+  }
+
+  const after = await getEffectivePointsBreakdown(row.studentId);
+  const parsed = parseManualRemisiReason(row.reason);
+  return {
+    ok: true,
+    result: {
+      id: row.id,
+      studentId: row.studentId,
+      studentName: row.student.name,
+      label: parsed.customLabel?.trim() || "Remisi manual",
+      pointsDelta: row.pointsDelta,
+      pointsRestored: after.effective - before.effective,
+      effectiveBefore: before.effective,
+      effectiveAfter: after.effective,
+      effectiveYmd: dateInTimeZoneYmd(row.effectiveDate ?? row.createdAt),
     },
   };
 }

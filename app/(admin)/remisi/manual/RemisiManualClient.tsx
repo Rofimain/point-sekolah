@@ -43,6 +43,7 @@ export default function RemisiManualClient({ canManage, classes }: { canManage: 
   const [jenisOptions, setJenisOptions] = useState<string[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [summary, setSummary] = useState({ jumlah: 0, totalPoin: 0, jenisTerbanyak: null as string | null });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,6 +73,34 @@ export default function RemisiManualClient({ canManage, classes }: { canManage: 
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function removeRow(row: Row) {
+    const cut = Math.abs(row.pointsDelta);
+    const ok = window.confirm(
+      `Hapus remisi manual "${row.label}" untuk ${row.studentName}?\n\nPotongan ${cut} poin dikembalikan. Remisi otomatis yang jatuh tempo setelah tanggal input ini dihitung ulang, supaya poin sama seperti remisi ini tidak pernah dimasukkan.`
+    );
+    if (!ok) return;
+    setDeletingId(row.id);
+    try {
+      const res = await fetch(`/api/admin/manual-remisi/${encodeURIComponent(row.id)}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus remisi");
+      const restored = typeof data.pointsRestored === "number" ? data.pointsRestored : cut;
+      const after = typeof data.effectiveAfter === "number" ? data.effectiveAfter : null;
+      let text = `Remisi manual dihapus. ${restored} poin dari baris itu kembali ke ${row.studentName}.`;
+      if (data.autoRebuilt > 0) {
+        text += ` Remisi otomatis setelah tanggal input itu dihitung ulang.`;
+      }
+      if (after != null) text += ` Poin efektif sekarang ${after}.`;
+      toast.success(text);
+      if (rows.length === 1 && page > 1) setPage((p) => p - 1);
+      else void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal menghapus remisi");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   function exportHref() {
     const sp = new URLSearchParams({ type: "manual", from, to });
@@ -137,10 +166,23 @@ export default function RemisiManualClient({ canManage, classes }: { canManage: 
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="table-elegant min-w-[980px]">
+          <table className="table-elegant min-w-[1080px]">
             <thead>
               <tr>
-                {["Tanggal input", "Tgl prestasi", "Siswa", "Kelas", "Jenis", "%", "Basis", "Poin", "Potongan", "Catatan", "Diinput oleh"].map((h) => (
+                {[
+                  "Tanggal input",
+                  "Tgl prestasi",
+                  "Siswa",
+                  "Kelas",
+                  "Jenis",
+                  "%",
+                  "Basis",
+                  "Poin",
+                  "Potongan",
+                  "Catatan",
+                  "Diinput oleh",
+                  ...(canManage ? ["Aksi"] : []),
+                ].map((h) => (
                   <th key={h} className="px-3 py-2 text-left">{h}</th>
                 ))}
               </tr>
@@ -148,7 +190,7 @@ export default function RemisiManualClient({ canManage, classes }: { canManage: 
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-3 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                  <td colSpan={canManage ? 12 : 11} className="px-3 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
                     {loading ? "Memuat..." : "Tidak ada remisi manual pada rentang ini."}
                   </td>
                 </tr>
@@ -172,6 +214,18 @@ export default function RemisiManualClient({ canManage, classes }: { canManage: 
                     <td className="px-3 text-sm tabular-nums">{r.pointsDelta}</td>
                     <td className="px-3 text-sm">{r.note || "—"}</td>
                     <td className="px-3 text-sm">{r.createdByName || "—"}</td>
+                    {canManage ? (
+                      <td className="px-3 text-sm">
+                        <button
+                          type="button"
+                          className="btn btn-danger touch-manipulation text-[11px] btn-sm"
+                          disabled={deletingId === r.id}
+                          onClick={() => void removeRow(r)}
+                        >
+                          {deletingId === r.id ? "Menghapus…" : "Hapus"}
+                        </button>
+                      </td>
+                    ) : null}
                   </tr>
                 ))
               )}

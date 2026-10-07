@@ -5,12 +5,12 @@ import {
   buildQuietMonthReason,
   buildQuietMonthReversalReason,
 } from "@/lib/point-adjustment-reason";
-import { computeRemisiPlan, type RemisiAdjustmentInput } from "@/lib/remisi-chain";
+import { autoRemisiIdsToRebuild, computeRemisiPlan, type RemisiAdjustmentInput } from "@/lib/remisi-chain";
 import { APP_KEYS } from "@/lib/app-setting-keys";
 import { getAppSetting } from "@/lib/app-settings";
 import { recordAccessLog } from "@/lib/access-log";
 
-export type ReconcileSummary = { created: number; reversed: number };
+export type ReconcileSummary = { created: number; reversed: number; rebuilt: number };
 
 function ymdToUtcNoon(ymd: string): Date {
   const [y, m, d] = ymd.split("-").map(Number);
@@ -51,14 +51,24 @@ async function loadPlanInput(studentId: string, db: Pick<typeof prisma, "violati
 
 export async function reconcileAutoRemisiForStudent(
   studentId: string,
-  opts?: { actorName?: string }
+  opts?: { actorName?: string; rebuildAutoAfterYmd?: string }
 ): Promise<ReconcileSummary> {
-  if (!(await isRemisiBerantaiAktif())) return { created: 0, reversed: 0 };
+  if (!(await isRemisiBerantaiAktif())) return { created: 0, reversed: 0, rebuilt: 0 };
 
   try {
     const outcome = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${studentId})::bigint)`;
       const input = await loadPlanInput(studentId, tx);
+      let rebuilt = 0;
+      if (opts?.rebuildAutoAfterYmd) {
+        const ids = autoRemisiIdsToRebuild(input.adjustments, opts.rebuildAutoAfterYmd);
+        if (ids.length > 0) {
+          await tx.pointAdjustment.deleteMany({ where: { id: { in: ids } } });
+          const drop = new Set(ids);
+          input.adjustments = input.adjustments.filter((a) => !drop.has(a.id));
+          rebuilt = ids.length;
+        }
+      }
       const plan = computeRemisiPlan(input);
       const todayYmd = input.todayYmd;
 
@@ -100,12 +110,12 @@ export async function reconcileAutoRemisiForStudent(
         running += rev.pointsDelta;
       }
 
-      return plan;
+      return { plan, rebuilt };
     });
 
-    if (outcome.toReverse.length > 0) {
+    if (outcome.plan.toReverse.length > 0) {
       const student = await prisma.user.findUnique({ where: { id: studentId }, select: { name: true } });
-      const sebab = outcome.toReverse.map((r) => `tahap ${r.step} (${r.sebab})`).join("; ");
+      const sebab = outcome.plan.toReverse.map((r) => `tahap ${r.step} (${r.sebab})`).join("; ");
       await recordAccessLog({
         portal: opts?.actorName ? "STAFF" : "SYSTEM",
         category: "DATA",
@@ -117,15 +127,19 @@ export async function reconcileAutoRemisiForStudent(
       });
     }
 
-    return { created: outcome.toCreate.length, reversed: outcome.toReverse.length };
+    return {
+      created: outcome.plan.toCreate.length,
+      reversed: outcome.plan.toReverse.length,
+      rebuilt: outcome.rebuilt,
+    };
   } catch (e) {
-    if (isPointAdjustmentTableMissing(e)) return { created: 0, reversed: 0 };
+    if (isPointAdjustmentTableMissing(e)) return { created: 0, reversed: 0, rebuilt: 0 };
     throw e;
   }
 }
 
 export async function reconcileAutoRemisiForAllStudents(): Promise<ReconcileSummary & { count: number; skipped: boolean }> {
-  if (!(await isRemisiBerantaiAktif())) return { created: 0, reversed: 0, count: 0, skipped: true };
+  if (!(await isRemisiBerantaiAktif())) return { created: 0, reversed: 0, rebuilt: 0, count: 0, skipped: true };
   const students = await prisma.user.findMany({
     where: { role: "STUDENT", status: "ACTIVE", deletedAt: null },
     select: { id: true },
@@ -138,7 +152,7 @@ export async function reconcileAutoRemisiForAllStudents(): Promise<ReconcileSumm
     created += one.created;
     reversed += one.reversed;
   }
-  return { created, reversed, count: students.length, skipped: false };
+  return { created, reversed, rebuilt: 0, count: students.length, skipped: false };
 }
 
 export async function getRemisiCountdown(studentId: string): Promise<{

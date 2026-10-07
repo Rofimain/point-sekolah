@@ -16,8 +16,6 @@ export type RemisiStudentRow = {
 };
 
 type PreviewState = {
-  eligibleGross: number;
-  grossTotal: number;
   effective: number;
   percent: number | null;
   pointsDelta: number | null;
@@ -79,8 +77,6 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
         const d = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(d.error || "Gagal memuat pratinjau");
         setPreview({
-          eligibleGross: d.eligibleGross ?? 0,
-          grossTotal: d.grossTotal ?? 0,
           effective: d.effective ?? 0,
           percent: d.percent ?? localPercent,
           pointsDelta: d.pointsDelta,
@@ -123,7 +119,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
     const confirmBits = [
       `Jenis: ${customLabel.trim()}`,
       `Tanggal prestasi: ${achievementYmd}`,
-      preview ? `Basis poin (≤ tanggal): ${preview.eligibleGross}` : null,
+      preview ? `Poin saat ini: ${preview.effective}` : null,
       `Persen: ${n}%`,
       preview?.pointsDelta != null ? `Potongan ≈ ${Math.abs(preview.pointsDelta)} poin` : null,
     ]
@@ -150,7 +146,7 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
       if (!res.ok) throw new Error(d.error || "Gagal menerapkan");
       setMsg({
         type: "ok",
-        text: `Berhasil: ${d.studentName} −${Math.abs(d.pointsDelta)} poin (${d.percent}% · ${d.customLabel}) dari basis ${d.eligibleGross} poin (≤ ${d.achievementYmd}). Poin efektif sekarang ${d.effectiveAfter}.`,
+        text: `Berhasil: ${d.studentName} −${Math.abs(d.pointsDelta)} poin (${d.percent}% · ${d.customLabel}) dari poin saat ini ${d.grossTotalBefore}. Poin efektif sekarang ${d.effectiveAfter}.`,
       });
       setNote("");
       router.refresh();
@@ -195,9 +191,8 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             2. Remisi &amp; reward manual
           </h2>
           <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Isi nama jenis dan persentase sendiri. Remisi dihitung dari poin pelanggaran dengan tanggal kejadian{" "}
-            <strong>pada/sebelum tanggal prestasi</strong>. Poin mulai hari berikutnya sampai hari ini tidak ikut
-            dihitung.
+            Isi nama jenis dan persentase sendiri. Persen dihitung dari poin siswa saat ini. Input yang sama
+            kedua kalinya memakai sisa poin setelah remisi pertama, jadi potongannya bisa lebih kecil.
           </p>
         </div>
 
@@ -339,14 +334,8 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
           >
             <p>
-              Basis remisi (poin ≤ {achievementYmd}):{" "}
-              <strong style={{ color: "var(--text-primary)" }}>{preview.eligibleGross}</strong>
-              {preview.grossTotal !== preview.eligibleGross ? (
-                <span style={{ color: "var(--text-muted)" }}>
-                  {" "}
-                  · bruto total {preview.grossTotal} (selisih setelah tanggal tidak dihitung)
-                </span>
-              ) : null}
+              Poin saat ini:{" "}
+              <strong style={{ color: "var(--text-primary)" }}>{preview.effective}</strong>
             </p>
             {preview.percent != null && preview.pointsDelta != null ? (
               <p>

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addMonthsClampYmd, computeRemisiPlan, type RemisiAdjustmentInput } from "../lib/remisi-chain";
+import { addMonthsClampYmd, autoRemisiIdsToRebuild, computeRemisiPlan, type RemisiAdjustmentInput } from "../lib/remisi-chain";
 import { buildQuietMonthReason } from "../lib/point-adjustment-reason";
 
 function adj(partial: Partial<RemisiAdjustmentInput> & Pick<RemisiAdjustmentInput, "id" | "reason" | "pointsDelta" | "effectiveYmd">): RemisiAdjustmentInput {
@@ -268,4 +268,48 @@ test("baris lama catch-up yang dibuat terlambat dihitung pada jatuh tempo tahap 
       ["2026-05-01", 2, "2026-07-01", 23, -6],
     ]
   );
+});
+
+test("hapus remisi manual menghitung ulang remisi otomatis sesudahnya", () => {
+  const keep = adj({
+    id: "m1",
+    reason: "MANUAL_CUSTOM|asOf:2026-10-01|Juara",
+    pointsDelta: -10,
+    effectiveYmd: "2026-10-01",
+  });
+  const dropped = adj({
+    id: "m2",
+    reason: "MANUAL_CUSTOM|asOf:2026-10-01|Juara",
+    pointsDelta: -8,
+    effectiveYmd: "2026-10-01",
+  });
+  const autoAfter = adj({
+    id: "a1",
+    reason: buildQuietMonthReason("2026-09-02", 1),
+    pointsDelta: -6,
+    effectiveYmd: "2026-10-02",
+  });
+  const autoBefore = adj({
+    id: "a0",
+    reason: buildQuietMonthReason("2026-08-02", 1),
+    pointsDelta: -10,
+    effectiveYmd: "2026-09-02",
+  });
+  const incidents = [
+    { ymd: "2026-09-02", points: 40 },
+    { ymd: "2026-10-03", points: 5 },
+    { ymd: "2026-10-04", points: 5 },
+  ];
+
+  assert.deepEqual(autoRemisiIdsToRebuild([keep, dropped, autoBefore, autoAfter], "2026-10-01"), ["a1"]);
+
+  const rebuilt = computeRemisiPlan({
+    incidents,
+    adjustments: [keep, autoBefore],
+    todayYmd: "2026-10-05",
+  });
+  const stage = rebuilt.toCreate.find((s) => s.dueYmd === "2026-10-02");
+  assert.ok(stage);
+  assert.equal(stage.effectiveBefore, 30);
+  assert.equal(stage.pointsDelta, -8);
 });

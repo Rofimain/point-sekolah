@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireManageData, isAuthFail } from "@/lib/api-auth";
 import { applyManualRemisiForStudent, getGrossPointsOnOrBefore } from "@/lib/manual-remisi";
-import { resolveManualRemisiPercent } from "@/lib/remisi-rules";
+import { manualRemisiCutFromCurrentPoints, resolveManualRemisiPercent } from "@/lib/remisi-rules";
 import { getEffectivePointsBreakdown } from "@/lib/student-effective-points";
 import { calendarTodayYmd } from "@/lib/incident-date";
 import { recordDataAccessLog } from "@/lib/access-log";
 import { reconcileAutoRemisiForStudent } from "@/lib/quiet-month-reduction";
 
-/** Pratinjau: skor eligible sampai tanggal prestasi + potongan. */
+/** Pratinjau: potongan dari poin efektif saat ini. Tanggal prestasi hanya memastikan ada pelanggaran sampai hari itu. */
 export async function GET(req: NextRequest) {
   const auth = await requireManageData();
   if (isAuthFail(auth)) return auth.response;
@@ -21,6 +21,12 @@ export async function GET(req: NextRequest) {
 
   const scoped = await getGrossPointsOnOrBefore(studentId, achievementYmd);
   if (!scoped.ok) return NextResponse.json({ error: scoped.error }, { status: 400 });
+  if (scoped.eligibleGross < 1) {
+    return NextResponse.json(
+      { error: `Tidak ada poin pelanggaran pada/sebelum ${achievementYmd}.` },
+      { status: 400 }
+    );
+  }
 
   const { effective, gross } = await getEffectivePointsBreakdown(studentId);
 
@@ -31,8 +37,8 @@ export async function GET(req: NextRequest) {
     const resolved = resolveManualRemisiPercent(Number(customPercent));
     if (resolved.ok) {
       percent = resolved.percent;
-      const deduct = Math.round(scoped.eligibleGross * (resolved.percent / 100));
-      pointsDelta = -Math.min(Math.max(0, deduct), effective);
+      const deduct = manualRemisiCutFromCurrentPoints(effective, resolved.percent);
+      pointsDelta = deduct > 0 ? -deduct : null;
     }
   }
 

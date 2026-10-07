@@ -111,6 +111,27 @@ type Claim = {
   pointsDelta: number;
 };
 
+/**
+ * Remisi otomatis yang jatuh tempo setelah suatu remisi manual.
+ * Baris ini ikut dihitung dari poin yang sudah dipotong remisi manual itu,
+ * jadi saat remisi manual dihapus baris ini perlu dihitung ulang.
+ */
+export function autoRemisiIdsToRebuild(
+  adjustments: RemisiAdjustmentInput[],
+  manualEffectiveYmd: string
+): string[] {
+  const reversedIds = new Set(
+    adjustments.map((a) => a.reversalOfId).filter((id): id is string => Boolean(id))
+  );
+  return adjustments
+    .filter((a) => {
+      if (a.reversalOfId || reversedIds.has(a.id)) return false;
+      if (!isQuietMonthReason(a.reason)) return false;
+      return a.effectiveYmd > manualEffectiveYmd;
+    })
+    .map((a) => a.id);
+}
+
 export function computeRemisiPlan(input: {
   incidents: RemisiIncident[];
   adjustments: RemisiAdjustmentInput[];

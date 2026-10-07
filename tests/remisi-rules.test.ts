@@ -5,6 +5,9 @@ import {
   resolveManualRemisiPercent,
   buildManualRemisiReason,
   parseManualRemisiReason,
+  isDeletableManualRemisi,
+  effectivePointsAfterRemovingDelta,
+  manualRemisiCutFromCurrentPoints,
 } from "../lib/remisi-rules";
 import { formatPointAdjustmentReason, QUIET_MONTH_REASON } from "../lib/point-adjustment-reason";
 
@@ -30,6 +33,35 @@ test("build/parse manual remisi reason with asOf and custom label", () => {
   assert.equal(p.note, "Juara 1");
   assert.match(formatPointAdjustmentReason(reason), /Juara robotik/);
   assert.match(formatPointAdjustmentReason(reason), /2026-07-10/);
+});
+
+test("remisi manual mengambil persen dari poin saat ini", () => {
+  assert.equal(manualRemisiCutFromCurrentPoints(40, 10), 4);
+  assert.equal(manualRemisiCutFromCurrentPoints(36, 10), 4);
+  assert.equal(manualRemisiCutFromCurrentPoints(40, 25), 10);
+  assert.equal(manualRemisiCutFromCurrentPoints(30, 25), 8);
+  assert.equal(manualRemisiCutFromCurrentPoints(8, 25), 2);
+  assert.equal(manualRemisiCutFromCurrentPoints(0, 10), 0);
+});
+
+test("hanya reason MANUAL_ yang boleh dihapus", () => {
+  const manual = buildManualRemisiReason({ customLabel: "Juara Basket FEBUI", achievementYmd: "2026-09-18" });
+  assert.equal(isDeletableManualRemisi(manual, null), true);
+  assert.equal(isDeletableManualRemisi("MANUAL_KHOTIB_JUMAT|asOf:2026-07-17", null), true);
+  assert.equal(isDeletableManualRemisi("QUIET_MONTH_REDUCTION|anchor=2026-09-18|step=1", null), false);
+  assert.equal(isDeletableManualRemisi("QUIET_MONTH_REVERSAL|anchor=2026-09-18|step=1|sebab=x", null), false);
+  assert.equal(isDeletableManualRemisi(manual, "adj_lain"), false);
+});
+
+test("hapus satu remisi manual mengembalikan potongannya, remisi otomatis tetap dijumlah", () => {
+  const duplicate = effectivePointsAfterRemovingDelta(40, -10, -5);
+  assert.deepEqual(duplicate, { before: 30, after: 35, restored: 5 });
+
+  const withAuto = effectivePointsAfterRemovingDelta(40, -18, -5);
+  assert.deepEqual(withAuto, { before: 22, after: 27, restored: 5 });
+
+  const floored = effectivePointsAfterRemovingDelta(4, -8, -8);
+  assert.deepEqual(floored, { before: 0, after: 4, restored: 4 });
 });
 
 test("formatPointAdjustmentReason labels", () => {
