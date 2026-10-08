@@ -298,8 +298,8 @@ export default function RemisiClient({ students }: { students: RemisiStudentRow[
             className="input max-w-xs"
           />
           <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Contoh: prestasi 10 Jul 2026 → yang diremisi hanya poin kejadian ≤ 10 Jul 2026. Poin 11 Jul 2026 s.d. hari
-            ini tidak termasuk.
+            Tanggal kejadian prestasi. Persen dihitung dari poin siswa saat ini. Tetap harus ada poin pelanggaran pada
+            atau sebelum tanggal ini.
           </p>
         </div>
 

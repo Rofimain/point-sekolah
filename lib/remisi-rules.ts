@@ -7,9 +7,30 @@ export const AUTO_REMISI_PERCENT = 25;
 export const MANUAL_REMISI_REASON_CODE = "MANUAL_CUSTOM";
 
 /**
- * Potongan remisi manual dari poin efektif saat ini (bukan skor pelanggaran yang sama berulang).
- * Hasil dibulatkan, dan tidak melebihi poin yang tersisa.
+ * Poin efektif tepat sebelum satu remisi manual.
+ * Pelanggaran masuk bila tanggal kejadian pada atau sebelum hari remisi itu.
+ * Penyesuaian lain masuk hanya bila waktunya lebih dulu (remisi manual sebelumnya
+ * maupun remisi otomatis yang sudah jatuh tempo).
  */
+export function balanceBeforeManualRemisi(input: {
+  violations: { ymd: string; points: number }[];
+  adjustments: { id: string; atMs: number; pointsDelta: number }[];
+  remisiId: string;
+  remisiAtMs: number;
+  remisiYmd: string;
+}): number {
+  let sum = 0;
+  for (const v of input.violations) {
+    if (v.ymd <= input.remisiYmd) sum += v.points;
+  }
+  for (const a of input.adjustments) {
+    if (a.id === input.remisiId) continue;
+    if (a.atMs < input.remisiAtMs) sum += a.pointsDelta;
+  }
+  return Math.max(0, sum);
+}
+
+/** Potongan remisi manual dari poin pada saat itu. Hasil dibulatkan, dan tidak melebihi poin yang tersisa. */
 export function manualRemisiCutFromCurrentPoints(currentPoints: number, percent: number): number {
   if (!Number.isFinite(currentPoints) || currentPoints < 1) return 0;
   if (!Number.isFinite(percent) || percent <= 0) return 0;

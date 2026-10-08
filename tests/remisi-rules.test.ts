@@ -8,6 +8,7 @@ import {
   isDeletableManualRemisi,
   effectivePointsAfterRemovingDelta,
   manualRemisiCutFromCurrentPoints,
+  balanceBeforeManualRemisi,
 } from "../lib/remisi-rules";
 import { formatPointAdjustmentReason, QUIET_MONTH_REASON } from "../lib/point-adjustment-reason";
 
@@ -42,6 +43,28 @@ test("remisi manual mengambil persen dari poin saat ini", () => {
   assert.equal(manualRemisiCutFromCurrentPoints(30, 25), 8);
   assert.equal(manualRemisiCutFromCurrentPoints(8, 25), 2);
   assert.equal(manualRemisiCutFromCurrentPoints(0, 10), 0);
+});
+
+test("basis edit remisi mengabaikan pelanggaran dan remisi otomatis sesudahnya", () => {
+  const pagi = Date.parse("2026-10-01T02:00:00.000Z");
+  const siang = Date.parse("2026-10-01T03:00:00.000Z");
+  const basis = balanceBeforeManualRemisi({
+    violations: [
+      { ymd: "2026-09-02", points: 40 },
+      { ymd: "2026-10-03", points: 5 },
+      { ymd: "2026-10-04", points: 5 },
+    ],
+    adjustments: [
+      { id: "m1", atMs: pagi, pointsDelta: -10 },
+      { id: "m2", atMs: siang, pointsDelta: -8 },
+      { id: "auto", atMs: Date.parse("2026-10-02T12:00:00.000Z"), pointsDelta: -6 },
+    ],
+    remisiId: "m2",
+    remisiAtMs: siang,
+    remisiYmd: "2026-10-01",
+  });
+  assert.equal(basis, 30);
+  assert.equal(manualRemisiCutFromCurrentPoints(basis, 10), 3);
 });
 
 test("hanya reason MANUAL_ yang boleh dihapus", () => {

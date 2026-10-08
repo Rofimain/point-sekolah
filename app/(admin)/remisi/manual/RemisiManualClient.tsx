@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { toast } from "sonner";
 import { PaginationBar } from "@/components/PaginationBar";
 import { calendarTodayYmd } from "@/lib/incident-date";
 import { formatYmdIndonesia } from "@/lib/point-adjustment-reason";
+import { manualRemisiCutFromCurrentPoints, resolveManualRemisiPercent } from "@/lib/remisi-rules";
+import { Z_MODAL_CLASS } from "@/lib/ui-layers";
 
 type ClassOpt = { id: string; name: string };
 type Row = {
@@ -23,6 +26,18 @@ type Row = {
   effectiveAfter: number | null;
   note: string | null;
   createdByName: string | null;
+};
+
+type EditForm = {
+  id: string;
+  studentName: string;
+  className: string | null;
+  label: string;
+  percent: string;
+  achievementYmd: string;
+  note: string;
+  basis: number;
+  effectiveYmd: string;
 };
 
 function monthRange() {
@@ -44,6 +59,9 @@ export default function RemisiManualClient({ canManage, classes }: { canManage: 
   const [totalPages, setTotalPages] = useState(1);
   const [summary, setSummary] = useState({ jumlah: 0, totalPoin: 0, jenisTerbanyak: null as string | null });
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [edit, setEdit] = useState<EditForm | null>(null);
+  const [editLoadingId, setEditLoadingId] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,10 +92,81 @@ export default function RemisiManualClient({ canManage, classes }: { canManage: 
     void load();
   }, [load]);
 
+  async function openEdit(row: Row) {
+    setEditLoadingId(row.id);
+    try {
+      const res = await fetch(`/api/admin/manual-remisi/${encodeURIComponent(row.id)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal memuat remisi");
+      setEdit({
+        id: data.id,
+        studentName: data.studentName,
+        className: data.className ?? null,
+        label: data.label ?? row.label,
+        percent: data.percent != null ? String(data.percent) : row.percent != null ? String(row.percent) : "",
+        achievementYmd: data.achievementYmd || row.prestasiYmd || calendarTodayYmd(),
+        note: data.note ?? "",
+        basis: typeof data.basis === "number" ? data.basis : row.basis,
+        effectiveYmd: data.effectiveYmd || row.inputYmd,
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal memuat remisi");
+    } finally {
+      setEditLoadingId(null);
+    }
+  }
+
+  async function saveEdit() {
+    if (!edit) return;
+    const n = Number(edit.percent);
+    if (!Number.isFinite(n) || n <= 0 || n > 100) {
+      toast.error("Persentase wajib 1–100.");
+      return;
+    }
+    if (edit.label.trim().length < 2) {
+      toast.error("Nama jenis remisi/reward wajib diisi.");
+      return;
+    }
+    if (!edit.achievementYmd) {
+      toast.error("Tanggal prestasi wajib diisi.");
+      return;
+    }
+    const cut = manualRemisiCutFromCurrentPoints(edit.basis, Math.round(n));
+    const ok = window.confirm(
+      `Simpan perubahan remisi "${edit.label.trim()}" untuk ${edit.studentName}?\n\nPotongan dihitung dari poin pada saat remisi ini (${edit.basis}), menjadi ${cut} poin. Pelanggaran dan remisi otomatis sesudah ${formatYmdIndonesia(edit.effectiveYmd)} ikut dihitung ulang.`
+    );
+    if (!ok) return;
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/admin/manual-remisi/${encodeURIComponent(edit.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customLabel: edit.label.trim(),
+          customPercent: n,
+          achievementYmd: edit.achievementYmd,
+          note: edit.note.trim() || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal mengubah remisi");
+      let text = `Remisi manual diubah. Potongan sekarang ${Math.abs(data.pointsDelta ?? cut)} poin.`;
+      if (data.autoRebuilt > 0) text += " Remisi otomatis sesudahnya dihitung ulang.";
+      if (typeof data.effectiveAfter === "number") text += ` Poin efektif sekarang ${data.effectiveAfter}.`;
+      toast.success(text);
+      setEdit(null);
+      void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal mengubah remisi");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
   async function removeRow(row: Row) {
     const cut = Math.abs(row.pointsDelta);
     const ok = window.confirm(
-      `Hapus remisi manual "${row.label}" untuk ${row.studentName}?\n\nPotongan ${cut} poin dikembalikan. Remisi otomatis yang jatuh tempo setelah tanggal input ini dihitung ulang, supaya poin sama seperti remisi ini tidak pernah dimasukkan.`
+      `Hapus remisi manual "${row.label}" untuk ${row.studentName}?\n\nPotongan ${cut} poin dikembalikan. Pelanggaran dan remisi otomatis sesudah tanggal input ini ikut dihitung ulang.`
     );
     if (!ok) return;
     setDeletingId(row.id);
@@ -166,7 +255,7 @@ export default function RemisiManualClient({ canManage, classes }: { canManage: 
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="table-elegant min-w-[1080px]">
+          <table className="table-elegant min-w-[1160px]">
             <thead>
               <tr>
                 {[
@@ -216,14 +305,24 @@ export default function RemisiManualClient({ canManage, classes }: { canManage: 
                     <td className="px-3 text-sm">{r.createdByName || "—"}</td>
                     {canManage ? (
                       <td className="px-3 text-sm">
-                        <button
-                          type="button"
-                          className="btn btn-danger touch-manipulation text-[11px] btn-sm"
-                          disabled={deletingId === r.id}
-                          onClick={() => void removeRow(r)}
-                        >
-                          {deletingId === r.id ? "Menghapus…" : "Hapus"}
-                        </button>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            className="btn btn-secondary touch-manipulation text-[11px] btn-sm"
+                            disabled={editLoadingId === r.id || deletingId === r.id}
+                            onClick={() => void openEdit(r)}
+                          >
+                            {editLoadingId === r.id ? "Memuat…" : "Ubah"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger touch-manipulation text-[11px] btn-sm"
+                            disabled={deletingId === r.id || editLoadingId === r.id}
+                            onClick={() => void removeRow(r)}
+                          >
+                            {deletingId === r.id ? "Menghapus…" : "Hapus"}
+                          </button>
+                        </div>
                       </td>
                     ) : null}
                   </tr>
@@ -234,7 +333,83 @@ export default function RemisiManualClient({ canManage, classes }: { canManage: 
         </div>
         <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
+      {edit ? <EditRemisiModal form={edit} saving={savingEdit} onChange={setEdit} onClose={() => setEdit(null)} onSave={() => void saveEdit()} /> : null}
     </div>
+  );
+}
+
+function EditRemisiModal({
+  form,
+  saving,
+  onChange,
+  onClose,
+  onSave,
+}: {
+  form: EditForm;
+  saving: boolean;
+  onChange: (next: EditForm) => void;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const resolved = resolveManualRemisiPercent(Number(form.percent));
+  const cut = resolved.ok ? manualRemisiCutFromCurrentPoints(form.basis, resolved.percent) : 0;
+  if (!mounted) return null;
+  return createPortal(
+    <div className={`modal-overlay ${Z_MODAL_CLASS} flex items-end justify-center p-0 sm:items-center sm:p-4`} onClick={onClose}>
+      <div
+        className="modal-surface max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[1.25rem] rounded-b-none px-4 pt-4 pb-sheet-bottom sm:rounded-[1.25rem] sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="mb-1 font-serif text-sm" style={{ color: "var(--text-primary)" }}>Ubah remisi manual</h3>
+        <p className="mb-4 text-xs" style={{ color: "var(--text-muted)" }}>
+          {form.studentName}
+          {form.className ? ` · ${form.className}` : ""} · diinput {formatYmdIndonesia(form.effectiveYmd)}
+        </p>
+        <div className="space-y-3">
+          <label className="label">
+            Nama jenis
+            <input className="input mt-1" value={form.label} onChange={(e) => onChange({ ...form, label: e.target.value })} />
+          </label>
+          <label className="label">
+            Persentase (%)
+            <input
+              className="input mt-1 max-w-[8rem]"
+              inputMode="numeric"
+              value={form.percent}
+              onChange={(e) => onChange({ ...form, percent: e.target.value })}
+            />
+          </label>
+          <label className="label">
+            Tanggal prestasi
+            <input
+              className="input mt-1 max-w-xs"
+              type="date"
+              min="2015-01-01"
+              max={calendarTodayYmd()}
+              value={form.achievementYmd}
+              onChange={(e) => onChange({ ...form, achievementYmd: e.target.value })}
+            />
+          </label>
+          <label className="label">
+            Catatan
+            <input className="input mt-1" value={form.note} onChange={(e) => onChange({ ...form, note: e.target.value })} />
+          </label>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            Poin pada saat remisi ini, sebelum pelanggaran dan remisi otomatis sesudahnya:{" "}
+            <strong>{form.basis}</strong>. Potongan baru: <strong>{cut || "—"}</strong> poin.
+          </p>
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <button type="button" className="btn btn-secondary btn-sm" disabled={saving} onClick={onClose}>Batal</button>
+          <button type="button" className="btn btn-primary btn-sm" disabled={saving || cut < 1} onClick={onSave}>
+            {saving ? "Menyimpan…" : "Simpan"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
